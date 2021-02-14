@@ -53,7 +53,6 @@ def scatter(xData, yData, xlabel='', ylabel='', title='', xlim=None, ylim=None, 
 
 ##############################
 ## Histogram plot
-## (single distribution)
 ##############################
 
 def hist(data, xlabel='', ylabel='frequency', title='', xlim=None, ylim=None, figsize=None, facecolor='w',
@@ -109,7 +108,6 @@ def hist(data, xlabel='', ylabel='frequency', title='', xlim=None, ylim=None, fi
 
 ##############################
 ## Heatmap plot
-## (single distribution)
 ##############################
 
 def hist2d(xData, yData, xlabel='', ylabel='frequency', title='', xlim=None, ylim=None, figsize=None,
