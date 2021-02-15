@@ -3,7 +3,7 @@
 #########################
 
 def version():
-    return '0.0.5'
+    return '0.0.6'
 
 
 ##############################
@@ -14,7 +14,9 @@ def handystrings(whichone='help', toconsole=True):
     handydict = {
         "pandas width": "pd.set_option('display.max_colwidth', None)",
         "parent directory": "sys.path.append(os.path.abspath('../'))",
-        "disable scrolling": ''
+        "disable scrolling": '',
+        "buildpackage":"python3 -m pip install --upgrade build && python3 -m build",
+        "distributepackage":"python3 -m pip install --upgrade twine && python3 -m twine dist/*"
     }
 
     if whichone == 'help':
@@ -48,10 +50,11 @@ def demoData(setID=1):
         y2, temp = demoData(1)
         x2 = [3, 3, 7, 30, 60, 75, 120, 250, 850, 900]
         color2 = '#3366FF'
-        markersize2 = 50
+        markersize2 = 300
         label2 = 'Control case'
+        markerstyle2='^'
 
         data1 = {'x':x1, 'y':y1, 'markercolor':color1, 'label':label1}
-        data2 = {'x':x2, 'y':y2, 'markercolor':color2, 'markersize':markersize2, 'label':label2}
+        data2 = {'x':x2, 'y':y2, 'markercolor':color2, 'markersize':markersize2, 'label':label2, 'markerstyle':markerstyle2}
 
         return [data1, data2]
