@@ -52,6 +52,66 @@ def scatter(xData, yData, xlabel='', ylabel='', title='', xlim=None, ylim=None, 
 
 
 ##############################
+## Scatter plot (dictionary input)
+##############################
+
+def scatterDictionary(dataDict, xlabel='', ylabel='', title='', xlim=None, ylim=None, figsize=None, facecolor='w',
+                      xylabelsize=15, titesize=20, xscale='linear', yscale='linear', grid=False, legend=None):
+    # Process defaults
+    if figsize is None:
+        figsize = (13, 7)
+
+    # Initialize
+    legendStrings = list()
+    legendHandles = list()
+
+    # Create the plot
+    f = plt.figure(figsize=figsize, facecolor=facecolor)
+
+    # Loop over data sets to process & plot
+    for traceIndex in range(len(dataDict)):
+        thisDict = dataDict[traceIndex]
+        theseKeys = list(thisDict.keys())
+        if ('x' in theseKeys) and ('y' in theseKeys):
+            x = thisDict['x']
+            y = thisDict['y']
+        else:
+            raise NameError('isthmuslib.scatterDict::NeedBothXandYdata')
+        if 'markersize' in theseKeys:
+            markersize = thisDict['markersize']
+        else:
+            markersize = None
+        if 'markercolor' in theseKeys:
+            markercolor = thisDict['markercolor']
+        else:
+            markercolor = None
+        if 'label' in theseKeys:
+            legendStrings.append(thisDict['label'])
+        else:
+            legendStrings.append('')
+
+        # Add this data set to the plot
+        trace = plt.scatter(x, y, s=markersize, c=markercolor)
+        legendHandles.append(trace)
+
+    # Bells and whistles
+    plt.xlabel(xlabel, size=xylabelsize)
+    plt.ylabel(ylabel, size=xylabelsize)
+    plt.title(title, size=titesize)
+    if xlim:
+        plt.xlim(xlim)
+    if ylim:
+        plt.ylim(ylim)
+    plt.xscale(xscale)
+    plt.yscale(yscale)
+    if grid:
+        plt.grid(grid)
+    if legend:
+        plt.legend(legendHandles, legendStrings)
+    return f
+
+
+##############################
 ## Histogram plot
 ##############################
 
