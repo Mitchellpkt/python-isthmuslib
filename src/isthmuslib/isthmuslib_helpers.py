@@ -15,8 +15,8 @@ def handystrings(whichone='help', toconsole=True):
         "pandas width": "pd.set_option('display.max_colwidth', None)",
         "parent directory": "sys.path.append(os.path.abspath('../'))",
         "disable scrolling": '',
-        "buildpackage":"python3 -m pip install --upgrade build && python3 -m build",
-        "distributepackage":"python3 -m pip install --upgrade twine && python3 -m twine dist/*"
+        "buildpackage": "python3 -m pip install --upgrade build && python3 -m build",
+        "distributepackage": "python3 -m pip install --upgrade twine && python3 -m twine dist/*"
     }
 
     if whichone == 'help':
@@ -52,9 +52,10 @@ def demoData(setID=1):
         color2 = '#3366FF'
         markersize2 = 300
         label2 = 'Control case'
-        markerstyle2='^'
+        markerstyle2 = '^'
 
-        data1 = {'x':x1, 'y':y1, 'markercolor':color1, 'label':label1}
-        data2 = {'x':x2, 'y':y2, 'markercolor':color2, 'markersize':markersize2, 'label':label2, 'markerstyle':markerstyle2}
+        data1 = {'x': x1, 'y': y1, 'markercolor': color1, 'label': label1}
+        data2 = {'x': x2, 'y': y2, 'markercolor': color2, 'markersize': markersize2, 'label': label2,
+                 'markerstyle': markerstyle2}
 
         return [data1, data2]
