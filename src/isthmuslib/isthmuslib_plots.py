@@ -12,7 +12,7 @@ import numpy as np
 
 def scatter(xData, yData, xlabel='', ylabel='', title='', xlim=None, ylim=None, figsize=None, facecolor='w',
             xylabelsize=15, titesize=20, xscale='linear', yscale='linear', markersize=3, markercolor='green',
-            grid=False, legend=None, markerstyle='o'):
+            grid=False, legend=None, markerstyle='o', lines=False, linestyle='-', linewidth=None):
     # Process defaults
     if figsize is None:
         figsize = (13, 7)
@@ -31,6 +31,8 @@ def scatter(xData, yData, xlabel='', ylabel='', title='', xlim=None, ylim=None, 
     for traceIndex in range(len(keys)):
         thisKey = keys[traceIndex]
         legendStrings.append(thisKey)
+        if lines:
+            plt.plot(xData, yData[thisKey], color=markercolor, linestyle=linestyle, linewidth=linewidth)
         trace = plt.scatter(xData, yData[thisKey], s=markersize, c=markercolor, marker=markerstyle)
         legendHandles.append(trace)
 
@@ -56,7 +58,8 @@ def scatter(xData, yData, xlabel='', ylabel='', title='', xlim=None, ylim=None, 
 ##############################
 
 def scatterDictionary(dataDict, xlabel='', ylabel='', title='', xlim=None, ylim=None, figsize=None, facecolor='w',
-                      xylabelsize=15, titesize=20, xscale='linear', yscale='linear', grid=False, legend=None):
+                      xylabelsize=15, titesize=20, xscale='linear', yscale='linear', grid=False, legend=None,
+                      lines=False, linestyle='-', linewidth=None):
     # Process defaults
     if figsize is None:
         figsize = (13, 7)
@@ -95,6 +98,8 @@ def scatterDictionary(dataDict, xlabel='', ylabel='', title='', xlim=None, ylim=
             legendStrings.append('')
 
         # Add this data set to the plot
+        if lines:
+            plt.plot(x, y, color=markercolor, linestyle=linestyle, linewidth=linewidth)
         trace = plt.scatter(x, y, s=markersize, c=markercolor, marker=markerstyle)
         legendHandles.append(trace)
 
