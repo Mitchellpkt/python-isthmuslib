@@ -42,9 +42,12 @@ Overview
 
 .. end-badges
 
-Misc utilities, mostly related to plotting
+Misc utilities, mostly related to plotting conveniences
 
-* Free software: GNU Lesser General Public License v3 (LGPLv3)
+* Turns matplotlib.pyplot figure generation into one-liners.
+* Free software for personal or academic use: **GNU Lesser General Public License v3 (LGPLv3).**
+* Contact licensing@mitchellpkt.com for commercial applications.
+* To-do: expand types of parameters that can be passed through (e.g. marker style, legend placement, etc)
 
 Installation
 ============
@@ -67,29 +70,8 @@ To use the project:
 .. code-block:: python
 
     import isthmuslib
-    isthmuslib.longest()
 
 
-Development
-===========
-
-To run all the tests run::
-
-    tox
-
-Note, to combine the coverage data from all the tox environments run:
-
-.. list-table::
-    :widths: 10 90
-    :stub-columns: 1
-
-    - - Windows
-      - ::
-
-            set PYTEST_ADDOPTS=--cov-append
-            tox
-
-    - - Other
-      - ::
-
-            PYTEST_ADDOPTS=--cov-append tox
+Demo
+=============
+See a light demo here: https://github.com/Mitchellpkt/python-isthmuslib/blob/main/light-demo.ipynb
