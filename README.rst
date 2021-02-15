@@ -47,7 +47,7 @@ Misc utilities, mostly related to plotting conveniences
 * Turns matplotlib.pyplot figure generation into one-liners.
 * Free software for personal or academic use: **GNU Lesser General Public License v3 (LGPLv3).**
 * Contact licensing@mitchellpkt.com for commercial applications.
-* To-do: expand types of parameters that can be passed through (e.g. marker style, legend placement, etc)
+* To-do: expand types of parameters that can be passed through (e.g. marker style, legend placement, etc).
 
 Installation
 ============
