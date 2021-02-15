@@ -12,7 +12,7 @@ import numpy as np
 
 def scatter(xData, yData, xlabel='', ylabel='', title='', xlim=None, ylim=None, figsize=None, facecolor='w',
             xylabelsize=15, titesize=20, xscale='linear', yscale='linear', markersize=3, markercolor='green',
-            grid=False, legend=None):
+            grid=False, legend=None, markerstyle='o'):
     # Process defaults
     if figsize is None:
         figsize = (13, 7)
@@ -31,7 +31,7 @@ def scatter(xData, yData, xlabel='', ylabel='', title='', xlim=None, ylim=None, 
     for traceIndex in range(len(keys)):
         thisKey = keys[traceIndex]
         legendStrings.append(thisKey)
-        trace = plt.scatter(xData, yData[thisKey], s=markersize, c=markercolor)
+        trace = plt.scatter(xData, yData[thisKey], s=markersize, c=markercolor, marker=markerstyle)
         legendHandles.append(trace)
 
     # Bells and whistles
@@ -85,13 +85,17 @@ def scatterDictionary(dataDict, xlabel='', ylabel='', title='', xlim=None, ylim=
             markercolor = thisDict['markercolor']
         else:
             markercolor = None
+        if 'markerstyle' in theseKeys:
+            markerstyle = thisDict['markerstyle']
+        else:
+            markerstyle = None
         if 'label' in theseKeys:
             legendStrings.append(thisDict['label'])
         else:
             legendStrings.append('')
 
         # Add this data set to the plot
-        trace = plt.scatter(x, y, s=markersize, c=markercolor)
+        trace = plt.scatter(x, y, s=markersize, c=markercolor, marker=markerstyle)
         legendHandles.append(trace)
 
     # Bells and whistles
