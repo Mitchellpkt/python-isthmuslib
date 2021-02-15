@@ -75,6 +75,7 @@ docs/_build
 
 # dev book
 src/isthmuslib/python-isthmuslib-dev.ipynb
+dev-ignore/
 
 # pycharm stuff
 .idea/
