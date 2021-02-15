@@ -62,8 +62,8 @@ setup(
         'Topic :: Utilities',
     ],
     project_urls={
-        'Changelog': 'https://github.com/mitchellpkt/python-isthmus/blob/master/CHANGELOG.rst',
-        'Issue Tracker': 'https://github.com/mitchellpkt/python-isthmus/issues',
+        'Changelog': 'https://github.com/mitchellpkt/python-isthmuslib/blob/master/CHANGELOG.rst',
+        'Issue Tracker': 'https://github.com/mitchellpkt/python-isthmuslib/issues',
     },
     keywords=[
         # eg: 'keyword1', 'keyword2', 'keyword3',
