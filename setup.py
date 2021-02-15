@@ -32,7 +32,7 @@ setup(
     ),
     author='Isthmus (Mitchell P. Krawiec-Thayer)',
     author_email='isthmuslib@mitchellpkt.com',
-    url='https://github.com/mitchellpkt/python-isthmus',
+    url='https://github.com/mitchellpkt/python-isthmuslib',
     packages=find_packages('src'),
     package_dir={'': 'src'},
     py_modules=[splitext(basename(path))[0] for path in glob('src/*.py')],
