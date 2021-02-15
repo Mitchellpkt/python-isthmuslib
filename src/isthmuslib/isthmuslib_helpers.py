@@ -3,7 +3,7 @@
 #########################
 
 def version():
-    return '0.0.4'
+    return '0.0.5'
 
 
 ##############################
@@ -33,7 +33,25 @@ def handystrings(whichone='help', toconsole=True):
 ## Misc useful stuff
 ##############################
 
-def demodata():
-    x = [1, 2, 5, 10, 20, 50, 100, 200, 500, 1000]
-    y = [1, 4, 8, 20, 30, 40, 120, 250, 700, 1100]
-    return x, y
+def demoData(setID=1):
+    # Warning, the format of the data depends on the set ID/type
+    if setID == 1:
+        x = [1, 2, 5, 10, 20, 50, 100, 200, 500, 1000]
+        y = [1, 4, 8, 20, 30, 40, 120, 250, 700, 1100]
+        return x, y
+
+    if setID == 2:
+        x1, y1, = demoData(1)
+        color1 = 'r'
+        label1 = 'Group data'
+
+        y2, temp = demoData(1)
+        x2 = [3, 3, 7, 30, 60, 75, 120, 250, 850, 900]
+        color2 = '#3366FF'
+        markersize2 = 50
+        label2 = 'Control case'
+
+        data1 = {'x':x1, 'y':y1, 'markercolor':color1, 'label':label1}
+        data2 = {'x':x2, 'y':y2, 'markercolor':color2, 'markersize':markersize2, 'label':label2}
+
+        return [data1, data2]
