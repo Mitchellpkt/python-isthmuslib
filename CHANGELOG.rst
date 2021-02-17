@@ -24,3 +24,15 @@ Changelog
 * Minor tweaks
 * Fixes a few bad links in README
 * Updates the changelog
+
+0.0.8 (2021-02-17)
+------------------
+
+* Adds data frame overviews
+
+
+0.0.9 (2021-02-17)
+------------------
+
+* Allows specification of plot types in 2d
+

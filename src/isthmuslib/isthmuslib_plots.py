@@ -4,6 +4,7 @@
 
 import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
 
 
 ##############################
@@ -209,3 +210,47 @@ def hist2d(xData, yData, xlabel='', ylabel='frequency', title='', xlim=None, yli
     if grid:
         plt.grid(grid)
     return f
+
+
+##############################
+## DataViz shotgun plots
+##############################
+# To do - log x-axis might not work
+
+def shotgunPlots1d(df, useFields=None, xscale='linear', yscale='linear', figsize=(13, 7)):
+    if useFields == None:
+        useFields = list(df.keys())
+        # If there are non-numeric fields, things will get wonky
+
+    for fIndex in range(len(useFields)):
+        thisField = useFields[fIndex]
+        thisData = df[thisField]
+        try:
+            hist(thisData, xlabel=thisField, title=thisField, xscale=xscale, yscale=yscale, figsize=figsize)
+        except:
+            pass
+
+
+def shotgunPlots2d(df, xColName, useFields=None, xscale='linear', yscale='linear', figsize=(13, 7),
+                   types=['scatter', 'hist2d']):
+    if useFields == None:
+        useFields = list(df.keys())
+        # If there are non-numeric fields, things will get wonky
+
+    for fIndex in range(len(useFields)):
+        thisField = useFields[fIndex]
+        thisData = df[thisField]
+
+        if any(atype == 'scatter' for atype in types):
+            try:
+                scatter(df[xColName], thisData, xlabel=xColName, ylabel=thisField, title=thisField, xscale=xscale,
+                        yscale=yscale, figsize=figsize)
+            except:
+                pass
+
+        if any(atype == 'hist2d' for atype in types):
+            try:
+                hist2d(df[xColName], thisData, xlabel=xColName, ylabel=thisField, title=thisField, xscale=xscale,
+                       yscale=yscale, figsize=figsize)
+            except:
+                pass
