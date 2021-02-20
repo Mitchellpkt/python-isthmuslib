@@ -37,6 +37,6 @@ Changelog
 * Allows specification of plot types in 2d
 
 0.0.10 (2021-02-19)
-------------------
+-------------------
 
 * Cumulative histograms
