@@ -127,7 +127,7 @@ def scatterDictionary(dataDict, xlabel='', ylabel='', title='', xlim=None, ylim=
 
 def hist(data, xlabel='', ylabel='frequency', title='', xlim=None, ylim=None, figsize=None, facecolor='w',
          xylabelsize=15, titesize=20, xscale='linear', yscale='linear', color=None, bins=150, grid=False, legend=None,
-         cumulative=False):
+         cumulative=False, density=False):
     if figsize is None:
         figsize = (13, 7)
 
@@ -157,7 +157,7 @@ def hist(data, xlabel='', ylabel='frequency', title='', xlim=None, ylim=None, fi
     for traceIndex in range(len(keys)):
         thisKey = keys[traceIndex]
         legendStrings.append(thisKey)
-        trace = plt.hist(data[thisKey], color=color, bins=bins, cumulative=cumulative)
+        trace = plt.hist(data[thisKey], color=color, bins=bins, cumulative=cumulative, density=density)
         legendHandles.append(trace)
 
     # Bells and whistles
@@ -218,7 +218,7 @@ def hist2d(xData, yData, xlabel='', ylabel='frequency', title='', xlim=None, yli
 ##############################
 # To do - log x-axis might not work
 
-def shotgunPlots1d(df, useFields=None, xscale='linear', yscale='linear', figsize=(13, 7), cumulative=False):
+def shotgunPlots1d(df, useFields=None, xscale='linear', yscale='linear', figsize=(13, 7), cumulative=False, density=False):
     if useFields == None:
         useFields = list(df.keys())
         # If there are non-numeric fields, things will get wonky
@@ -228,7 +228,7 @@ def shotgunPlots1d(df, useFields=None, xscale='linear', yscale='linear', figsize
         thisData = df[thisField]
         try:
             hist(thisData, xlabel=thisField, title=thisField, xscale=xscale, yscale=yscale, figsize=figsize,
-                 cumuative=cumulative)
+                 cumuative=cumulative, density=density)
         except:
             pass
 

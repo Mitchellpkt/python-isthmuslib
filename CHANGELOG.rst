@@ -40,3 +40,8 @@ Changelog
 -------------------
 
 * Cumulative histograms
+
+0.0.11 (2021-02-19)
+-------------------
+
+* Histogram normalization
