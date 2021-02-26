@@ -5,6 +5,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+import seaborn as sns
 
 
 ##############################
@@ -12,7 +13,7 @@ import pandas as pd
 ##############################
 
 def scatter(xData, yData, xlabel='', ylabel='', title='', xlim=None, ylim=None, figsize=None, facecolor='w',
-            xylabelsize=15, titesize=20, xscale='linear', yscale='linear', markersize=3, markercolor='green',
+            xylabelsize=15, titlesize=20, xscale='linear', yscale='linear', markersize=3, markercolor='green',
             grid=False, legend=None, markerstyle='o', lines=False, linestyle='-', linewidth=None):
     # Process defaults
     if figsize is None:
@@ -40,7 +41,7 @@ def scatter(xData, yData, xlabel='', ylabel='', title='', xlim=None, ylim=None, 
     # Bells and whistles
     plt.xlabel(xlabel, size=xylabelsize)
     plt.ylabel(ylabel, size=xylabelsize)
-    plt.title(title, size=titesize)
+    plt.title(title, size=titlesize)
     if xlim:
         plt.xlim(xlim)
     if ylim:
@@ -59,7 +60,7 @@ def scatter(xData, yData, xlabel='', ylabel='', title='', xlim=None, ylim=None, 
 ##############################
 
 def scatterDictionary(dataDict, xlabel='', ylabel='', title='', xlim=None, ylim=None, figsize=None, facecolor='w',
-                      xylabelsize=15, titesize=20, xscale='linear', yscale='linear', grid=False, legend=None,
+                      xylabelsize=15, titlesize=20, xscale='linear', yscale='linear', grid=False, legend=None,
                       lines=False, linestyle='-', linewidth=None):
     # Process defaults
     if figsize is None:
@@ -107,7 +108,7 @@ def scatterDictionary(dataDict, xlabel='', ylabel='', title='', xlim=None, ylim=
     # Bells and whistles
     plt.xlabel(xlabel, size=xylabelsize)
     plt.ylabel(ylabel, size=xylabelsize)
-    plt.title(title, size=titesize)
+    plt.title(title, size=titlesize)
     if xlim:
         plt.xlim(xlim)
     if ylim:
@@ -126,7 +127,7 @@ def scatterDictionary(dataDict, xlabel='', ylabel='', title='', xlim=None, ylim=
 ##############################
 
 def hist(data, xlabel='', ylabel='frequency', title='', xlim=None, ylim=None, figsize=None, facecolor='w',
-         xylabelsize=15, titesize=20, xscale='linear', yscale='linear', color=None, bins=150, grid=False, legend=None,
+         xylabelsize=15, titlesize=20, xscale='linear', yscale='linear', color=None, bins=150, grid=False, legend=None,
          cumulative=False, density=False):
     if figsize is None:
         figsize = (13, 7)
@@ -163,7 +164,7 @@ def hist(data, xlabel='', ylabel='frequency', title='', xlim=None, ylim=None, fi
     # Bells and whistles
     plt.xlabel(xlabel, size=xylabelsize)
     plt.ylabel(ylabel, size=xylabelsize)
-    plt.title(title, size=titesize)
+    plt.title(title, size=titlesize)
     if xlim:
         plt.xlim(xlim)
     if ylim:
@@ -178,11 +179,13 @@ def hist(data, xlabel='', ylabel='frequency', title='', xlim=None, ylim=None, fi
 
 
 ##############################
-## Heatmap plot
+## 2D histogram plot
+## Input: X & Y vectors
+## Calculates: Z = counts
 ##############################
 
 def hist2d(xData, yData, xlabel='', ylabel='frequency', title='', xlim=None, ylim=None, figsize=None,
-           facecolor='w', xylabelsize=15, titesize=20, xscale='linear', yscale='linear', cmap='jet', bins=50,
+           facecolor='w', xylabelsize=15, titlesize=20, xscale='linear', yscale='linear', cmap='jet', bins=50,
            grid=None, range=None, density=False, cmin=None, cmax=None, norm=None, bookends=1):
     # Process defaults
     if figsize is None:
@@ -201,7 +204,7 @@ def hist2d(xData, yData, xlabel='', ylabel='frequency', title='', xlim=None, yli
     # Bells and whistles
     plt.xlabel(xlabel, size=xylabelsize)
     plt.ylabel(ylabel, size=xylabelsize)
-    plt.title(title, size=titesize)
+    plt.title(title, size=titlesize)
     if xlim:
         plt.xlim(xlim)
     if ylim:
@@ -214,11 +217,66 @@ def hist2d(xData, yData, xlabel='', ylabel='frequency', title='', xlim=None, yli
 
 
 ##############################
+## 2D histogram plot
+## Input: X & Y & Z vectors
+##############################
+
+def heatmapDataFrame(df, xcol='x', ycol='y', zcol='z', xlabel='', ylabel='', annot=False, figsize=None,
+                     facecolor='white', title='', xlim=None, ylim=None, vmin=None, vmax=None, xylabelsize=15,
+                     titlesize=20, linewidth=None, cmap=None, cbar=True, mask=None, center=None, robust=None,
+                     linecolor=None):
+
+    # Process defaults
+    if figsize is None:
+        figsize = (13, 7)
+
+    x = df[xcol]
+    y = df[ycol]
+    z = df[zcol]
+    return heatmap(x, y, z, annot=annot, xlabel=xlabel, ylabel=ylabel, figsize=figsize,
+                   facecolor=facecolor, title=title, xlim=xlim, ylim=ylim, vmin=vmin, vmax=vmax,
+                   xylabelsize=xylabelsize, titlesize=titlesize, linewidth=linewidth, cmap=cmap, cbar=cbar, mask=mask,
+                   center=center, robust=robust, linecolor=linecolor)
+
+
+def heatmap(x, y, z, xlabel='x', ylabel='y', annot=False, figsize=None, facecolor='white', title='',
+            xlim=None, ylim=None, vmin=None, vmax=None, xylabelsize=15, titlesize=20, linewidth=None, cmap=None,
+            cbar=True, mask=None, center=None, robust=None, linecolor=None):
+
+    # Process defaults
+    if figsize is None:
+        figsize = (13, 7)
+
+    # Initial data wrangling
+    df = pd.DataFrame()
+    df['x'] = x
+    df['y'] = y
+    df['z'] = z
+    dfPivoted = df.pivot("y", "x", "z")
+
+    # Make the plot
+    f = plt.figure(figsize=figsize, facecolor=facecolor)
+    sns.heatmap(dfPivoted, annot=annot, vmin=vmin, vmax=vmax, linewidth=linewidth, cmap=cmap, cbar=cbar, mask=mask,
+                center=center, robust=robust, linecolor=linecolor)
+
+    # Bells and whistles
+    plt.xlabel(xlabel, size=xylabelsize)
+    plt.ylabel(ylabel, size=xylabelsize)
+    plt.title(title, size=titlesize)
+    if xlim:
+        plt.xlim(xlim)
+    if ylim:
+        plt.ylim(ylim)
+    return f
+
+
+##############################
 ## DataViz shotgun plots
 ##############################
 # To do - log x-axis might not work
 
-def shotgunPlots1d(df, useFields=None, xscale='linear', yscale='linear', figsize=(13, 7), cumulative=False, density=False):
+def shotgunPlots1d(df, useFields=None, xscale='linear', yscale='linear', figsize=(13, 7), cumulative=False,
+                   density=False):
     if useFields == None:
         useFields = list(df.keys())
         # If there are non-numeric fields, things will get wonky
