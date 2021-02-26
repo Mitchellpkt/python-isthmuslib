@@ -3,8 +3,14 @@
 #########################
 
 def version():
-    return '0.0.11'
+    return '0.0.12'
 
+
+#########################
+## imports
+#########################
+
+import pandas as pd
 
 ##############################
 ## Misc useful stuff
@@ -59,3 +65,10 @@ def demoData(setID=1):
                  'markerstyle': markerstyle2}
 
         return [data1, data2]
+
+    if setID == 3:
+        df = pd.DataFrame()
+        df['x'], df['y'] = demoData(1)
+        df['z'] = df['x'] + df['y']
+        return df
+
