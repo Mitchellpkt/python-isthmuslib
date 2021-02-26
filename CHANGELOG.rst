@@ -45,3 +45,8 @@ Changelog
 -------------------
 
 * Histogram normalization
+
+0.0.12 (2021-02-25)
+-------------------
+
+* Heatmaps
