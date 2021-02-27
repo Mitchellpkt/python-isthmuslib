@@ -50,3 +50,8 @@ Changelog
 -------------------
 
 * Heatmaps
+
+0.0.13 (2021-02-26)
+-------------------
+
+* Feature engineering code generator

@@ -3,7 +3,7 @@
 #########################
 
 def version():
-    return '0.0.12'
+    return '0.0.13'
 
 
 #########################
@@ -35,6 +35,32 @@ def handystrings(whichone='help', toconsole=True):
     if toconsole:
         print(response)
     return response
+
+
+##############################
+## Codegen
+##############################
+
+def featureEngTemplate(listOfFeatures, dataFrameName='df', listName='Vec'):
+    for l in range(len(listOfFeatures)):
+        thisFeature = listOfFeatures[l]
+        print(thisFeature + listName + ' = list()')
+
+    for l in range(len(listOfFeatures)):
+        thisFeature = listOfFeatures[l]
+        print(thisFeature + ' = np.nan')
+
+    for l in range(len(listOfFeatures)):
+        thisFeature = listOfFeatures[l]
+        print(thisFeature + '= None')
+
+    for l in range(len(listOfFeatures)):
+        thisFeature = listOfFeatures[l]
+        print(thisFeature + listName + '.append(' + thisFeature + ')')
+
+    for l in range(len(listOfFeatures)):
+        thisFeature = listOfFeatures[l]
+        print(dataFrameName + "['" + thisFeature + "'] = " + thisFeature + listName)
 
 
 ##############################
