@@ -3,7 +3,7 @@
 #########################
 
 def version():
-    return '0.0.13'
+    return '0.0.14'
 
 
 #########################
@@ -56,7 +56,12 @@ def featureEngTemplate(listOfFeatures, dataFrameName='df', listName='Vec'):
 
     for l in range(len(listOfFeatures)):
         thisFeature = listOfFeatures[l]
+        print("print('" + thisFeature + " = ' + str(" + thisFeature + "))")
+
+    for l in range(len(listOfFeatures)):
+        thisFeature = listOfFeatures[l]
         print(thisFeature + listName + '.append(' + thisFeature + ')')
+
 
     for l in range(len(listOfFeatures)):
         thisFeature = listOfFeatures[l]
