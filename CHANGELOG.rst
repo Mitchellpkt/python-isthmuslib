@@ -70,3 +70,8 @@ Changelog
 -------------------
 
 * Fixes histogram color passthrough
+
+0.0.17 (2021-03-14)
+-------------------
+
+* Adds internal face color for histogram (probably extend to others later)
