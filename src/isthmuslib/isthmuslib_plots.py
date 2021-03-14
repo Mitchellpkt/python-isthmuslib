@@ -128,7 +128,7 @@ def scatterDictionary(dataDict, xlabel='', ylabel='', title='', xlim=None, ylim=
 
 def hist(data, xlabel='', ylabel='frequency', title='', xlim=None, ylim=None, figsize=None, facecolor='w',
          xylabelsize=15, titlesize=20, xscale='linear', yscale='linear', color=None, bins=150, grid=False, legend=None,
-         cumulative=False, density=False):
+         cumulative=False, density=False, internalFaceColor=None):
     if figsize is None:
         figsize = (13, 7)
 
@@ -155,7 +155,9 @@ def hist(data, xlabel='', ylabel='frequency', title='', xlim=None, ylim=None, fi
     keys = list(data.keys())
 
     # Create the plot
-    f = plt.figure(figsize=figsize, facecolor=facecolor)
+    f, ax = plt.subplots(figsize=figsize, facecolor=facecolor)
+    if internalFaceColor is not None:
+        ax.set_facecolor(internalFaceColor)
     for traceIndex in range(len(keys)):
         thisKey = keys[traceIndex]
         legendStrings.append(thisKey)
