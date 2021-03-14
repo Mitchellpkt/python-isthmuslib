@@ -137,7 +137,8 @@ def hist(data, xlabel='', ylabel='frequency', title='', xlim=None, ylim=None, fi
         dataCache = data
         data = dict()
         data[''] = dataCache
-        color = 'green'
+        if color is None:
+            color = 'green'
 
     # If the x-axis scale is 'log' this must be taken into account when picking bin edges!
     # (this is not the case with log y-axis, which is an easy transformation)

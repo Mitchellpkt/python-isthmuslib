@@ -65,3 +65,8 @@ Changelog
 -------------------
 
 * Adds requirements
+
+0.0.16 (2021-03-14)
+-------------------
+
+* Fixes histogram color passthrough
