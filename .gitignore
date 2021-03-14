@@ -79,3 +79,5 @@ dev-ignore/
 
 # pycharm stuff
 .idea/
+
+env/
