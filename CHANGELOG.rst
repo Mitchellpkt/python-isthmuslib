@@ -60,3 +60,8 @@ Changelog
 -------------------
 
 * Adds print template
+
+0.0.15 (2021-03-14)
+-------------------
+
+* Adds requirements

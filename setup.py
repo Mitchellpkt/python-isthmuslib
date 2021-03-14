@@ -23,7 +23,7 @@ def read(*names, **kwargs):
 
 setup(
     name='isthmuslib',
-    version='0.0.14',
+    version='0.0.15',
     license='LGPL-3.0-only',
     description='Misc utilities, mostly related to plotting',
     long_description='%s\n%s' % (
@@ -69,7 +69,7 @@ setup(
     ],
     python_requires='>=3.6',
     install_requires=[
-        # eg: 'aspectlib==1.1.1', 'six>=1.7',
+        'numpy', 'pandas', 'matplotlib', 'seaborn'
     ],
     extras_require={
         # eg:
