@@ -75,3 +75,9 @@ Changelog
 -------------------
 
 * Adds internal face color for histogram (probably extend to others later)
+
+0.0.18 (2021-03-28)
+-------------------
+
+* Adds gaussian demo data
+* Histagram alpha parameter
