@@ -128,7 +128,7 @@ def scatterDictionary(dataDict, xlabel='', ylabel='', title='', xlim=None, ylim=
 
 def hist(data, xlabel='', ylabel='frequency', title='', xlim=None, ylim=None, figsize=None, facecolor='w',
          xylabelsize=15, titlesize=20, xscale='linear', yscale='linear', color=None, bins=150, grid=False, legend=None,
-         cumulative=False, density=False, internalFaceColor=None):
+         cumulative=False, density=False, internalFaceColor=None, alpha=None):
     if figsize is None:
         figsize = (13, 7)
 
@@ -161,7 +161,7 @@ def hist(data, xlabel='', ylabel='frequency', title='', xlim=None, ylim=None, fi
     for traceIndex in range(len(keys)):
         thisKey = keys[traceIndex]
         legendStrings.append(thisKey)
-        trace = plt.hist(data[thisKey], color=color, bins=bins, cumulative=cumulative, density=density)
+        trace = plt.hist(data[thisKey], color=color, bins=bins, cumulative=cumulative, density=density, alpha=alpha)
         legendHandles.append(trace)
 
     # Bells and whistles
