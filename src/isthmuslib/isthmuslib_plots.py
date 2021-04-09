@@ -63,11 +63,11 @@ def scatter(xData, yData, xlabel='', ylabel='', title='', xlim=None, ylim=None, 
 
             if rollingMedianBinWidth is not None:
                 trace = plt.scatter(temporaryDataFrame.xData,
-                                    temporaryDataFrame['yData'].rolling(rollingMeanBinWidth).median(),
+                                    temporaryDataFrame['yData'].rolling(rollingMedianBinWidth).median(),
                                     color=linecolor, linestyle=linestyle, linewidth=linewidth)
-                plt.plot(temporaryDataFrame.xData, temporaryDataFrame['yData'].rolling(rollingMeanBinWidth).median(),
+                plt.plot(temporaryDataFrame.xData, temporaryDataFrame['yData'].rolling(rollingMedianBinWidth).median(),
                          color=trace.get_facecolor(), linestyle=linestyle, linewidth=linewidth)
-                thisString = thisKey + ' (rolling median, bin width = ' + str(rollingMeanBinWidth) + ')'
+                thisString = thisKey + ' (rolling median, bin width = ' + str(rollingMedianBinWidth) + ')'
                 legendHandles.append(trace)
                 legendStrings.append(thisString)
 

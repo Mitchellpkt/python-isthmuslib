@@ -1,4 +1,4 @@
-__version__ = '0.0.19'
+__version__ = '0.0.20'
 
 from .isthmuslib_plots import *
 from .isthmuslib_helpers import *

@@ -86,3 +86,8 @@ Changelog
 -------------------
 
 * Adds rolling mean and median to scatter function
+
+0.0.20 (2021-04-09)
+-------------------
+
+* Fixes mean / median bugs
