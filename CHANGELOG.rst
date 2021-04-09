@@ -91,3 +91,8 @@ Changelog
 -------------------
 
 * Fixes mean / median bugs
+
+0.0.21 (2021-04-09)
+-------------------
+
+* Fixes mean / median bugs

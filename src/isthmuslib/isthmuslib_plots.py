@@ -56,7 +56,7 @@ def scatter(xData, yData, xlabel='', ylabel='', title='', xlim=None, ylim=None, 
                                     temporaryDataFrame['yData'].rolling(rollingMeanBinWidth).mean(),
                                     color=linecolor, linestyle=linestyle, linewidth=linewidth)
                 plt.plot(temporaryDataFrame.xData, temporaryDataFrame['yData'].rolling(rollingMeanBinWidth).mean(),
-                         color=trace.get_facecolor(), linestyle=linestyle, linewidth=linewidth)
+                         color='k', linestyle=linestyle, linewidth=linewidth)
                 thisString = thisKey + ' (rolling mean, bin width = ' + str(rollingMeanBinWidth) + ')'
                 legendHandles.append(trace)
                 legendStrings.append(thisString)
@@ -66,7 +66,7 @@ def scatter(xData, yData, xlabel='', ylabel='', title='', xlim=None, ylim=None, 
                                     temporaryDataFrame['yData'].rolling(rollingMedianBinWidth).median(),
                                     color=linecolor, linestyle=linestyle, linewidth=linewidth)
                 plt.plot(temporaryDataFrame.xData, temporaryDataFrame['yData'].rolling(rollingMedianBinWidth).median(),
-                         color=trace.get_facecolor(), linestyle=linestyle, linewidth=linewidth)
+                         color='k', linestyle=linestyle, linewidth=linewidth)
                 thisString = thisKey + ' (rolling median, bin width = ' + str(rollingMedianBinWidth) + ')'
                 legendHandles.append(trace)
                 legendStrings.append(thisString)
