@@ -81,3 +81,8 @@ Changelog
 
 * Adds gaussian demo data
 * Histagram alpha parameter
+
+0.0.19 (2021-04-09)
+-------------------
+
+* Adds rolling mean and median to scatter function

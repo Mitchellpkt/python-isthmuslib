@@ -14,7 +14,8 @@ import seaborn as sns
 
 def scatter(xData, yData, xlabel='', ylabel='', title='', xlim=None, ylim=None, figsize=None, facecolor='w',
             xylabelsize=15, titlesize=20, xscale='linear', yscale='linear', markersize=3, markercolor='green',
-            grid=False, legend=None, markerstyle='o', lines=False, linestyle='-', linewidth=None):
+            grid=False, legend=None, markerstyle='o', lines=False, linestyle='-', linewidth=None,
+            rollingMedianBinWidth=None, rollingMeanBinWidth=None, linecolor=None):
     # Process defaults
     if figsize is None:
         figsize = (13, 7)
@@ -22,6 +23,9 @@ def scatter(xData, yData, xlabel='', ylabel='', title='', xlim=None, ylim=None, 
         yDataCache = yData
         yData = dict()
         yData[''] = yDataCache
+        hadLabel = False
+    else:
+        hadLabel = True
 
     # Initialize
     legendStrings = list()
@@ -31,12 +35,41 @@ def scatter(xData, yData, xlabel='', ylabel='', title='', xlim=None, ylim=None, 
     # Create the plot
     f = plt.figure(figsize=figsize, facecolor=facecolor)
     for traceIndex in range(len(keys)):
+        # This loop is over y data sets, if a dictionary was provided
         thisKey = keys[traceIndex]
-        legendStrings.append(thisKey)
+        yDataSet = yData[thisKey]
         if lines:
-            plt.plot(xData, yData[thisKey], color=markercolor, linestyle=linestyle, linewidth=linewidth)
-        trace = plt.scatter(xData, yData[thisKey], s=markersize, c=markercolor, marker=markerstyle)
-        legendHandles.append(trace)
+            plt.plot(xData, yDataSet, color=markercolor, linestyle=linestyle, linewidth=linewidth)
+        trace = plt.scatter(xData, yDataSet, s=markersize, c=markercolor, marker=markerstyle)
+        if hadLabel:
+            legendHandles.append(trace)
+            legendStrings.append(thisKey)
+
+        if (rollingMeanBinWidth is not None) or (rollingMedianBinWidth is not None):
+            temporaryDataFrame = pd.DataFrame()
+            temporaryDataFrame['xData'] = xData
+            temporaryDataFrame['yData'] = yDataSet
+            temporaryDataFrame.sort_values(by='xData', ascending=True, inplace=True)
+
+            if rollingMeanBinWidth is not None:
+                trace = plt.scatter(temporaryDataFrame.xData,
+                                    temporaryDataFrame['yData'].rolling(rollingMeanBinWidth).mean(),
+                                    color=linecolor, linestyle=linestyle, linewidth=linewidth)
+                plt.plot(temporaryDataFrame.xData, temporaryDataFrame['yData'].rolling(rollingMeanBinWidth).mean(),
+                         color=trace.get_facecolor(), linestyle=linestyle, linewidth=linewidth)
+                thisString = thisKey + ' (rolling mean, bin width = ' + str(rollingMeanBinWidth) + ')'
+                legendHandles.append(trace)
+                legendStrings.append(thisString)
+
+            if rollingMedianBinWidth is not None:
+                trace = plt.scatter(temporaryDataFrame.xData,
+                                    temporaryDataFrame['yData'].rolling(rollingMeanBinWidth).median(),
+                                    color=linecolor, linestyle=linestyle, linewidth=linewidth)
+                plt.plot(temporaryDataFrame.xData, temporaryDataFrame['yData'].rolling(rollingMeanBinWidth).median(),
+                         color=trace.get_facecolor(), linestyle=linestyle, linewidth=linewidth)
+                thisString = thisKey + ' (rolling median, bin width = ' + str(rollingMeanBinWidth) + ')'
+                legendHandles.append(trace)
+                legendStrings.append(thisString)
 
     # Bells and whistles
     plt.xlabel(xlabel, size=xylabelsize)
@@ -228,7 +261,6 @@ def heatmapDataFrame(df, xcol='x', ycol='y', zcol='z', xlabel='', ylabel='', ann
                      facecolor='white', title='', xlim=None, ylim=None, vmin=None, vmax=None, xylabelsize=15,
                      titlesize=20, linewidth=None, cmap=None, cbar=True, mask=None, center=None, robust=None,
                      linecolor=None):
-
     # Process defaults
     if figsize is None:
         figsize = (13, 7)
@@ -245,7 +277,6 @@ def heatmapDataFrame(df, xcol='x', ycol='y', zcol='z', xlabel='', ylabel='', ann
 def heatmap(x, y, z, xlabel='x', ylabel='y', annot=False, figsize=None, facecolor='white', title='',
             xlim=None, ylim=None, vmin=None, vmax=None, xylabelsize=15, titlesize=20, linewidth=None, cmap=None,
             cbar=True, mask=None, center=None, robust=None, linecolor=None):
-
     # Process defaults
     if figsize is None:
         figsize = (13, 7)
