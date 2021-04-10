@@ -96,3 +96,8 @@ Changelog
 -------------------
 
 * Fixes mean / median bugs
+
+0.0.22 (2021-04-09)
+-------------------
+
+* Adds line of best fit

@@ -15,7 +15,7 @@ import seaborn as sns
 def scatter(xData, yData, xlabel='', ylabel='', title='', xlim=None, ylim=None, figsize=None, facecolor='w',
             xylabelsize=15, titlesize=20, xscale='linear', yscale='linear', markersize=3, markercolor='green',
             grid=False, legend=None, markerstyle='o', lines=False, linestyle='-', linewidth=None,
-            rollingMedianBinWidth=None, rollingMeanBinWidth=None, linecolor=None):
+            rollingMedianBinWidth=None, rollingMeanBinWidth=None, linecolor=None, plotBestFit=False):
     # Process defaults
     if figsize is None:
         figsize = (13, 7)
@@ -70,6 +70,17 @@ def scatter(xData, yData, xlabel='', ylabel='', title='', xlim=None, ylim=None, 
                 thisString = thisKey + ' (rolling median, bin width = ' + str(rollingMedianBinWidth) + ')'
                 legendHandles.append(trace)
                 legendStrings.append(thisString)
+
+        if plotBestFit:
+            m, b = np.polyfit(xData, yDataSet, 1)
+            bestFitY = [m*x+b for x in xData]
+            plt.plot(xData, bestFitY, color = 'k')
+            # Next few lines disabled until plot handles are handled
+            #trace = plt.plot(xData, bestFitY)
+            # thisString = thisKey + ' (best fit)'
+            # legendHandles.append(trace)
+            # legendStrings.append(thisString)
+
 
     # Bells and whistles
     plt.xlabel(xlabel, size=xylabelsize)
