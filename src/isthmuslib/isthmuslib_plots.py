@@ -16,7 +16,7 @@ def scatter(xData, yData, xlabel='', ylabel='', title='', xlim=None, ylim=None, 
             xylabelsize=15, titlesize=20, xscale='linear', yscale='linear', markersize=3, markercolor='green',
             grid=False, legend=None, markerstyle='o', lines=False, linestyle='-', linewidth=None,
             rollingMedianBinWidth=None, rollingMeanBinWidth=None, linecolor=None, plotBestFit=False,
-            watermarkText=None, watermarkPlacement=None, watermarkSize=10):
+            watermarkText=None, watermarkPlacement=None, watermarkSize=10, watermarkColor='grey'):
     # Process defaults
     if figsize is None:
         figsize = (13, 7)
@@ -103,7 +103,7 @@ def scatter(xData, yData, xlabel='', ylabel='', title='', xlim=None, ylim=None, 
         yLimits = plt.ylim()
         xCoordinate = xLimits[0] + watermarkPlacement[0] * (xLimits[1] - xLimits[0])
         yCoordinate = yLimits[0] + watermarkPlacement[1] * (yLimits[1] - yLimits[0])
-        plt.text(xCoordinate, yCoordinate, watermarkText, fontsize=watermarkSize)
+        plt.text(xCoordinate, yCoordinate, watermarkText, fontsize=watermarkSize, c=watermarkColor)
     return f
 
 
@@ -114,7 +114,7 @@ def scatter(xData, yData, xlabel='', ylabel='', title='', xlim=None, ylim=None, 
 def scatterDictionary(dataDict, xlabel='', ylabel='', title='', xlim=None, ylim=None, figsize=None, facecolor='w',
                       xylabelsize=15, titlesize=20, xscale='linear', yscale='linear', grid=False, legend=None,
                       lines=False, linestyle='-', linewidth=None, watermarkText=None, watermarkPlacement=None,
-                      watermarkSize=10):
+                      watermarkSize=10, watermarkColor='grey'):
     # Process defaults
     if figsize is None:
         figsize = (13, 7)
@@ -179,7 +179,7 @@ def scatterDictionary(dataDict, xlabel='', ylabel='', title='', xlim=None, ylim=
         yLimits = plt.ylim()
         xCoordinate = xLimits[0] + watermarkPlacement[0] * (xLimits[1] - xLimits[0])
         yCoordinate = yLimits[0] + watermarkPlacement[1] * (yLimits[1] - yLimits[0])
-        plt.text(xCoordinate, yCoordinate, watermarkText, fontsize=watermarkSize)
+        plt.text(xCoordinate, yCoordinate, watermarkText, fontsize=watermarkSize, c=watermarkColor)
     return f
 
 
@@ -190,7 +190,7 @@ def scatterDictionary(dataDict, xlabel='', ylabel='', title='', xlim=None, ylim=
 def hist(data, xlabel='', ylabel='frequency', title='', xlim=None, ylim=None, figsize=None, facecolor='w',
          xylabelsize=15, titlesize=20, xscale='linear', yscale='linear', color=None, bins=150, grid=False, legend=None,
          cumulative=False, density=False, internalFaceColor=None, alpha=None, watermarkText=None,
-         watermarkPlacement=None, watermarkSize=10):
+         watermarkPlacement=None, watermarkSize=10, watermarkColor='grey'):
     if figsize is None:
         figsize = (13, 7)
 
@@ -247,7 +247,7 @@ def hist(data, xlabel='', ylabel='frequency', title='', xlim=None, ylim=None, fi
         yLimits = plt.ylim()
         xCoordinate = xLimits[0] + watermarkPlacement[0] * (xLimits[1] - xLimits[0])
         yCoordinate = yLimits[0] + watermarkPlacement[1] * (yLimits[1] - yLimits[0])
-        plt.text(xCoordinate, yCoordinate, watermarkText, fontsize=watermarkSize)
+        plt.text(xCoordinate, yCoordinate, watermarkText, fontsize=watermarkSize, c=watermarkColor)
     return f
 
 
@@ -260,7 +260,7 @@ def hist(data, xlabel='', ylabel='frequency', title='', xlim=None, ylim=None, fi
 def hist2d(xData, yData, xlabel='', ylabel='frequency', title='', xlim=None, ylim=None, figsize=None,
            facecolor='w', xylabelsize=15, titlesize=20, xscale='linear', yscale='linear', cmap='jet', bins=50,
            grid=None, range=None, density=False, cmin=None, cmax=None, norm=None, bookends=1, watermarkText=None,
-           watermarkPlacement=None, watermarkSize=10):
+           watermarkPlacement=None, watermarkSize=10, watermarkColor='grey'):
     # Process defaults
     if figsize is None:
         figsize = (13, 7)
@@ -294,7 +294,7 @@ def hist2d(xData, yData, xlabel='', ylabel='frequency', title='', xlim=None, yli
         yLimits = plt.ylim()
         xCoordinate = xLimits[0] + watermarkPlacement[0] * (xLimits[1] - xLimits[0])
         yCoordinate = yLimits[0] + watermarkPlacement[1] * (yLimits[1] - yLimits[0])
-        plt.text(xCoordinate, yCoordinate, watermarkText, fontsize=watermarkSize)
+        plt.text(xCoordinate, yCoordinate, watermarkText, fontsize=watermarkSize, c=watermarkColor)
     return f
 
 
@@ -306,7 +306,7 @@ def hist2d(xData, yData, xlabel='', ylabel='frequency', title='', xlim=None, yli
 def heatmapDataFrame(df, xcol='x', ycol='y', zcol='z', xlabel='', ylabel='', annot=False, figsize=None,
                      facecolor='white', title='', xlim=None, ylim=None, vmin=None, vmax=None, xylabelsize=15,
                      titlesize=20, linewidth=None, cmap=None, cbar=True, mask=None, center=None, robust=None,
-                     linecolor=None, watermarkText=None, watermarkPlacement=None, watermarkSize=10):
+                     linecolor=None, watermarkText=None, watermarkPlacement=None, watermarkSize=10, watermarkColor='grey'):
     # Process defaults
     if figsize is None:
         figsize = (13, 7)
@@ -324,7 +324,7 @@ def heatmapDataFrame(df, xcol='x', ycol='y', zcol='z', xlabel='', ylabel='', ann
 def heatmap(x, y, z, xlabel='x', ylabel='y', annot=False, figsize=None, facecolor='white', title='',
             xlim=None, ylim=None, vmin=None, vmax=None, xylabelsize=15, titlesize=20, linewidth=None, cmap=None,
             cbar=True, mask=None, center=None, robust=None, linecolor=None, watermarkText=None,
-            watermarkPlacement=None, watermarkSize=10):
+            watermarkPlacement=None, watermarkSize=10, watermarkColor='grey'):
     # Process defaults
     if figsize is None:
         figsize = (13, 7)
@@ -356,7 +356,7 @@ def heatmap(x, y, z, xlabel='x', ylabel='y', annot=False, figsize=None, facecolo
         yLimits = plt.ylim()
         xCoordinate = xLimits[0] + watermarkPlacement[0] * (xLimits[1] - xLimits[0])
         yCoordinate = yLimits[0] + watermarkPlacement[1] * (yLimits[1] - yLimits[0])
-        plt.text(xCoordinate, yCoordinate, watermarkText, fontsize=watermarkSize)
+        plt.text(xCoordinate, yCoordinate, watermarkText, fontsize=watermarkSize, c=watermarkColor)
     return f
 
 
