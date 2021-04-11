@@ -15,7 +15,8 @@ import seaborn as sns
 def scatter(xData, yData, xlabel='', ylabel='', title='', xlim=None, ylim=None, figsize=None, facecolor='w',
             xylabelsize=15, titlesize=20, xscale='linear', yscale='linear', markersize=3, markercolor='green',
             grid=False, legend=None, markerstyle='o', lines=False, linestyle='-', linewidth=None,
-            rollingMedianBinWidth=None, rollingMeanBinWidth=None, linecolor=None, plotBestFit=False):
+            rollingMedianBinWidth=None, rollingMeanBinWidth=None, linecolor=None, plotBestFit=False,
+            waterprintText=None, waterprintPlacement=None, waterprintSize=10):
     # Process defaults
     if figsize is None:
         figsize = (13, 7)
@@ -73,14 +74,13 @@ def scatter(xData, yData, xlabel='', ylabel='', title='', xlim=None, ylim=None, 
 
         if plotBestFit:
             m, b = np.polyfit(xData, yDataSet, 1)
-            bestFitY = [m*x+b for x in xData]
-            plt.plot(xData, bestFitY, color = 'k')
+            bestFitY = [m * x + b for x in xData]
+            plt.plot(xData, bestFitY, color='k')
             # Next few lines disabled until plot handles are handled
-            #trace = plt.plot(xData, bestFitY)
+            # trace = plt.plot(xData, bestFitY)
             # thisString = thisKey + ' (best fit)'
             # legendHandles.append(trace)
             # legendStrings.append(thisString)
-
 
     # Bells and whistles
     plt.xlabel(xlabel, size=xylabelsize)
@@ -96,6 +96,14 @@ def scatter(xData, yData, xlabel='', ylabel='', title='', xlim=None, ylim=None, 
         plt.grid(grid)
     if legend:
         plt.legend(legendHandles, legendStrings)
+    if waterprintText is not None:
+        if waterprintPlacement is None:
+            waterprintPlacement = (0.01, 0.97)
+        xLimits = plt.xlim()
+        yLimits = plt.ylim()
+        xCoordinate = xLimits[0] + waterprintPlacement[0] * (xLimits[1] - xLimits[0])
+        yCoordinate = yLimits[0] + waterprintPlacement[1] * (yLimits[1] - yLimits[0])
+        plt.text(xCoordinate, yCoordinate, waterprintText, fontsize=waterprintSize)
     return f
 
 
@@ -105,7 +113,8 @@ def scatter(xData, yData, xlabel='', ylabel='', title='', xlim=None, ylim=None, 
 
 def scatterDictionary(dataDict, xlabel='', ylabel='', title='', xlim=None, ylim=None, figsize=None, facecolor='w',
                       xylabelsize=15, titlesize=20, xscale='linear', yscale='linear', grid=False, legend=None,
-                      lines=False, linestyle='-', linewidth=None):
+                      lines=False, linestyle='-', linewidth=None, waterprintText=None, waterprintPlacement=None,
+                      waterprintSize=10):
     # Process defaults
     if figsize is None:
         figsize = (13, 7)
@@ -163,6 +172,14 @@ def scatterDictionary(dataDict, xlabel='', ylabel='', title='', xlim=None, ylim=
         plt.grid(grid)
     if legend:
         plt.legend(legendHandles, legendStrings)
+    if waterprintText is not None:
+        if waterprintPlacement is None:
+            waterprintPlacement = (0.01, 0.97)
+        xLimits = plt.xlim()
+        yLimits = plt.ylim()
+        xCoordinate = xLimits[0] + waterprintPlacement[0] * (xLimits[1] - xLimits[0])
+        yCoordinate = yLimits[0] + waterprintPlacement[1] * (yLimits[1] - yLimits[0])
+        plt.text(xCoordinate, yCoordinate, waterprintText, fontsize=waterprintSize)
     return f
 
 
@@ -172,7 +189,8 @@ def scatterDictionary(dataDict, xlabel='', ylabel='', title='', xlim=None, ylim=
 
 def hist(data, xlabel='', ylabel='frequency', title='', xlim=None, ylim=None, figsize=None, facecolor='w',
          xylabelsize=15, titlesize=20, xscale='linear', yscale='linear', color=None, bins=150, grid=False, legend=None,
-         cumulative=False, density=False, internalFaceColor=None, alpha=None):
+         cumulative=False, density=False, internalFaceColor=None, alpha=None, waterprintText=None,
+         waterprintPlacement=None, waterprintSize=10):
     if figsize is None:
         figsize = (13, 7)
 
@@ -222,6 +240,14 @@ def hist(data, xlabel='', ylabel='frequency', title='', xlim=None, ylim=None, fi
         plt.grid(grid)
     if legend:
         plt.legend(legendHandles, legendStrings)
+    if waterprintText is not None:
+        if waterprintPlacement is None:
+            waterprintPlacement = (0.01, 0.97)
+        xLimits = plt.xlim()
+        yLimits = plt.ylim()
+        xCoordinate = xLimits[0] + waterprintPlacement[0] * (xLimits[1] - xLimits[0])
+        yCoordinate = yLimits[0] + waterprintPlacement[1] * (yLimits[1] - yLimits[0])
+        plt.text(xCoordinate, yCoordinate, waterprintText, fontsize=waterprintSize)
     return f
 
 
@@ -233,7 +259,8 @@ def hist(data, xlabel='', ylabel='frequency', title='', xlim=None, ylim=None, fi
 
 def hist2d(xData, yData, xlabel='', ylabel='frequency', title='', xlim=None, ylim=None, figsize=None,
            facecolor='w', xylabelsize=15, titlesize=20, xscale='linear', yscale='linear', cmap='jet', bins=50,
-           grid=None, range=None, density=False, cmin=None, cmax=None, norm=None, bookends=1):
+           grid=None, range=None, density=False, cmin=None, cmax=None, norm=None, bookends=1, waterprintText=None,
+           waterprintPlacement=None, waterprintSize=10):
     # Process defaults
     if figsize is None:
         figsize = (13, 7)
@@ -260,6 +287,14 @@ def hist2d(xData, yData, xlabel='', ylabel='frequency', title='', xlim=None, yli
     plt.yscale(yscale)
     if grid:
         plt.grid(grid)
+    if waterprintText is not None:
+        if waterprintPlacement is None:
+            waterprintPlacement = (0.01, 0.97)
+        xLimits = plt.xlim()
+        yLimits = plt.ylim()
+        xCoordinate = xLimits[0] + waterprintPlacement[0] * (xLimits[1] - xLimits[0])
+        yCoordinate = yLimits[0] + waterprintPlacement[1] * (yLimits[1] - yLimits[0])
+        plt.text(xCoordinate, yCoordinate, waterprintText, fontsize=waterprintSize)
     return f
 
 
@@ -271,7 +306,7 @@ def hist2d(xData, yData, xlabel='', ylabel='frequency', title='', xlim=None, yli
 def heatmapDataFrame(df, xcol='x', ycol='y', zcol='z', xlabel='', ylabel='', annot=False, figsize=None,
                      facecolor='white', title='', xlim=None, ylim=None, vmin=None, vmax=None, xylabelsize=15,
                      titlesize=20, linewidth=None, cmap=None, cbar=True, mask=None, center=None, robust=None,
-                     linecolor=None):
+                     linecolor=None, waterprintText=None, waterprintPlacement=None, waterprintSize=10):
     # Process defaults
     if figsize is None:
         figsize = (13, 7)
@@ -282,12 +317,14 @@ def heatmapDataFrame(df, xcol='x', ycol='y', zcol='z', xlabel='', ylabel='', ann
     return heatmap(x, y, z, annot=annot, xlabel=xlabel, ylabel=ylabel, figsize=figsize,
                    facecolor=facecolor, title=title, xlim=xlim, ylim=ylim, vmin=vmin, vmax=vmax,
                    xylabelsize=xylabelsize, titlesize=titlesize, linewidth=linewidth, cmap=cmap, cbar=cbar, mask=mask,
-                   center=center, robust=robust, linecolor=linecolor)
+                   center=center, robust=robust, linecolor=linecolor, waterprintSize=waterprintSize,
+                   waterprintText=waterprintText, waterprintPlacement=waterprintPlacement)
 
 
 def heatmap(x, y, z, xlabel='x', ylabel='y', annot=False, figsize=None, facecolor='white', title='',
             xlim=None, ylim=None, vmin=None, vmax=None, xylabelsize=15, titlesize=20, linewidth=None, cmap=None,
-            cbar=True, mask=None, center=None, robust=None, linecolor=None):
+            cbar=True, mask=None, center=None, robust=None, linecolor=None, waterprintText=None,
+            waterprintPlacement=None, waterprintSize=10):
     # Process defaults
     if figsize is None:
         figsize = (13, 7)
@@ -312,6 +349,14 @@ def heatmap(x, y, z, xlabel='x', ylabel='y', annot=False, figsize=None, facecolo
         plt.xlim(xlim)
     if ylim:
         plt.ylim(ylim)
+    if waterprintText is not None:
+        if waterprintPlacement is None:
+            waterprintPlacement = (0.01, 0.97)
+        xLimits = plt.xlim()
+        yLimits = plt.ylim()
+        xCoordinate = xLimits[0] + waterprintPlacement[0] * (xLimits[1] - xLimits[0])
+        yCoordinate = yLimits[0] + waterprintPlacement[1] * (yLimits[1] - yLimits[0])
+        plt.text(xCoordinate, yCoordinate, waterprintText, fontsize=waterprintSize)
     return f
 
 

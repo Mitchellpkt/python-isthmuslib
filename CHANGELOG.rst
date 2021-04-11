@@ -101,3 +101,8 @@ Changelog
 -------------------
 
 * Adds line of best fit
+
+0.0.23 (2021-04-11)
+-------------------
+
+* Adds watermark
