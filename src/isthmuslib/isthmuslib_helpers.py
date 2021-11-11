@@ -3,7 +3,7 @@
 #########################
 
 def version():
-    return '0.0.24'
+    return '0.0.24.a'
 
 
 #########################
@@ -12,6 +12,7 @@ def version():
 
 import pandas as pd
 import random
+from typing import List
 
 ##############################
 ## Misc useful stuff
@@ -67,6 +68,16 @@ def featureEngTemplate(listOfFeatures, dataFrameName='df', listName='Vec'):
     for l in range(len(listOfFeatures)):
         thisFeature = listOfFeatures[l]
         print(dataFrameName + "['" + thisFeature + "'] = " + thisFeature + listName)
+        
+        
+def class_def_to_init(input: str) -> str:
+    class_name: str = input.split(' ')[1].split('(')[0]
+    padding: str = ' '*(len(class_name) + 1)
+    var_names: List[str] = [x.replace(':','') for x in input.split(' ') if ':' in x][1::]
+    output: str = f"{class_name}(\n"
+    for x in var_names:
+        output += f"{padding}{x}={x},\n"
+    return f"{output}{padding})"
 
 
 ##############################
