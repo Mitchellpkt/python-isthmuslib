@@ -67,6 +67,13 @@ class SlidingWindowResults(Style, Rosetta):
         return figure_handle
 
     def plot_pdf(self, field_name: str, legend_override: List[str] = None, **kwargs) -> plt.Figure:
+        """
+        PLot the probability density function(s) of the sliding window results. Useful kwargs: [cumulative, density]
+        @param field_name: which field should be plotted
+        @param legend_override: custom legend labels if desired (must have same length as number of unique widths)
+        @param kwargs: plt.hist() keyword arguments
+        @return: figure handle
+        """
         figure_handle: plt.Figure = plt.figure(figsize=self.figsize, facecolor=self.facecolor)
         grouped: Dict[float, pd.DataFrame] = self.group_by_window_width()
         for key, value in grouped.items():
@@ -124,7 +131,7 @@ class OrderedSeries(PickleUtils, Style, Rosetta):
                        name_root: str = None):
         """
         Converts a dataframe to an OrderedSeries
-        @param df: data frame to import
+        @param data_frame: data frame to import
         @param series_name: column name for the series
         @param basis_name: column name for the basis
         @param name_root: optional name for the series
