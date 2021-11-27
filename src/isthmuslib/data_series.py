@@ -126,6 +126,12 @@ class OrderedSeries(PickleUtils, Style, Rosetta):
     series: List[Any]
     basis: List[Any] = None  # optional
     name_root: str = None  # optional to use for labeling
+    config_infer_missing_basis: bool = False  # if True, will use index for basis of only series is provide on __init__
+
+    def __init__(self, **data: Any):
+        super().__init__(**data)
+        if (not self.basis) and self.config_infer_missing_basis:
+            self.index_to_basis()
 
     def from_dataframe(self, data_frame: pd.DataFrame, series_name: str, basis_name: str = None,
                        name_root: str = None):
