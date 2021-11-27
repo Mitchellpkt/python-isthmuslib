@@ -15,15 +15,15 @@ from setuptools import setup
 
 def read(*names, **kwargs):
     with io.open(
-        join(dirname(__file__), *names),
-        encoding=kwargs.get('encoding', 'utf8')
+            join(dirname(__file__), *names),
+            encoding=kwargs.get('encoding', 'utf8')
     ) as fh:
         return fh.read()
 
 
 setup(
     name='isthmuslib',
-    version='0.0.24',
+    version='0.0.28',
     license='LGPL-3.0-only',
     description='Misc utilities, mostly related to plotting',
     long_description='%s\n%s' % (
@@ -69,7 +69,7 @@ setup(
     ],
     python_requires='>=3.6',
     install_requires=[
-        'numpy', 'pandas', 'matplotlib', 'seaborn'
+        'numpy', 'pandas', 'matplotlib', 'seaborn', 'loguru', 'pydantic'
     ],
     extras_require={
         # eg:

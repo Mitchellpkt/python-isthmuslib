@@ -12,6 +12,7 @@ import seaborn as sns
 ## Scatter plot
 ##############################
 
+# LEGACY CODE - NEEDS REFACTOR
 def scatter(xData, yData, xlabel='', ylabel='', title='', xlim=None, ylim=None, figsize=None, facecolor='w',
             xylabelsize=15, titlesize=20, xscale='linear', yscale='linear', markersize=3, markercolor='green',
             grid=False, legend=None, markerstyle='o', lines=False, linestyle='-', linewidth=None,
@@ -111,6 +112,7 @@ def scatter(xData, yData, xlabel='', ylabel='', title='', xlim=None, ylim=None, 
 ## Scatter plot (dictionary input)
 ##############################
 
+# LEGACY CODE - NEEDS REFACTOR
 def scatterDictionary(dataDict, xlabel='', ylabel='', title='', xlim=None, ylim=None, figsize=None, facecolor='w',
                       xylabelsize=15, titlesize=20, xscale='linear', yscale='linear', grid=False, legend=None,
                       lines=False, linestyle='-', linewidth=None, watermarkText=None, watermarkPlacement=None,
@@ -187,6 +189,7 @@ def scatterDictionary(dataDict, xlabel='', ylabel='', title='', xlim=None, ylim=
 ## Histogram plot
 ##############################
 
+# LEGACY CODE - NEEDS REFACTOR
 def hist(data, xlabel='', ylabel='frequency', title='', xlim=None, ylim=None, figsize=None, facecolor='w',
          xylabelsize=15, titlesize=20, xscale='linear', yscale='linear', color=None, bins=150, grid=False, legend=None,
          cumulative=False, density=False, internalFaceColor=None, alpha=None, watermarkText=None,
@@ -257,6 +260,7 @@ def hist(data, xlabel='', ylabel='frequency', title='', xlim=None, ylim=None, fi
 ## Calculates: Z = counts
 ##############################
 
+# LEGACY CODE - NEEDS REFACTOR
 def hist2d(xData, yData, xlabel='', ylabel='frequency', title='', xlim=None, ylim=None, figsize=None,
            facecolor='w', xylabelsize=15, titlesize=20, xscale='linear', yscale='linear', cmap='jet', bins=50,
            grid=None, range=None, density=False, cmin=None, cmax=None, norm=None, bookends=1, watermarkText=None,
@@ -303,10 +307,12 @@ def hist2d(xData, yData, xlabel='', ylabel='frequency', title='', xlim=None, yli
 ## Input: X & Y & Z vectors
 ##############################
 
+# LEGACY CODE - NEEDS REFACTOR
 def heatmapDataFrame(df, xcol='x', ycol='y', zcol='z', xlabel='', ylabel='', annot=False, figsize=None,
                      facecolor='white', title='', xlim=None, ylim=None, vmin=None, vmax=None, xylabelsize=15,
                      titlesize=20, linewidth=None, cmap=None, cbar=True, mask=None, center=None, robust=None,
-                     linecolor=None, watermarkText=None, watermarkPlacement=None, watermarkSize=10, watermarkColor='grey'):
+                     linecolor=None, watermarkText=None, watermarkPlacement=None, watermarkSize=10,
+                     watermarkColor='grey'):
     # Process defaults
     if figsize is None:
         figsize = (13, 7)
@@ -321,6 +327,7 @@ def heatmapDataFrame(df, xcol='x', ycol='y', zcol='z', xlabel='', ylabel='', ann
                    watermarkText=watermarkText, watermarkPlacement=watermarkPlacement)
 
 
+# LEGACY CODE - NEEDS REFACTOR
 def heatmap(x, y, z, xlabel='x', ylabel='y', annot=False, figsize=None, facecolor='white', title='',
             xlim=None, ylim=None, vmin=None, vmax=None, xylabelsize=15, titlesize=20, linewidth=None, cmap=None,
             cbar=True, mask=None, center=None, robust=None, linecolor=None, watermarkText=None,
@@ -365,6 +372,7 @@ def heatmap(x, y, z, xlabel='x', ylabel='y', annot=False, figsize=None, facecolo
 ##############################
 # To do - log x-axis might not work
 
+# LEGACY CODE - NEEDS REFACTOR
 def shotgunPlots1d(df, useFields=None, xscale='linear', yscale='linear', figsize=(13, 7), cumulative=False,
                    density=False):
     if useFields == None:
@@ -381,6 +389,7 @@ def shotgunPlots1d(df, useFields=None, xscale='linear', yscale='linear', figsize
             pass
 
 
+# LEGACY CODE - NEEDS REFACTOR
 def shotgunPlots2d(df, xColName, useFields=None, xscale='linear', yscale='linear', figsize=(13, 7),
                    types=['scatter', 'hist2d']):
     if useFields == None:

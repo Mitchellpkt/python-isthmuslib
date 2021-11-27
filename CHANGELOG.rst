@@ -111,3 +111,23 @@ Changelog
 -------------------
 
 * Adds color
+
+0.0.25 (2021-06-01)
+-------------------
+
+* Adds timeseries tooling and misc utils
+
+0.0.26 (2021-06-01)
+-------------------
+
+* Repackage
+
+0.0.27 (2021-11-26)
+-------------------
+
+* Include pydantic and loguru in dependencies
+
+0.0.28 (2021-11-26)
+-------------------
+
+* bugfix

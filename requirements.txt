@@ -2,3 +2,5 @@ numpy
 matplotlib
 pandas
 seaborn
+loguru
+pydantic

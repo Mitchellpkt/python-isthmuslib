@@ -3,7 +3,7 @@
 #########################
 
 def version():
-    return '0.0.24.a'
+    return '0.0.28'
 
 
 #########################
@@ -14,10 +14,12 @@ import pandas as pd
 import random
 from typing import List
 
+
 ##############################
 ## Misc useful stuff
 ##############################
 
+# LEGACY CODE - NEEDS REFACTOR
 def handystrings(whichone='help', toconsole=True):
     handydict = {
         "pandas width": "pd.set_option('display.max_colwidth', None)",
@@ -43,6 +45,7 @@ def handystrings(whichone='help', toconsole=True):
 ## Codegen
 ##############################
 
+# LEGACY CODE - NEEDS REFACTOR
 def featureEngTemplate(listOfFeatures, dataFrameName='df', listName='Vec'):
     for l in range(len(listOfFeatures)):
         thisFeature = listOfFeatures[l]
@@ -64,16 +67,16 @@ def featureEngTemplate(listOfFeatures, dataFrameName='df', listName='Vec'):
         thisFeature = listOfFeatures[l]
         print(thisFeature + listName + '.append(' + thisFeature + ')')
 
-
     for l in range(len(listOfFeatures)):
         thisFeature = listOfFeatures[l]
         print(dataFrameName + "['" + thisFeature + "'] = " + thisFeature + listName)
-        
-        
+
+
+# LEGACY CODE - NEEDS REFACTOR
 def class_def_to_init(input: str) -> str:
     class_name: str = input.split(' ')[1].split('(')[0]
-    padding: str = ' '*(len(class_name) + 1)
-    var_names: List[str] = [x.replace(':','') for x in input.split(' ') if ':' in x][1::]
+    padding: str = ' ' * (len(class_name) + 1)
+    var_names: List[str] = [x.replace(':', '') for x in input.split(' ') if ':' in x][1::]
     output: str = f"{class_name}(\n"
     for x in var_names:
         output += f"{padding}{x}={x},\n"
@@ -84,6 +87,7 @@ def class_def_to_init(input: str) -> str:
 ## Misc useful stuff
 ##############################
 
+# LEGACY CODE - NEEDS REFACTOR
 def demoData(setID=1):
     # Warning, the format of the data depends on the set ID/type
     if setID == 1:
@@ -320,4 +324,4 @@ def demoData(setID=1):
              1.7161881641748993, 5.504555110579078, 4.530607074407019, 2.5974827291626035, -0.016520197820059312,
              0.11155045714578171, -0.277288858839726, 2.9072490441788092, 8.779195328741526, 2.0084261358948146,
              -3.6068290085023182, -0.18725572608261443, 1.7113432497831176, -1.1888544611134648, 3.1546106837248415]
-        return x,y
+        return x, y
