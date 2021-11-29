@@ -131,3 +131,8 @@ Changelog
 -------------------
 
 * bugfix
+
+0.0.29 (2021-11-28)
+-------------------
+
+* tweak naming and add high dimension generalisation
