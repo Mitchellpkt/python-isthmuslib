@@ -453,7 +453,7 @@ class Sequence(PickleUtils, Style, Rosetta):
 class OrderedSeries(BaseModel):
     def __init__(self, **data: Any):
         super().__init__(**data)
-        raise TypeError("Notice: The OrderedSeries class is now the Sequence class ")
+        raise TypeError("Notice: The OrderedSeries class is now the Sequence class")
 
 
 class VectorSequence(PickleUtils, Style, Rosetta):
