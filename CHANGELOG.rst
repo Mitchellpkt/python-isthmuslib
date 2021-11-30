@@ -1,4 +1,3 @@
-
 Changelog
 =========
 
@@ -136,3 +135,28 @@ Changelog
 -------------------
 
 * tweak naming and add high dimension generalisation
+
+0.0.30 (2021-11-29)
+-------------------
+
+* ability to invert y-axis on heatmaps
+
+0.0.31 (2021-11-29)
+-------------------
+
+* deprecate univariate sequences
+
+0.0.32 (2021-11-29)
+-------------------
+
+* method hint
+
+0.0.33 (2021-11-29)
+-------------------
+
+* drop stray logger
+
+0.0.34 (2021-11-29)
+-------------------
+
+* fix: sorting

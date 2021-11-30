@@ -18,3 +18,4 @@ class Style(BaseModel):
     tight_axes: bool = True
     formatter: str = '%Y-%m-%d %H:%M:%S'
     markersize: float = 50
+    transparent_alpha: float = 0.5
