@@ -22,13 +22,12 @@ class PickleUtils(BaseModel):
         @param file_path: file to import
         """
         with open(file_path, 'rb') as infile:
-            retrieved = pickle.load(infile)
-        return retrieved
+            return pickle.load(infile)
 
 
 class PickleJar(PickleUtils):
     """ Class with to_pickle() and from_pickle(), supporting arbitrary data in `contents` attribute """
-    contents: Any
+    contents: Any = None
 
     class Config:
         arbitrary_types_allowed = True
@@ -37,8 +36,7 @@ class PickleJar(PickleUtils):
         """ Imports a pickle (similar to read_pickle(), but this method is inplace)
         @param file_path: file to import
         """
-        retrieved = self.read_pickle(file_path)
-        self.contents = retrieved.contents
+        self.contents = self.read_pickle(file_path).contents
 
 
 class Rosetta(BaseModel):
@@ -58,17 +56,16 @@ class Rosetta(BaseModel):
         @param missing_response: how to handle a missing entry ("return_input" or "error")
         @return: human-readable output
         """
-        if key is None:
+        if not key:
             return ''
-        if key in self.stone.keys():
+        if key in self.stone:
             return self.stone[key]
+        if missing_response == "return_input":
+            return key
+        elif missing_response == "error":
+            raise KeyError(f"\nNOT FOUND: {key}\n in mappings:\n{self.stone}")
         else:
-            if missing_response == "return_input":
-                return key
-            elif missing_response == "error":
-                raise KeyError(f"\nNOT FOUND: {key}\n in mappings:\n{self.stone}")
-            else:
-                raise ValueError(f"Unknown missing_response parameter: {missing_response}")
+            raise ValueError(f"Unknown missing_response parameter: {missing_response}")
 
     def translate_time(self, key: Union[str, float, int], include_timezone: bool = True) -> str:
         """ Convert a timestamp (seconds) into human readable string """
@@ -80,7 +77,7 @@ class Rosetta(BaseModel):
         @param value: human-readable output
         @param silent_overwrite: if True, overwrites existing entries. If false, raises KeyError
         """
-        if (key in self.stone.keys()) and (not silent_overwrite):
+        if (key in self.stone) and (not silent_overwrite):
             raise KeyError(f"Key {key} is already in mappings, and silent_overwrite is False")
         self.stone[key] = value
 
@@ -100,10 +97,10 @@ def human_time(timestamp_sec: Union[float, str, int], formatter: str = '%Y-%m-%d
     """ Converts timestamp to human readable time, taking into account time zone (US/Pacific by default)
         To see other time zone options, see `pytz.common_timezones` """
     if isinstance(timestamp_sec, str):
-        try:
+        if timestamp_sec.replace('.', '', 1).isdigit():
             timestamp_sec: float = int(timestamp_sec)
-        except ValueError as e:
-            raise ValueError(f"Could not interpret string as a numeric timestamp: {timestamp_sec}\n(Raised: {e})")
+        else:
+            raise ValueError(f"Could not interpret string as a numeric timestamp: {timestamp_sec})")
     datetime_string: str = datetime.fromtimestamp(timestamp_sec, pytz.timezone(timezone)).strftime(formatter)
     if include_timezone:
         datetime_string += f" ({timezone})"
@@ -126,13 +123,12 @@ def machine_time(time: str, units: str = 'seconds') -> float:
         raise ValueError(f"Unknown units: {units}")
 
 
-def as_list(input: Union[Any, List[Any]]) -> List[Any]:
+def as_list(anything: Union[Any, List[Any]]) -> List[Any]:
     """
     If it's not a list, stick it in a list. If it's already a list, return it.
-    @param input: Anything
+    @param anything: Anything that you want to ensure is in a list
     @return: Anything, but in list form
     """
-    if not isinstance(input, list):
-        return [input]
-    else:
-        return input
+    if isinstance(anything, list):
+        return anything
+    return [anything]
