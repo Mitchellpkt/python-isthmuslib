@@ -160,3 +160,8 @@ Changelog
 -------------------
 
 * fix: sorting
+
+0.0.35 (2021-12-04)
+-------------------
+
+* fix: vector ordering
