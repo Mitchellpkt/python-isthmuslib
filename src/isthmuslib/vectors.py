@@ -229,7 +229,7 @@ class VectorMultiset(PickleUtils, Style, Rosetta):
         plt.ylabel(self.translate(y_name), size=self.label_fontsize)
         if not title:
             title: str = self.translate(z_name)
-            if not self.name_root:
+            if self.name_root:
                 title += f" ({self.translate(self.name_root)})"
         plt.title(title, size=self.title_fontsize)
 
@@ -332,6 +332,16 @@ class SlidingWindowResults(VectorMultiset):
 
     def heatmap_feature(self, col_name: str, **kwargs) -> plt.Figure:
         return self.heatmap(self.window_start_col_name, self.window_width_col_name, col_name, **kwargs)
+
+
+class InfoSurface(SlidingWindowResults):
+    def plot_info_surface(self, singular_values: List[int] = None) -> List[plt.Figure]:
+        figure_handles: List[plt.Figure] = []
+        if not singular_values:
+            singular_values: List[int] = [1, 2, 3]
+        for s in singular_values:
+            figure_handles.append(self.heatmap_feature(f"singular_value_{s}"))
+        return figure_handles
 
 
 class VectorSequence(VectorMultiset):
@@ -522,6 +532,34 @@ class VectorSequence(VectorMultiset):
             plt.title(f'{title}  // residual', size=self.title_fontsize)
 
         return figure_handles
+
+    def singular_value_decomposition(self, cols: Union[str, List[str]] = None,
+                                     **kwargs) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+        """ Helper function that wraps numpy svd to feed in a subset of data features (see kwarg: 'full_matrices')
+
+        :param cols: which data features to use
+        :param kwargs: keyword arguments for SVD
+        :return:
+        """
+        if not cols:
+            cols = [x for x in self.data.keys().tolist() if x != self.basis_col_name]
+        return np.linalg.svd(deepcopy(self.data.loc[:, cols]), **kwargs)
+
+    def calculate_info_surface(self, window_widths: List[float], cols: Union[str, List[str]] = None, *args,
+                               **kwargs) -> InfoSurface:
+        result: SlidingWindowResults = self.sliding_window(info_surface_slider, window_widths, cols=cols, *args,
+                                                           **kwargs)
+        return InfoSurface(**result.dict())
+
+    def plot_info_surface(self, window_widths: List[float], cols: Union[str, List[str]] = None,
+                          singular_values: List[int] = None, *args, **kwargs) -> List[plt.Figure]:
+        result: InfoSurface = self.calculate_info_surface(window_widths, cols=cols, *args, **kwargs)
+        return result.plot_info_surface(singular_values=singular_values)
+
+
+def info_surface_slider(vs: VectorSequence, *args, **kwargs) -> Dict[str, Any]:
+    u, s, vh = vs.singular_value_decomposition(*args, **kwargs)
+    return {f"singular_value_{i + 1}": value for i, value in enumerate(s)}
 
 
 class OrderedSeries:
