@@ -229,6 +229,8 @@ class VectorMultiset(PickleUtils, Style, Rosetta):
         plt.ylabel(self.translate(y_name), size=self.label_fontsize)
         if not title:
             title: str = self.translate(z_name)
+            if isinstance(self, InfoSurface):
+                title: str = title.replace('_', ' ')  # so that we get "singular value 1" instead of "singular_value_1"
             if self.name_root:
                 title += f" ({self.translate(self.name_root)})"
         plt.title(title, size=self.title_fontsize)
