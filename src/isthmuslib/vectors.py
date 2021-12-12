@@ -343,15 +343,6 @@ class VectorSequence(VectorMultiset):
         super().__init__(**data)
         self.sort()
 
-    def sort(self, by: str = None) -> None:
-        """ Sorts the data by the basis (or a specified field)
-
-        :param by: which field to sort by, uses basis (`basis_col_name`) if not provided
-        """
-        if not by:
-            by = self.basis_col_name
-        self.data.sort_values(by=by, ascending=True, inplace=True, ignore_index=True)
-
     def slice(self, start_at: Any = None, stop_at: Any = None, inplace: bool = False, reset_index: bool = True):
         """ Slices the VectorSequence according to the basis
 
@@ -379,20 +370,23 @@ class VectorSequence(VectorMultiset):
         """  Adds (or overwrites) 'basis' column with a default index [0, 1, 2, ...] """
         self.data[self.basis_col_name] = list(range(len(self.data)))
 
-    def sort(self, inplace: bool = True, reset_index: bool = True):
+    def sort(self, by: str = None, inplace: bool = True, reset_index: bool = True):
         """ Sorts the data points by the basis
 
         :param inplace: import inplace (default) or return the result
         :param reset_index: indicate whether or not to reset the data frame index (default = True)
+        :param by: which field to use for the sort (uses the basis by default)
         :return: sorted data frame, if inplace is False
         """
-        sorted_data: pd.DataFrame = self.data.sort_values(by=self.basis_col_name, inplace=False,
-                                                          ignore_index=reset_index)
-
+        if not by:
+            by = self.basis_col_name
+        result: pd.DataFrame = self.data.sort_values(by=by, ascending=True, inplace=inplace, ignore_index=False)
+        if reset_index:
+            result.reset_index(inplace=True)
         if inplace:
-            self.data = sorted_data
+            self.data = result
         else:
-            return VectorSequence(basis_col_name=self.basis_col_name, name_root=self.name_root, data=sorted_data)
+            return VectorSequence(basis_col_name=self.basis_col_name, name_root=self.name_root, data=result)
 
     def sliding_window(self, function: Callable[[Any, List[Any], Dict[str, Any]], Dict[str, Any]],
                        window_widths: List[float], window_starts: List[Any] = None, step_size: float = None,
