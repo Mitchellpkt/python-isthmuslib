@@ -170,3 +170,8 @@ Changelog
 -------------------
 
 * seasonal decomposition of vector sequence
+
+0.0.37 (2021-12-12)
+-------------------
+
+* Singular vector decomposition infosurface
