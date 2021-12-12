@@ -400,7 +400,7 @@ class VectorSequence(VectorMultiset):
             return VectorSequence(basis_col_name=self.basis_col_name, name_root=self.name_root, data=result)
 
     def sliding_window(self, function: Callable[[Any, List[Any], Dict[str, Any]], Dict[str, Any]],
-                       window_widths: List[float], window_starts: List[Any] = None, step_size: float = None,
+                       window_widths: List[float] = None, window_starts: List[Any] = None, step_size: float = None,
                        overlapping: bool = False, verbose: bool = False, *args, **kwargs) -> SlidingWindowResults:
         """ Apply function in a sliding window over the sequence
 
@@ -425,6 +425,10 @@ class VectorSequence(VectorMultiset):
 
         df: pd.DataFrame = pd.DataFrame()
         basis: Tuple[float] = (self.data[self.basis_col_name].tolist())
+
+        if not window_widths:
+            data_duration: float = max(self.data[self.basis_col_name]) - min(self.data[self.basis_col_name])
+            window_widths: List[float] = [data_duration / x for x in range(20, 401, 20)]
 
         # Loop over window widths
         for i, window_width in enumerate(window_widths):
@@ -545,15 +549,15 @@ class VectorSequence(VectorMultiset):
             cols = [x for x in self.data.keys().tolist() if x != self.basis_col_name]
         return np.linalg.svd(deepcopy(self.data.loc[:, cols]), **kwargs)
 
-    def calculate_info_surface(self, window_widths: List[float], cols: Union[str, List[str]] = None, *args,
+    def calculate_info_surface(self, window_widths: List[float] = None, cols: Union[str, List[str]] = None, *args,
                                **kwargs) -> InfoSurface:
-        result: SlidingWindowResults = self.sliding_window(info_surface_slider, window_widths, cols=cols, *args,
-                                                           **kwargs)
+        result: SlidingWindowResults = self.sliding_window(info_surface_slider, window_widths=window_widths, cols=cols,
+                                                           *args, **kwargs)
         return InfoSurface(**result.dict())
 
-    def plot_info_surface(self, window_widths: List[float], cols: Union[str, List[str]] = None,
+    def plot_info_surface(self, window_widths: List[float] = None, cols: Union[str, List[str]] = None,
                           singular_values: List[int] = None, *args, **kwargs) -> List[plt.Figure]:
-        result: InfoSurface = self.calculate_info_surface(window_widths, cols=cols, *args, **kwargs)
+        result: InfoSurface = self.calculate_info_surface(window_widths=window_widths, cols=cols, *args, **kwargs)
         return result.plot_info_surface(singular_values=singular_values)
 
 
