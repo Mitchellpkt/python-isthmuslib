@@ -165,3 +165,8 @@ Changelog
 -------------------
 
 * fix: vector ordering
+
+0.0.36 (2021-12-08)
+-------------------
+
+* seasonal decomposition of vector sequence

@@ -9,6 +9,7 @@ from .utils import PickleUtils, Rosetta, as_list
 import matplotlib as mpl
 import seaborn as sns
 from copy import deepcopy
+import statsmodels.api as sm
 
 
 class VectorMultiset(PickleUtils, Style, Rosetta):
@@ -360,7 +361,7 @@ class VectorSequence(VectorMultiset):
             stop_at: Any = max(df[self.basis_col_name])
         in_range: pd.DataFrame = df.loc[df[self.basis_col_name].between(start_at, stop_at), :]
         if reset_index:
-            in_range.reset_index(inplace=True)
+            in_range.reset_index(drop=True, inplace=True)
         if inplace:
             self.data = in_range
         else:
@@ -380,9 +381,9 @@ class VectorSequence(VectorMultiset):
         """
         if not by:
             by = self.basis_col_name
-        result: pd.DataFrame = self.data.sort_values(by=by, ascending=True, inplace=inplace, ignore_index=False)
+        result: pd.DataFrame = self.data.sort_values(by=by, ascending=True, inplace=False, ignore_index=False)
         if reset_index:
-            result.reset_index(inplace=True)
+            result.reset_index(drop=True, inplace=True)
         if inplace:
             self.data = result
         else:
@@ -448,6 +449,79 @@ class VectorSequence(VectorMultiset):
         cache['data'] = pd.DataFrame({x: input.__getattribute__(x) for x in [sequence_attribute, basis_name]})
         cache['basis_col_name'] = basis_name
         return self.__class__(**cache)
+
+    def seasonal_decompose(self, col: str, period: float, **kwargs):
+        """ Seasonal (weekly, monthly, etc) decomposition, must specify the period
+
+        :param period: period of the data
+        :param col: which data feature to use
+        :param kwargs: additional kwargs for statsmodels.tsa.seasonal_decompose
+        :return: sm.tsa.seasonal.DecomposeResult
+        """
+        x: pd.DataFrame = deepcopy(self.data.loc[:, col])
+        try:
+            return sm.tsa.seasonal_decompose(x, period=period, **kwargs)
+        except ValueError as e:
+            raise ValueError(f"Error - did you include a non-numeric column, or not specify 'cols'? See: {e}")
+
+    def plot_decomposition(self, col: str, period: float, figsize: List[int] = None, which_plots: List[str] = None,
+                           xlabel: str = 'basis', ylabel: str = '[units]', title: str = None,
+                           **kwargs) -> List[plt.Figure]:
+
+        """ Plot the seasonal (weekly, monthly, etc) decomposition. Must specify period
+
+        :param period: period of the data
+        :param col: which data feature to use
+        :param figsize: size of each subfigure
+        :param which_plots: which plots to make
+        :param xlabel: how to label the x-axis
+        :param ylabel: how to label the y-axis (e.g. units)
+        :param title: title string (prefix) for the plots
+        :param kwargs: additional kwargs for statsmodels.tsa.seasonal_decompose
+        :return: list of figure handles
+        """
+        if not figsize:
+            figsize: List[float] = [8.0, 3.0]
+        if not which_plots:
+            which_plots: List[str] = ['observed', 'trend', 'seasonal', 'residual']
+        if not title:
+            title: str = self.translate(self.name_root)
+
+        def add_labels(xlabel: str, ylabel: str) -> None:
+            plt.xlabel(xlabel, size=self.label_fontsize)
+            plt.legend(fontsize=self.legend_fontsize)
+            plt.ylabel(ylabel, size=self.label_fontsize)
+
+        decomposition = self.seasonal_decompose(col, period, **kwargs)
+        figure_handles: List[plt.Figure] = []
+
+        if 'observed' in which_plots:
+            figure_handles.append(plt.figure(figsize=figsize, facecolor=self.facecolor))
+            plt.plot(self.data.loc[:, self.basis_col_name], decomposition.observed, '-', label='Sequence',
+                     color='black')
+            add_labels(xlabel, ylabel)
+            plt.title(f'{title}  // observed', size=self.title_fontsize)
+
+        if 'trend' in which_plots:
+            figure_handles.append(plt.figure(figsize=figsize, facecolor=self.facecolor))
+            plt.plot(self.data.loc[:, self.basis_col_name], decomposition.trend, '-', label='Trend', color='green')
+            add_labels(xlabel, ylabel)
+            plt.title(f'{title}  // trend', size=self.title_fontsize)
+
+        if 'seasonal' in which_plots:
+            figure_handles.append(plt.figure(figsize=figsize, facecolor=self.facecolor))
+            plt.plot(self.data.loc[:, self.basis_col_name], decomposition.seasonal, '-', label='Trend',
+                     color='darkslateblue')
+            add_labels(xlabel, ylabel)
+            plt.title(f"{title} // seasonality with period {period}", size=self.title_fontsize)
+
+        if 'residual' in which_plots:
+            figure_handles.append(plt.figure(figsize=figsize, facecolor=self.facecolor))
+            plt.plot(self.data.loc[:, self.basis_col_name], decomposition.resid, '-', label='Residual', color='darkred')
+            add_labels(xlabel, ylabel)
+            plt.title(f'{title}  // residual', size=self.title_fontsize)
+
+        return figure_handles
 
 
 class OrderedSeries:
