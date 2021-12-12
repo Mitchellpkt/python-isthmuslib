@@ -337,7 +337,14 @@ class SlidingWindowResults(VectorMultiset):
 
 
 class InfoSurface(SlidingWindowResults):
+    """ Wrapper for SlidingWindowResults that knows how to plot the infosurface """
+
     def plot_info_surface(self, singular_values: List[int] = None) -> List[plt.Figure]:
+        """ Plot the info surface showing value of singular vectors as a function of window start and width
+
+        :param singular_values: Which singular values to plot [1, 2, 3] by default
+        :return: figure handles
+        """
         figure_handles: List[plt.Figure] = []
         if not singular_values:
             singular_values: List[int] = [1, 2, 3]
@@ -545,7 +552,7 @@ class VectorSequence(VectorMultiset):
 
         :param cols: which data features to use
         :param kwargs: keyword arguments for SVD
-        :return:
+        :return: u, s, vh arrays
         """
         if not cols:
             cols = [x for x in self.data.keys().tolist() if x != self.basis_col_name]
@@ -553,18 +560,42 @@ class VectorSequence(VectorMultiset):
 
     def calculate_info_surface(self, window_widths: List[float] = None, cols: Union[str, List[str]] = None, *args,
                                **kwargs) -> InfoSurface:
+        """ Calculates the info surface by sliding the SVD function along the basis
+
+        :param window_widths: window widths for the sliding window analysis
+        :param cols: which data features to use in the svd
+        :param args: args for sliding window analysis and eval function
+        :param kwargs: kwargs for sliding window analysis and eval function
+        :return: InfoSurface object
+        """
         result: SlidingWindowResults = self.sliding_window(info_surface_slider, window_widths=window_widths, cols=cols,
                                                            *args, **kwargs)
         return InfoSurface(**result.dict())
 
     def plot_info_surface(self, window_widths: List[float] = None, cols: Union[str, List[str]] = None,
                           singular_values: List[int] = None, *args, **kwargs) -> List[plt.Figure]:
+        """ Calculates and plots the info surface: value of singular vectors as a function of window start and width
+
+        :param window_widths: window widths for the sliding window analysis
+        :param cols: which data features to use in the svd
+        :param singular_values: singular values for which to plot the surface (default: [1, 2, 3])
+        :param args: args for sliding window analysis and eval function
+        :param kwargs: kwargs for sliding window analysis and eval function
+        :return: list of figure handles
+        """
         result: InfoSurface = self.calculate_info_surface(window_widths=window_widths, cols=cols, *args, **kwargs)
         return result.plot_info_surface(singular_values=singular_values)
 
 
 def info_surface_slider(vs: VectorSequence, *args, **kwargs) -> Dict[str, Any]:
-    u, s, vh = vs.singular_value_decomposition(*args, **kwargs)
+    """ Helper function for sliding window SVD analysis
+
+    :param vs: vector sequence
+    :param args: args for svd
+    :param kwargs: kwargs for svd
+    :return: dictionary with singular values
+    """
+    _, s, _ = vs.singular_value_decomposition(*args, **kwargs)
     return {f"singular_value_{i + 1}": value for i, value in enumerate(s)}
 
 
