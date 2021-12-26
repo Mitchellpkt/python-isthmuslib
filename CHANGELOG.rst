@@ -175,3 +175,8 @@ Changelog
 -------------------
 
 * Singular vector decomposition infosurface
+
+0.0.38 (2021-12-13)
+-------------------
+
+* fix: frequency decomposition label and xlims

@@ -488,7 +488,7 @@ class VectorSequence(VectorMultiset):
             raise ValueError(f"Error - did you include a non-numeric column, or not specify 'cols'? See: {e}")
 
     def plot_decomposition(self, col: str, period: float, figsize: List[int] = None, which_plots: List[str] = None,
-                           xlabel: str = 'basis', ylabel: str = '[units]', title: str = None,
+                           xlabel: str = 'basis', ylabel: str = '[units]', title: str = None, xlim: List[float] = None,
                            **kwargs) -> List[plt.Figure]:
 
         """ Plot the seasonal (weekly, monthly, etc) decomposition. Must specify period
@@ -500,6 +500,7 @@ class VectorSequence(VectorMultiset):
         :param xlabel: how to label the x-axis
         :param ylabel: how to label the y-axis (e.g. units)
         :param title: title string (prefix) for the plots
+        :param xlim: x-axis limits (Left, Right)
         :param kwargs: additional kwargs for statsmodels.tsa.seasonal_decompose
         :return: list of figure handles
         """
@@ -524,25 +525,33 @@ class VectorSequence(VectorMultiset):
                      color='black')
             add_labels(xlabel, ylabel)
             plt.title(f'{title}  // observed', size=self.title_fontsize)
+            if xlim:
+                plt.xlim(xlim)
 
         if 'trend' in which_plots:
             figure_handles.append(plt.figure(figsize=figsize, facecolor=self.facecolor))
             plt.plot(self.data.loc[:, self.basis_col_name], decomposition.trend, '-', label='Trend', color='green')
             add_labels(xlabel, ylabel)
             plt.title(f'{title}  // trend', size=self.title_fontsize)
+            if xlim:
+                plt.xlim(xlim)
 
         if 'seasonal' in which_plots:
             figure_handles.append(plt.figure(figsize=figsize, facecolor=self.facecolor))
-            plt.plot(self.data.loc[:, self.basis_col_name], decomposition.seasonal, '-', label='Trend',
+            plt.plot(self.data.loc[:, self.basis_col_name], decomposition.seasonal, '-', label='Seasonality',
                      color='darkslateblue')
             add_labels(xlabel, ylabel)
             plt.title(f"{title} // seasonality with period {period}", size=self.title_fontsize)
+            if xlim:
+                plt.xlim(xlim)
 
         if 'residual' in which_plots:
             figure_handles.append(plt.figure(figsize=figsize, facecolor=self.facecolor))
             plt.plot(self.data.loc[:, self.basis_col_name], decomposition.resid, '-', label='Residual', color='darkred')
             add_labels(xlabel, ylabel)
             plt.title(f'{title}  // residual', size=self.title_fontsize)
+            if xlim:
+                plt.xlim(xlim)
 
         return figure_handles
 
