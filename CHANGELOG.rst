@@ -180,3 +180,8 @@ Changelog
 -------------------
 
 * fix: frequency decomposition label and xlims
+
+0.0.39 (2021-12-27)
+-------------------
+
+* refactor: everything

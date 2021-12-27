@@ -42,12 +42,16 @@ Overview
 
 .. end-badges
 
-Misc utilities, mostly related to plotting conveniences
+Convenience utils for plotting, styling, and manipulating high-dimensional vectors.
 
-* Turns matplotlib.pyplot figure generation into one-liners.
-* Free software for personal or academic use: **GNU Lesser General Public License v3 (LGPLv3).**
-* Contact licensing@mitchellpkt.com for commercial applications.
-* To-do: expand types of parameters that can be passed through (e.g. marker style, legend placement, etc).
+* Analyses and plotting methods are one line to call, and produce consistently-formatted publication-ready plots.
+* Enables rapid exploratory data analysis (EDA) and prototyping, perfect for taking a quick peek at data or making a quick figure to stash in the lab book (with labels and titles automatically included). See `examples here <https://github.com/Mitchellpkt/python-isthmuslib/blob/main/demo.ipynb>`_.
+* Designed for easy drop-in use for other projects, whether using internally to the code or for clean notebooks. Import isthmuslib to avoid writing many lines of plotting code when it would distract or detract from the main focus of your project.
+* The visual and text configuration objects (`Style` and `Rosetta`, respectively) can be directly attached to a given data set, so you can "set it and forget it" at instantiation. All subsequent outputs will automatically have matching colors, sizes, labels, etc.
+* The `VectorSequence` object is designed for handling, plotting, and manipulating timeseries-like high-dimensional vectors. Its functionality includes: dimensionality reduction via singular vealue decomposition, seasonal (e.g. weekly, monthly, ...) timeseries decomposition, infosurface generation, and more.
+* Uses industry standard libraries (pyplot, numpy, seaborn, pandas, etc) under the hood, and exposes their underlying functionality through the wrappers.
+
+Free software for personal or academic use: **GNU Lesser General Public License v3 (LGPLv3).** Contact licensing@mitchellpkt.com for commercial applications.
 
 Installation
 ============
@@ -55,11 +59,6 @@ Installation
 ::
 
     pip install isthmuslib
-
-You can also install the in-development version with::
-
-    pip install https://github.com/mitchellpkt/python-isthmus/archive/master.zip
-
 
 Documentation
 =============
@@ -74,4 +73,4 @@ To use the project:
 
 Demo
 =============
-See a light demo here: https://github.com/Mitchellpkt/python-isthmuslib/blob/main/light-demo.ipynb
+See a light demo here: https://github.com/Mitchellpkt/python-isthmuslib/blob/main/demo.ipynb

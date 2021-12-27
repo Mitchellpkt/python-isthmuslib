@@ -5,11 +5,11 @@ import numpy as np
 import pandas as pd
 from loguru import logger
 from .config import Style
-from .utils import PickleUtils, Rosetta, as_list
-import matplotlib as mpl
-import seaborn as sns
+from .utils import PickleUtils, Rosetta
 from copy import deepcopy
 import statsmodels.api as sm
+from .plotting import visualize_x_y, visualize_1d_distribution, visualize_surface
+import pathlib
 
 
 class VectorMultiset(PickleUtils, Style, Rosetta):
@@ -64,7 +64,7 @@ class VectorMultiset(PickleUtils, Style, Rosetta):
         else:
             return self.__class__(data=data_frame, **kwargs)
 
-    def to_csv(self, file_path: str = None) -> None:
+    def to_csv(self, file_path: Union[str, pathlib.Path] = None) -> None:
         """ Saves the data as a CSV file (note: this drops the name_root)
 
         :param file_path: path to write the file
@@ -73,7 +73,7 @@ class VectorMultiset(PickleUtils, Style, Rosetta):
             file_path: str = f'default_filename_{time.time():.0f}.csv'
         self.data.to_csv(file_path=file_path)
 
-    def read_csv(self, file_path: str, inplace: bool = True, **kwargs):
+    def read_csv(self, file_path: Union[str, pathlib.Path], inplace: bool = True, **kwargs):
         """Reads data from a CSV file
 
         :param file_path: file to read
@@ -92,60 +92,21 @@ class VectorMultiset(PickleUtils, Style, Rosetta):
     # Visualizations
     ################
 
-    def visualize_x_y(self, x_name: str, y_name: str, cumulative: str = '', figsize: Any = None, title: str = None,
-                      log_axes: str = '', types: Union[str, List[str]] = 'line', **kwargs) -> plt.Figure:
-        """ Creates a 2D (scatter and/or line) plot of x and y data
+    def visualize_x_y(self, x_name: str, y_name: str, cumulative: Union[str, List[str]] = '', **kwargs) -> plt.Figure:
+        """ Visualize in two dimensions
 
-        :param y_name: field or subfield to plot on x-axis
-        :param x_name: field or subfield to plot on y-axis
-        :param cumulative: 'x' or 'y' or 'xy' to plot cumulative data on that axis
-        :param figsize: figure size
-        :param title: figure title (raw strings are translated)
-        :param log_axes: 'x' or 'y' or 'xy' to plot that axis/axes on a log scale
-        :param types: any subset of ['scatter, 'plot']
-        :return: figure handle
+        :param x_name: name of the x-axis data feature
+        :param y_name: name of the y-axis data feature
+        :param cumulative: Which (if any) dimensions should be cumulative, e.g. 'x' or ['x','y'] or 'xy'
+        :param kwargs: additional kwargs for isthmuslib.visualize_x_y, passed through to matplotlib.pyplot.scatter()
+        :return: figure handle for the plot
         """
-
-        if not figsize:
-            figsize: Tuple[float, float] = self.figsize
-
-        # Data
         x_data: List[Any] = self.values(x_name, cumulative='x' in cumulative)
         y_data: List[Any] = self.values(y_name, cumulative='y' in cumulative)
-        x_label, y_label = (self.translate(item) for item in [x_name, y_name])
-        if 'x' in cumulative:
-            x_data: List[Any] = np.cumsum(x_data)
-            x_label += ' (cumulative)'
-        if 'y' in cumulative:
-            y_data: List[Any] = np.cumsum(y_data)
-            y_label += ' (cumulative)'
-
-        # Plot
-        figure_handle: plt.Figure = plt.figure(facecolor=self.facecolor, figsize=figsize)
-        if 'line' in (styles_list := as_list(types)):
-            plt.scatter(x_data, y_data, self.markersize, self.color, **kwargs)
-        if 'plot' in styles_list:
-            plt.plot(x_data, y_data, color=self.color, linewidth=self.linewidth)
-
-        # Labels
-        plt.xlabel(x_label, fontsize=self.label_fontsize)
-        plt.ylabel(y_label, fontsize=self.label_fontsize)
-        if title:
-            plt.title(title, fontsize=self.title_fontsize)
-        elif self.name_root:
-            plt.title(self.translate(self.name_root), fontsize=self.title_fontsize)
-        plt.grid(self.grid)
-
-        # Axes
-        if self.tight_axes:
-            plt.xlim([np.nanmin(x_data), np.nanmax(x_data)])
-            plt.ylim([np.nanmin(y_data), np.nanmax(y_data)])
-        if 'x' in log_axes:
-            plt.xscale('log')
-        if 'y' in log_axes:
-            plt.yscale('log')
-
-        return figure_handle
+        kwargs.setdefault('xlabel', self.translate(x_name))
+        kwargs.setdefault('ylabel', self.translate(y_name))
+        kwargs.setdefault('title', self.translate(self.name_root))
+        return visualize_x_y(x_data, y_data, style=Style(**self.dict()), **kwargs)
 
     def scatter(self, *args, **kwargs) -> plt.Figure:
         """ Creates a 2D scatter plot of x and y data (wraps visualize_x_y) """
@@ -161,85 +122,32 @@ class VectorMultiset(PickleUtils, Style, Rosetta):
             raise ValueError(f"Plot requires x & y. Hint: You might want SlidingWindowResults.plot_results()")
         return self.visualize_x_y(types='plot', *args, **kwargs)
 
-    def hist(self, col_name: str, log_axes: str = '', title: str = None, **kwargs) -> plt.Figure:
+    def hist(self, col_name: str, **kwargs) -> plt.Figure:
         """ Plot a histogram of data. Useful kwargs: [cumulative, density, bins]
 
         :param col_name: name of field to plot
-        :param log_axes: 'y' to plot log-scale y-axis
-        :param title: figure title (raw strings are translated)
         :return: figure handle
         """
+        data: List[Any] = self.values(col_name)
+        kwargs.setdefault('xlabel', self.translate(col_name))
+        kwargs.setdefault('title', self.translate(self.name_root))
+        return visualize_1d_distribution(data, style=Style(**self.dict()), **kwargs)
 
-        # Plot
-        figure_handle: plt.Figure = plt.figure(facecolor=self.facecolor, figsize=self.figsize)
-        plt.hist((data := self.values(col_name)), color=self.color, **kwargs)
+    def surface(self, x_name: str, y_name: str, z_name: str, **kwargs) -> plt.Figure:
+        """ Plot a surface from the data. Useful kwargs: [cumulative, density, bins]
 
-        # Labels
-        if kwargs.get('cumulative'):
-            y_label: str = 'cumulative counts'
-        else:
-            y_label: str = 'counts'
-        if kwargs.get('density'):
-            y_label += " (density)"
-        plt.ylabel(y_label, fontsize=self.label_fontsize)
-        plt.xlabel(self.translate(col_name), fontsize=self.label_fontsize)
-        if title:
-            plt.title(title, fontsize=self.title_fontsize)
-        elif self.name_root:
-            plt.title(self.translate(self.name_root), fontsize=self.title_fontsize)
-
-        # Axes
-        if self.tight_axes:
-            plt.xlim([np.nanmin(data), np.nanmax(data)])
-        if 'y' in log_axes:
-            plt.yscale('log')
-        if 'x' in log_axes:
-            raise NotImplementedError("log x histogram requires different bin handling")
-
-        return figure_handle
-
-    def heatmap(self, x_name: str, y_name: str, z_name: str, y_axis_ascending: bool = True,
-                figsize: Any = None, title: str = None, **kwargs) -> plt.Figure:
-        """ Creates a heatmap from any 3 features of the vector set.
-
-        :param x_name: name of column to use for x-axis values
-        :param y_name: name of column to use for y-axis values
-        :param z_name: name of column to use for z-axis (color) values
-        :param y_axis_ascending: flip the y-axis to read low to high ascending (overrides weird sns default)
-        :param figsize: figsize
-        :param title: custom title
-        :param kwargs: sns.heatmap() kwargs (hint: annot=True adds labels)
-        :return: figure_handle
-
-        to-do: aggregation_function: Callable[[Any], float] for handling multiple z values at one (x,y) coordinate
+        :param x_name: name of the x-axis data feature
+        :param y_name: name of the y-axis data feature
+        :param z_name: name of the z-axis data feature (color)
+        :param kwargs: additional keyword arguments for visualize_surface which passes to seaborn heatmap()
+        :return: figure handle for the plot
         """
-
         if isinstance(self, VectorSequence) and (not x_name):
             x_name: str = self.basis_col_name
-        if not kwargs.get(figsize):
-            figsize: Any = self.figsize
-
-        # Make plot
-        figure_handle: plt.Figure = plt.figure(figsize=figsize, facecolor=self.facecolor)
-        df: pd.DataFrame = self.data.loc[:, [x_name, y_name, z_name]].pivot(y_name, x_name, z_name)
-        ax: plt.Axes = sns.heatmap(df, **kwargs)
-
-        # Labels
-        plt.xlabel(self.translate(x_name), size=self.label_fontsize)
-        plt.ylabel(self.translate(y_name), size=self.label_fontsize)
-        if not title:
-            title: str = self.translate(z_name)
-            if isinstance(self, InfoSurface):
-                title: str = title.replace('_', ' ')  # so that we get "singular value 1" instead of "singular_value_1"
-            if self.name_root:
-                title += f" ({self.translate(self.name_root)})"
-        plt.title(title, size=self.title_fontsize)
-
-        # Axes
-        if y_axis_ascending:
-            ax.invert_yaxis()
-
-        return figure_handle
+        kwargs.setdefault('xlabel', self.translate(x_name, missing_response='return_input'))
+        kwargs.setdefault('ylabel', self.translate(y_name, missing_response='return_input'))
+        kwargs.setdefault('title', self.translate(z_name, missing_response='return_input'))
+        return visualize_surface(self.data.loc[:, x_name], self.data.loc[:, y_name], self.data.loc[:, z_name], **kwargs)
 
 
 class SlidingWindowResults(VectorMultiset):
@@ -251,53 +159,35 @@ class SlidingWindowResults(VectorMultiset):
         """ Helper function that returns individual dataframes for each window width """
         return {x: self.data[self.data['window_width'] == x] for x in set(self.data.window_width)}
 
-    def plot_results(self, col_name: str, cumulative: bool = False, figsize: Any = None, title: str = None,
-                     legend_override: List[str] = None, **kwargs) -> plt.Figure:
+    def plot_results(self, col_name: str, legend_override: List[str] = None, **kwargs) -> plt.Figure:
         """ Plot any sequence (based on the data frame column name)
 
         :param col_name: dataframe column to plot
-        :param cumulative: plot cumulative values (default: False)
-        :param figsize: specify a custom figure size if desired
         :param title: specify a custom title if desired
         :param legend_override: specify custom legend keys if desired
         :return: figure handle
         """
-        if not figsize:
-            figsize = self.figsize
+        x_arrays: List[Any] = []
+        y_arrays: List[Any] = []
+        labels: List[Any] = []
 
-        traces: List[mpl.collections.PathCollection] = []
-        labels: List[str] = []
-        figure_handle = plt.figure(figsize=figsize, facecolor=self.facecolor)
-
-        # For each `window_width` add a trace to the plot
+        # For each `window_width` add we'll add a trace to the plot
         group_by_window_width: Dict[float, pd.DataFrame] = self.group_by_window_width()
         for key in sorted(group_by_window_width.keys()):  # looping over group_by_window_width.items() gives wrong order
             value: pd.DataFrame = deepcopy(group_by_window_width[key])
-            value.sort_values(by=self.window_start_col_name, ascending=True, ignore_index=True)
-            y_vec: List[float] = value.loc[:, col_name]
-            if cumulative:
-                y_vec: List[float] = np.cumsum(y_vec)
-            h: mpl.collections.PathCollection = plt.scatter((x_vec := value.loc[:, self.window_start_col_name]), y_vec,
-                                                            self.markersize, **kwargs)
-            traces.append(h)
-            labels.append(f"Window width: {key}")
-            plt.plot(x_vec, y_vec, linewidth=self.linewidth)
+            value.sort_values(by=self.window_start_col_name, ascending=True, ignore_index=True, inplace=True)
+            x_arrays.append(value.loc[:, self.window_start_col_name])
+            y_arrays.append(value.loc[:, col_name])
+            labels.append(str(key))  # noqa: key is a string
 
-        # Labels
-        plt.xlabel('Window start', fontsize=self.label_fontsize)
-        plt.ylabel(self.translate(col_name), fontsize=self.label_fontsize)
-        if not title:
-            if self.name_root:
-                title: str = f"{self.translate_time(self.name_root)}: {self.translate(col_name)}"
-            else:
-                title: str = self.translate(col_name)
-        plt.title(title, fontsize=self.title_fontsize)
+        # Final settings and overrides
         if legend_override:
-            plt.legend(handles=traces, labels=legend_override, fontsize=self.legend_fontsize)
-        else:
-            plt.legend(handles=traces, labels=labels, fontsize=self.legend_fontsize)
-
-        return figure_handle
+            labels: List[str] = legend_override
+        kwargs.setdefault('types', ['scatter', 'plot'])
+        kwargs.setdefault('xlabel', self.translate(self.translate('window_start')))
+        kwargs.setdefault('ylabel', self.translate(col_name))
+        kwargs.setdefault('title', self.translate(self.name_root))
+        return visualize_x_y(x_arrays, y_arrays, legend_strings=labels, style=Style(**self.dict()), **kwargs)
 
     def plot_pdfs(self, col_name: str, legend_override: List[str] = None, **kwargs) -> plt.Figure:
         """ Plot the probability density function(s) of the sliding window results. Useful kwargs: [cumulative, density]
@@ -305,35 +195,22 @@ class SlidingWindowResults(VectorMultiset):
         :param col_name: which field should be plotted
         :param legend_override: custom legend labels if desired (must have same length as number of unique widths)
         :param kwargs: plt.hist() keyword arguments.
-]        :return: figure handle
+        :return: figure handle
         """
-        if not kwargs.get('alpha'):
-            kwargs['alpha'] = 0.5  # Transparency is helpful for reading overlapping histograms
-
-        # Make figure
-        figure_handle: plt.Figure = plt.figure(figsize=self.figsize, facecolor=self.facecolor)
         grouped: Dict[float, pd.DataFrame] = self.group_by_window_width()
+        data_sets: List[Any] = []
+        labels: List[Any] = []
         for key, value in grouped.items():
-            plt.hist(value[col_name], **kwargs)
-
-        # Legends
-        plt.xlabel(self.translate(col_name), fontsize=self.label_fontsize)
-        if kwargs.get("cumulative"):
-            y_label: str = 'cumulative counts'
-        else:
-            y_label: str = 'counts'
-        if kwargs.get("density"):
-            y_label += " (density)"
-        plt.ylabel(y_label, fontsize=self.label_fontsize)
-        plt.legend(grouped.keys())
+            data_sets.append(value[col_name])
+            labels.append(str(key))
         if legend_override:
-            plt.legend(legend_override, fontsize=self.legend_fontsize)
-        else:
-            plt.legend([f"{x} weeks " for x in grouped], fontsize=self.legend_fontsize)
-        return figure_handle
+            labels: List[str] = legend_override
+        kwargs.setdefault('xlabel', self.translate(col_name))
+        kwargs.setdefault('title', self.translate(self.name_root))
+        return visualize_1d_distribution(data_sets, legend_strings=labels, **kwargs)
 
     def heatmap_feature(self, col_name: str, **kwargs) -> plt.Figure:
-        return self.heatmap(self.window_start_col_name, self.window_width_col_name, col_name, **kwargs)
+        return self.surface(self.window_start_col_name, self.window_width_col_name, col_name, **kwargs)
 
 
 class InfoSurface(SlidingWindowResults):
@@ -349,19 +226,20 @@ class InfoSurface(SlidingWindowResults):
         if not singular_values:
             singular_values: List[int] = [1, 2, 3]
         for s in singular_values:
-            figure_handles.append(self.heatmap_feature(f"singular_value_{s}"))
+            figure_handles.append(self.heatmap_feature(f"singular_value_{s}", title=f'Singular value # {s}'))
         return figure_handles
 
 
 class VectorSequence(VectorMultiset):
     """ Set of vectors in a sequence ordered according to some basis (e.g. height, wavelength, time) """
 
-    # (Inherits dataframe and name string from VectorMultiset)
+    # (Inherits `data` dataframe and `name_root` string from VectorMultiset)
     basis_col_name: str = 'basis'
 
     def __init__(self, **data: Any):
         super().__init__(**data)
-        self.sort()
+        if self.data is not None:
+            self.sort()
 
     def slice(self, start_at: Any = None, stop_at: Any = None, inplace: bool = False, reset_index: bool = True):
         """ Slices the VectorSequence according to the basis
@@ -465,7 +343,7 @@ class VectorSequence(VectorMultiset):
                                 f"Starting at: {window_start} ({j + 1} of {len(window_starts)})")
 
         return SlidingWindowResults(window_width_col_name='window_width', window_start_col_name='window_start',
-                                    data=df)
+                                    data=df, name_root=self.name_root)
 
     def repackage(self, instance: Any, sequence_attribute: str = 'series', basis_name: str = 'basis') -> Any:
         cache: Dict[str, Any] = instance.dict()
@@ -487,9 +365,9 @@ class VectorSequence(VectorMultiset):
         except ValueError as e:
             raise ValueError(f"Error - did you include a non-numeric column, or not specify 'cols'? See: {e}")
 
-    def plot_decomposition(self, col: str, period: float, figsize: List[int] = None, which_plots: List[str] = None,
-                           xlabel: str = 'basis', ylabel: str = '[units]', title: str = None, xlim: List[float] = None,
-                           **kwargs) -> List[plt.Figure]:
+    def plot_decomposition(self, col: str, period: float, figsize: Tuple[float, float] = None,
+                           which_plots: List[str] = None, xlabel: str = 'basis', ylabel: str = '[units]',
+                           title: str = None, xlim: List[float] = None, **kwargs) -> List[plt.Figure]:
 
         """ Plot the seasonal (weekly, monthly, etc) decomposition. Must specify period
 
@@ -524,7 +402,7 @@ class VectorSequence(VectorMultiset):
             plt.plot(self.data.loc[:, self.basis_col_name], decomposition.observed, '-', label='Sequence',
                      color='black')
             add_labels(xlabel, ylabel)
-            plt.title(f'{title}  // observed', size=self.title_fontsize)
+            plt.title(f'{title}observed', size=self.title_fontsize)
             if xlim:
                 plt.xlim(xlim)
 
@@ -532,7 +410,7 @@ class VectorSequence(VectorMultiset):
             figure_handles.append(plt.figure(figsize=figsize, facecolor=self.facecolor))
             plt.plot(self.data.loc[:, self.basis_col_name], decomposition.trend, '-', label='Trend', color='green')
             add_labels(xlabel, ylabel)
-            plt.title(f'{title}  // trend', size=self.title_fontsize)
+            plt.title(f'{title}trend', size=self.title_fontsize)
             if xlim:
                 plt.xlim(xlim)
 
@@ -541,7 +419,7 @@ class VectorSequence(VectorMultiset):
             plt.plot(self.data.loc[:, self.basis_col_name], decomposition.seasonal, '-', label='Seasonality',
                      color='darkslateblue')
             add_labels(xlabel, ylabel)
-            plt.title(f"{title} // seasonality with period {period}", size=self.title_fontsize)
+            plt.title(f"{title}seasonality with period {period}", size=self.title_fontsize)
             if xlim:
                 plt.xlim(xlim)
 
@@ -549,7 +427,7 @@ class VectorSequence(VectorMultiset):
             figure_handles.append(plt.figure(figsize=figsize, facecolor=self.facecolor))
             plt.plot(self.data.loc[:, self.basis_col_name], decomposition.resid, '-', label='Residual', color='darkred')
             add_labels(xlabel, ylabel)
-            plt.title(f'{title}  // residual', size=self.title_fontsize)
+            plt.title(f'{title}residual', size=self.title_fontsize)
             if xlim:
                 plt.xlim(xlim)
 

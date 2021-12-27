@@ -5,3 +5,4 @@ seaborn
 loguru
 pydantic
 statsmodels
+pytz

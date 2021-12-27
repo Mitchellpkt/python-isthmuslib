@@ -1,125 +1,66 @@
-#########################
-## version
-#########################
-
-
-
-#########################
-## imports
-#########################
+# OLD SLOPPY LEGACY CODE
+# Not used in isthmuslib core logic
 
 import pandas as pd
+import numpy as np
 import random
-from typing import List
+from typing import List, Dict, Any, Callable
 
-
-##############################
-## Misc useful stuff
-##############################
 
 # LEGACY CODE - NEEDS REFACTOR
-def handystrings(whichone='help', toconsole=True):
-    handydict = {
+def notes(key: str = 'help') -> str:
+    notes_dict: Dict[str, str] = {
         "pandas width": "pd.set_option('display.max_colwidth', None)",
         "parent directory": "sys.path.append(os.path.abspath('../'))",
-        "disable scrolling": '',
+        "disable scrolling": """ %%javascript
+IPython.OutputArea.prototype._should_scroll = function(lines) {
+    return false;
+} """,
         "buildpackage": "python3 -m pip install --upgrade build && python3 -m build",
         "distributepackage": "python3 -m pip install --upgrade twine && python3 -m twine dist/*"
     }
 
-    if whichone == 'help':
-        response = str(handydict.keys())
+    response: str = notes_dict.get(key)
+    if not response:
+        return f"Select a key from {handydict.keys()}"  # noqa: not SQL
     else:
-        try:
-            response = handydict[whichone]
-        except:
-            response = "entry not found, try handystrings('help')"
-    if toconsole:
-        print(response)
-    return response
-
-
-##############################
-## Codegen
-##############################
-
-# LEGACY CODE - NEEDS REFACTOR
-def featureEngTemplate(listOfFeatures, dataFrameName='df', listName='Vec'):
-    for l in range(len(listOfFeatures)):
-        thisFeature = listOfFeatures[l]
-        print(thisFeature + listName + ' = list()')
-
-    for l in range(len(listOfFeatures)):
-        thisFeature = listOfFeatures[l]
-        print(thisFeature + ' = np.nan')
-
-    for l in range(len(listOfFeatures)):
-        thisFeature = listOfFeatures[l]
-        print(thisFeature + '= None')
-
-    for l in range(len(listOfFeatures)):
-        thisFeature = listOfFeatures[l]
-        print("print('" + thisFeature + " = ' + str(" + thisFeature + "))")
-
-    for l in range(len(listOfFeatures)):
-        thisFeature = listOfFeatures[l]
-        print(thisFeature + listName + '.append(' + thisFeature + ')')
-
-    for l in range(len(listOfFeatures)):
-        thisFeature = listOfFeatures[l]
-        print(dataFrameName + "['" + thisFeature + "'] = " + thisFeature + listName)
+        return response
 
 
 # LEGACY CODE - NEEDS REFACTOR
-def class_def_to_init(input: str) -> str:
-    class_name: str = input.split(' ')[1].split('(')[0]
-    padding: str = ' ' * (len(class_name) + 1)
-    var_names: List[str] = [x.replace(':', '') for x in input.split(' ') if ':' in x][1::]
-    output: str = f"{class_name}(\n"
-    for x in var_names:
-        output += f"{padding}{x}={x},\n"
-    return f"{output}{padding})"
-
-
-##############################
-## Misc useful stuff
-##############################
-
-# LEGACY CODE - NEEDS REFACTOR
-def demoData(setID=1):
+def demo_data(setID: int = 1):
     # Warning, the format of the data depends on the set ID/type
     if setID == 1:
-        x = [1, 2, 5, 10, 20, 50, 100, 200, 500, 1000]
-        y = [1, 4, 8, 20, 30, 40, 120, 250, 700, 1100]
+        x: List[int] = [1, 2, 5, 10, 20, 50, 100, 200, 500, 1000]
+        y: List[int] = [1, 4, 8, 20, 30, 40, 120, 250, 700, 1100]
         return x, y
 
     if setID == 2:
-        x1, y1, = demoData(1)
-        color1 = 'r'
-        label1 = 'Group data'
+        x1, y1, = demo_data(1)
+        color1: str = 'r'
+        label1: str = 'Group data'
 
-        y2, temp = demoData(1)
-        x2 = [3, 3, 7, 30, 60, 75, 120, 250, 850, 900]
-        color2 = '#3366FF'
-        markersize2 = 300
-        label2 = 'Control case'
-        markerstyle2 = '^'
+        y2, temp = demo_data(1)
+        x2: List[int] = [3, 3, 7, 30, 60, 75, 120, 250, 850, 900]
+        color2: str = '#3366FF'
+        markersize2: int = 300
+        label2: str = 'Control case'
+        markerstyle2: str = '^'
 
-        data1 = {'x': x1, 'y': y1, 'markercolor': color1, 'label': label1}
-        data2 = {'x': x2, 'y': y2, 'markercolor': color2, 'markersize': markersize2, 'label': label2,
-                 'markerstyle': markerstyle2}
+        data1: Dict[str, Any] = {'x': x1, 'y': y1, 'markercolor': color1, 'label': label1}
+        data2: Dict[str, Any] = {'x': x2, 'y': y2, 'markercolor': color2, 'markersize': markersize2, 'label': label2,
+                                 'markerstyle': markerstyle2}
 
         return [data1, data2]
 
     if setID == 3:
-        df = pd.DataFrame()
-        df['x'], df['y'] = demoData(1)
+        df: pd.DataFrame = pd.DataFrame()
+        df['x'], df['y'] = demo_data(1)
         df['z'] = df['x'] + df['y']
         return df
 
     if setID == 4:
         return [random.gauss(2, 2) for _ in range(500)], [random.gauss(1, 3) for _ in range(500)]
-
     if setID == 5:
         # Same as #4 but deterministic
         x = [5.959838826858405, 1.1082129165979508, 1.500127065166587, 4.694460112417438, -0.36490670832999195,
@@ -323,3 +264,11 @@ def demoData(setID=1):
              0.11155045714578171, -0.277288858839726, 2.9072490441788092, 8.779195328741526, 2.0084261358948146,
              -3.6068290085023182, -0.18725572608261443, 1.7113432497831176, -1.1888544611134648, 3.1546106837248415]
         return x, y
+
+    if setID == 6:
+        np.random.seed(0)
+        return np.random.normal(size=1000)
+
+
+# Alias to old name
+demoData: Callable[[int], Any] = demo_data

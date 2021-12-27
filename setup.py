@@ -23,7 +23,7 @@ def read(*names, **kwargs):
 
 setup(
     name='isthmuslib',
-    version='0.0.38',
+    version='0.0.39',
     license='LGPL-3.0-only',
     description='Misc utilities, mostly related to plotting',
     long_description='%s\n%s' % (
@@ -69,7 +69,7 @@ setup(
     ],
     python_requires='>=3.6',
     install_requires=[
-        'numpy', 'pandas', 'matplotlib', 'seaborn', 'loguru', 'pydantic', 'statsmodels'
+        'numpy', 'pandas', 'matplotlib', 'seaborn', 'loguru', 'pydantic', 'statsmodels', 'pytz'
     ],
     extras_require={
         # eg:

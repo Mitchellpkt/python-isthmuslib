@@ -5,19 +5,21 @@ from typing import Dict, Union, List
 from datetime import datetime
 import pytz
 from dateutil import parser
+import pandas as pd
+import pathlib
 
 
 class PickleUtils(BaseModel):
     """ Pickle IO - adds pickle import & export helper functions to any class that imports these utils  """
 
-    def to_pickle(self, file_path: str) -> None:
+    def to_pickle(self, file_path: Union[str, pathlib.Path]) -> None:
         """Exports self as a pickle
         @param file_path: where to write the file
         """
         with open(file_path, 'wb') as outfile:
             pickle.dump(self, outfile)
 
-    def read_pickle(self, file_path: str) -> Any:  # noqa: could be static, placed here for convenient organization
+    def read_pickle(self, file_path: Union[str, pathlib.Path]) -> Any:  # noqa: static, placed here for organization
         """ Imports a pickle. Note: this is _not_ inplace; the pickle contents are _returned_ by this method
         @param file_path: file to import
         """
@@ -32,7 +34,7 @@ class PickleJar(PickleUtils):
     class Config:
         arbitrary_types_allowed = True
 
-    def from_pickle(self, file_path: str) -> None:
+    def from_pickle(self, file_path: Union[str, pathlib.Path]) -> None:
         """ Imports a pickle (similar to read_pickle(), but this method is inplace)
         @param file_path: file to import
         """
@@ -46,10 +48,13 @@ class Rosetta(BaseModel):
     stone: Dict[str, str] = {
         # input string : human-readable output
         "input": "The Input (formatted)",
+        "window_start": "Window start time",
+        "window_width": "Window width"
         # ... (fill out the rest of the human-readable names)
     }
+    default_missing_response: str = 'return_input'
 
-    def translate(self, key: str, missing_response: str = "return_input") -> str:
+    def translate(self, key: str, missing_response: str = None) -> str:
         """ Main function that wraps dictionary access with robust handling for missing inputs, missing keys, etc.
         Consider using for cases like axis.label(self.translate('timestamp_sec')) --> axis.label("Timestamp (sec)")
         @param key: input to be translated
@@ -60,6 +65,8 @@ class Rosetta(BaseModel):
             return ''
         if key in self.stone:
             return self.stone[key]
+        if not missing_response:
+            missing_response: str = self.default_missing_response
         if missing_response == "return_input":
             return key
         elif missing_response == "error":
@@ -96,6 +103,8 @@ def human_time(timestamp_sec: Union[float, str, int], formatter: str = '%Y-%m-%d
                timezone: str = 'US/Pacific', include_timezone: bool = True) -> str:
     """ Converts timestamp to human readable time, taking into account time zone (US/Pacific by default)
         To see other time zone options, see `pytz.common_timezones` """
+
+    # If input is a string, try to parse it as a float or int
     if isinstance(timestamp_sec, str):
         if timestamp_sec.replace('.', '', 1).isdigit():
             timestamp_sec: float = int(timestamp_sec)
@@ -126,9 +135,18 @@ def machine_time(time: str, units: str = 'seconds') -> float:
 def as_list(anything: Union[Any, List[Any]]) -> List[Any]:
     """
     If it's not a list, stick it in a list. If it's already a list, return it.
-    @param anything: Anything that you want to ensure is in a list
-    @return: Anything, but in list form
+    @param anything: anything that you want to ensure is in a list
+    @return: anything, but in list form
     """
     if isinstance(anything, list):
         return anything
     return [anything]
+
+
+def looks_like_list_of_lists(input_var: Any) -> bool:
+    """ Does this look like a list of lists? Wraps a pandas util
+
+    :param input_var: input to assess
+    :return: True if it looks like a list of lists
+    """
+    return pd.api.types.is_list_like(input_var) and pd.api.types.is_list_like(input_var[0])
