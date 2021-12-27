@@ -4,7 +4,7 @@ import pandas as pd
 import seaborn as sns
 from .config import Style
 from .utils import looks_like_list_of_lists
-from typing import List, Any, Union, Tuple, Callable, Dict
+from typing import List, Any, Union, Tuple, Callable
 
 
 ##################
@@ -79,7 +79,7 @@ def applylabels(xlabel: str = '', ylabel: str = '', title: str = '', style: Styl
     plt.title(style.rosetta.translate(title, missing_response='return_input'), fontsize=style.title_fontsize)
 
 
-def apply_watermark(watermark_text: str, style: Style = None, **kwargs) -> None:
+def apply_watermark(watermark_text: str, style: Style = None, use_default: bool = True, **kwargs) -> None:
     """ Helper function to apply watermark text to a plot based on config Style object parameters
 
     :param watermark_text: Text to display
@@ -87,6 +87,11 @@ def apply_watermark(watermark_text: str, style: Style = None, **kwargs) -> None:
     :param kwargs: additional keyword arguments for matplotlib.pyplot.text
     :return: None
     """
+
+    if not watermark_text:
+        if use_default:
+            watermark_text: str = style.watermark_text
+
     if not watermark_text:
         return None
 

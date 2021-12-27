@@ -10,10 +10,10 @@ class Style(BaseModel):
 
     color: str = 'DarkGreen'  # isthmuslib default
     facecolor: str = 'w'
-    title_fontsize: float = 18.0
-    label_fontsize: float = 15.0
-    legend_fontsize: float = 15.0
-    tick_fontsize: float = 12.0
+    title_fontsize: Any = 18.0
+    label_fontsize: Any = 15.0
+    legend_fontsize: Any = 15.0
+    tick_fontsize: Any = 12.0
     figsize: Tuple[float, float] = (10.0, 8.0)
     linewidth: float = 5.0
     grid: str = 'on'
@@ -22,9 +22,10 @@ class Style(BaseModel):
     markersize: float = 50
     transparent_alpha: float = 0.5
     watermark_placement: Any = (0.05, 0.05)
-    watermark_fontsize: float = 20
-    watermark_color: str = 'dimgrey'
-    histogram_bins: int = 25
+    watermark_fontsize: Any = 20
+    watermark_color: Any = 'dimgrey'
+    watermark_text: str = ''
+    histogram_bins: Any = 25
     multi_hist_alpha: float = 0.5
     rosetta: Rosetta = Rosetta()
 
