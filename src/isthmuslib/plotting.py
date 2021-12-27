@@ -235,7 +235,7 @@ def visualize_x_y(x_data: Any, y_data: Any, xlabel: str = '', ylabel: str = '', 
             y_array: np.ndarray = np.asarray(data_set[1])
 
         if 'scatter' in types:
-            scatter_handles.append(plt.scatter(x_array, y_array, config.markersize, config.color, **kwargs))
+            scatter_handles.append(plt.scatter(x_array, y_array, config.markersize, color=config.color, **kwargs))
 
         if includes_line_plot := any(x in types for x in ['plot', 'line']):
             p = plt.plot(x_array, y_array, color=config.color, linewidth=config.linewidth)
