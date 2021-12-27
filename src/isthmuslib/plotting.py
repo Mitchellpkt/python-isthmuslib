@@ -186,9 +186,9 @@ def visualize_1d_distribution(data: Any, xlabel: str = '', ylabel: str = 'counts
 
 def visualize_x_y(x_data: Any, y_data: Any, xlabel: str = '', ylabel: str = '', title: str = '', cumulative: str = '',
                   log_axes: Union[str, List[str]] = '', types: Union[str, List[str]] = 'scatter', style: Style = None,
-                  watermark: str = '', multi: bool = None,
-                  legend_strings: Union[Tuple[str], List[str]] = None, xlim: Any = None, ylim: Any = None,
-                  plot_best_fit: Union[bool, int] = False, **kwargs) -> plt.Figure:
+                  watermark: str = '', multi: bool = None, legend_strings: Union[Tuple[str], List[str]] = None,
+                  xlim: Any = None, ylim: Any = None, plot_best_fit: Union[bool, int] = False,
+                  rolling_mean_width: int = None, rolling_median_width: int = None, **kwargs) -> plt.Figure:
     """ Core function for visualizing 2-dimensional data sets
 
     :param x_data: can be an array-like object or a list of array-like objects (for multiple traces)
@@ -250,6 +250,17 @@ def visualize_x_y(x_data: Any, y_data: Any, xlabel: str = '', ylabel: str = '', 
             else:
                 degree: int = 1
             plot_best_fit_line(x_array, y_array, degree=degree, color=color, style=config)
+
+        if rolling_mean_width or rolling_median_width:
+            df: pd.DataFrame = pd.DataFrame({'x': x_array, 'y': y_array})
+            df.sort_values(by='x', ascending=True, inplace=True, ignore_index=True)
+            width_scale: float = 1 / 2
+            if rolling_mean_width:
+                plt.plot(df.x, df.y.rolling(rolling_mean_width).mean(), color=config.mean_linecolor,
+                         linewidth=style.linewidth * width_scale, linestyle=config.mean_linestyle)
+            if rolling_median_width:
+                plt.plot(df.x, df.y.rolling(rolling_median_width).median(), color=config.median_linecolor,
+                         linewidth=style.linewidth * width_scale, linestyle=config.median_linestyle)
 
     # Adjust view & style where applicable
     xlabel_buffer: str = config.translate(xlabel, missing_response='return_input')

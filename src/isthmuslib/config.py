@@ -16,6 +16,7 @@ class Style(BaseModel):
     tick_fontsize: Any = 12.0
     figsize: Tuple[float, float] = (10.0, 8.0)
     linewidth: float = 5.0
+    linestyle: str = '-'
     grid: str = 'on'
     tight_axes: bool = True
     formatter: str = '%Y-%m-%d %H:%M:%S'
@@ -28,6 +29,10 @@ class Style(BaseModel):
     histogram_bins: Any = 25
     multi_hist_alpha: float = 0.5
     rosetta: Rosetta = Rosetta()
+    median_linestyle: str = '--'
+    median_linecolor: str = 'k'
+    mean_linestyle: str = '-'
+    mean_linecolor: str = 'k'
 
     def translate(self, key: str, **kwargs) -> str:
         """ Helper function that allows Style objects to translate text according to the provided Rosetta mappings
