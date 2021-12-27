@@ -8,8 +8,8 @@ class Style(BaseModel):
     """ Miscellaneous properties; set defaults once, then use or inherit elsewhere for consistent style
         (note: some names are formatted to be congruent with matplotlib.pyplot vars & args, rather than isthmuslib) """
 
-    color: str = 'DarkGreen'  # isthmuslib default
-    facecolor: str = 'w'
+    color: Any = 'DarkGreen'  # isthmuslib default
+    facecolor: Any = 'w'
     title_fontsize: Any = 18.0
     label_fontsize: Any = 15.0
     legend_fontsize: Any = 15.0
