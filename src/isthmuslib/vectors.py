@@ -6,6 +6,7 @@ import pandas as pd
 from loguru import logger
 from .config import Style
 from .utils import PickleUtils, Rosetta
+from .data_quality import basis_quality_checks, basis_quality_plots
 from copy import deepcopy
 import statsmodels.api as sm
 from .plotting import visualize_x_y, visualize_1d_distribution, visualize_surface
@@ -31,7 +32,7 @@ class VectorMultiset(PickleUtils, Style, Rosetta):
         :param cumulative: whether to apply a cumulative sum (default = False)
         :return: Extracted data
         """
-        values: pd.Series = self.data[feature]
+        values: pd.Series = self.data.loc[:, feature]
         if args:
             for unpack_next in args:
                 values: List[Any] = [x.__getattribute__(unpack_next) for x in values]
@@ -157,7 +158,7 @@ class SlidingWindowResults(VectorMultiset):
 
     def group_by_window_width(self) -> Dict[float, pd.DataFrame]:
         """ Helper function that returns individual dataframes for each window width """
-        return {x: self.data[self.data['window_width'] == x] for x in set(self.data.window_width)}
+        return {x: self.data.loc[self.data.loc[:, 'window_width'] == x, :] for x in set(self.data.window_width)}
 
     def plot_results(self, col_name: str, legend_override: List[str] = None, **kwargs) -> plt.Figure:
         """ Plot any sequence (based on the data frame column name)
@@ -235,11 +236,34 @@ class VectorSequence(VectorMultiset):
 
     # (Inherits `data` dataframe and `name_root` string from VectorMultiset)
     basis_col_name: str = 'basis'
+    error_if_basis_quality_issues: bool = False
 
     def __init__(self, **data: Any):
         super().__init__(**data)
         if self.data is not None:
             self.sort()
+            if self.error_if_basis_quality_issues:
+                is_ok, explanation = self.passes_basis_quality_checks()
+                if not is_ok:
+                    raise ValueError(f"Issues with basis:\n{explanation}\nSee: `error_if_basis_quality_issues`")
+
+    def basis_quality_checks(self) -> Tuple[bool, str]:
+        """ Checks basis data quality and returns both a True/False flag and a string with an explanation
+
+        :return: True if OK, and a string with explanation either way
+        """
+        return basis_quality_checks(self.data.loc[:, self.basis_col_name])
+
+    def passes_basis_quality_checks(self) -> bool:
+        """ Super thin wrapper around basis_quality_checks that drops the explanation string
+
+        :return: True if OK
+        """
+        result, _ = self.basis_quality_checks()
+        return result
+
+    def basis_quality_plots(self) -> List[plt.Figure]:
+        return basis_quality_plots(self.data.loc[:, self.basis_col_name])
 
     def slice(self, start_at: Any = None, stop_at: Any = None, inplace: bool = False, reset_index: bool = True):
         """ Slices the VectorSequence according to the basis
@@ -253,10 +277,10 @@ class VectorSequence(VectorMultiset):
         df: pd.DataFrame = deepcopy(self.data)
         df.sort_values(by=self.basis_col_name, ascending=True, inplace=True, ignore_index=True)
         if not start_at:
-            start_at: Any = min(df[self.basis_col_name])
+            start_at: Any = min(df.loc[:, self.basis_col_name])
         if not stop_at:
-            stop_at: Any = max(df[self.basis_col_name])
-        in_range: pd.DataFrame = df.loc[df[self.basis_col_name].between(start_at, stop_at), :]
+            stop_at: Any = max(df.loc[:, self.basis_col_name])
+        in_range: pd.DataFrame = df.loc[df.loc[:, self.basis_col_name].between(start_at, stop_at), :]
         if reset_index:
             in_range.reset_index(drop=True, inplace=True)
         if inplace:
@@ -266,7 +290,7 @@ class VectorSequence(VectorMultiset):
 
     def index_to_basis(self) -> None:
         """  Adds (or overwrites) 'basis' column with a default index [0, 1, 2, ...] """
-        self.data[self.basis_col_name] = list(range(len(self.data)))
+        self.data.loc[:, self.basis_col_name] = list(range(len(self.data)))
 
     def sort(self, by: str = None, inplace: bool = True, reset_index: bool = True):
         """ Sorts the data points by the basis
@@ -311,11 +335,11 @@ class VectorSequence(VectorMultiset):
             raise AttributeError(f'basis_col_name {self.basis_col_name} not a column in data frame:\n{self.data}')
 
         df: pd.DataFrame = pd.DataFrame()
-        basis: Tuple[float] = (self.data[self.basis_col_name].tolist())
+        basis: Tuple[float] = (self.data.loc[:, self.basis_col_name].tolist())
 
         if not window_widths:
-            data_duration: float = max(self.data[self.basis_col_name]) - min(self.data[self.basis_col_name])
-            window_widths: List[float] = [data_duration / x for x in range(20, 401, 20)]
+            duration: float = max(self.data.loc[:, self.basis_col_name]) - min(self.data.loc[:, self.basis_col_name])
+            window_widths: List[float] = [duration / x for x in range(20, 401, 20)]
 
         # Loop over window widths
         for i, window_width in enumerate(window_widths):

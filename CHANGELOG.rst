@@ -185,3 +185,8 @@ Changelog
 -------------------
 
 * refactor: everything
+
+0.0.40 (2021-12-28)
+-------------------
+
+* extra configurability, colors, etc

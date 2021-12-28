@@ -167,3 +167,16 @@ def margin_calc(margin: float, span: Tuple[float, float], scale: str) -> float:
         return 10 ** (np.log10(span[0]) + margin * (np.log10(span[1]) - np.log10(span[0])))
     else:
         raise ValueError(f"Unexpected {scale=}")
+
+
+def to_list_if_other_array(array: Any) -> List[Any]:
+    """ Helper function that casts 1D data frames and numpy ndarrays to lists (important for inputs of core viz code)
+
+    :param array: An array-like (1D) object with numeric values
+    :return: a list
+    """
+    if isinstance(array, pd.DataFrame) and (l := len(array.keys()) > 1):
+        raise ValueError(f"Instead of array, received data frame with {l} features / columns")
+    if isinstance(array, (np.ndarray, pd.Series)):
+        return array.tolist()
+    return array

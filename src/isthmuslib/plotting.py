@@ -3,7 +3,7 @@ import numpy as np
 import pandas as pd
 import seaborn as sns
 from .config import Style
-from .utils import looks_like_list_of_lists, margin_calc
+from .utils import looks_like_list_of_lists, margin_calc, to_list_if_other_array
 from typing import List, Any, Union, Tuple, Callable
 
 
@@ -84,6 +84,7 @@ def apply_watermark(watermark_text: str, style: Style = None, use_default: bool 
 
     :param watermark_text: Text to display
     :param style: configuration object (Style)
+    :type use_default: if True, then the config watermark_text will override the input argument watermark_text
     :param kwargs: additional keyword arguments for matplotlib.pyplot.text
     :return: None
     """
@@ -210,10 +211,14 @@ def visualize_x_y(x_data: Any, y_data: Any, xlabel: str = '', ylabel: str = '', 
     :param kwargs: additional keyword arguments for matplotlib.pyplot.scatter()
     :return: figure handle for the plot
     """
+
     # Use package style defaults for any fields not specified in style (or all fields if style object is not provided)
     config: Style = Style()
     if style:
         config: Style = Style(**{**Style().dict(), **style.dict()})
+
+    x_data: List[Any] = to_list_if_other_array(x_data)
+    y_data: List[Any] = to_list_if_other_array(y_data)
 
     # If not specified, try to ascertain whether one or multiple data sets are being provided
     if multi or ((multi is None) and looks_like_list_of_lists(y_data)):
@@ -361,6 +366,9 @@ def visualize_hist2d(x_data: Any, y_data: Any, xlabel: str = '', ylabel: str = '
     if style:
         config: Style = Style(**{**Style().dict(), **style.dict()})
 
+    x_data: List[Any] = to_list_if_other_array(x_data)
+    y_data: List[Any] = to_list_if_other_array(y_data)
+
     # Make the plot
     figure_handle: plt.Figure = plt.figure(facecolor=config.facecolor, figsize=config.figsize)
     plt.hist2d(x_data, y_data, **kwargs)
@@ -404,6 +412,10 @@ def visualize_surface(x_data, y_data, z_data, xlabel: str = '', ylabel: str = ''
     config: Style = Style()
     if style:
         config: Style = Style(**{**Style().dict(), **style.dict()})
+
+    x_data: List[Any] = to_list_if_other_array(x_data)
+    y_data: List[Any] = to_list_if_other_array(y_data)
+    z_data: List[Any] = to_list_if_other_array(z_data)
 
     # Initial data wrangling
     df: pd.DataFrame = pd.DataFrame({'x': x_data, 'y': y_data, 'z': z_data})

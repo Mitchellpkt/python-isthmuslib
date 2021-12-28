@@ -35,6 +35,8 @@ class Style(BaseModel):
     mean_linewidth: Any = 3.0
     mean_linecolor: Any = 'k'
     cycler: Any = None
+    good_color: Any = 'navy'
+    bad_color: Any = 'firebrick'
 
     def translate(self, key: str, **kwargs) -> str:
         """ Helper function that allows Style objects to translate text according to the provided Rosetta mappings
