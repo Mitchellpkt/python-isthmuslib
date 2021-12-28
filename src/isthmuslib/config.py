@@ -1,6 +1,5 @@
-from typing import Any
 from pydantic import BaseModel
-from typing import Tuple
+from typing import Tuple, Dict, Any
 from .utils import Rosetta
 
 
@@ -14,13 +13,13 @@ class Style(BaseModel):
     label_fontsize: Any = 15.0
     legend_fontsize: Any = 15.0
     tick_fontsize: Any = 12.0
-    figsize: Tuple[float, float] = (10.0, 8.0)
-    linewidth: float = 5.0
-    linestyle: str = '-'
+    figsize: Tuple[Any, Any] = (10.0, 8.0)
+    linewidth: Any = 5.0
+    linestyle: Any = '-'
     grid: str = 'on'
     tight_axes: bool = True
     formatter: str = '%Y-%m-%d %H:%M:%S'
-    markersize: float = 50
+    markersize: Any = 50
     transparent_alpha: float = 0.5
     watermark_placement: Any = (0.05, 0.05)
     watermark_fontsize: Any = 20
@@ -29,10 +28,12 @@ class Style(BaseModel):
     histogram_bins: Any = 25
     multi_hist_alpha: float = 0.5
     rosetta: Rosetta = Rosetta()
-    median_linestyle: str = '--'
-    median_linecolor: str = 'k'
-    mean_linestyle: str = '-'
-    mean_linecolor: str = 'k'
+    median_linestyle: Any = '--'
+    median_linewidth: Any = 3.0
+    median_linecolor: Any = 'k'
+    mean_linestyle: Any = '-'
+    mean_linewidth: Any = 3.0
+    mean_linecolor: Any = 'k'
 
     def translate(self, key: str, **kwargs) -> str:
         """ Helper function that allows Style objects to translate text according to the provided Rosetta mappings
@@ -45,3 +46,11 @@ class Style(BaseModel):
             return self.rosetta.translate(key, **kwargs)
         else:
             return key
+
+    def override(self, overrides: Dict[str, Any]):
+        """ Helper function that overrides specific style features
+
+        :param overrides: feature names and new values, e.g. ... = style.override({'color':'k', 'size':50})
+        :return: returns a fresh copy of a Style object with the updated values
+        """
+        return Style(**{**self.dict(), **overrides})

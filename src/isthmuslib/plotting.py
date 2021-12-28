@@ -254,13 +254,12 @@ def visualize_x_y(x_data: Any, y_data: Any, xlabel: str = '', ylabel: str = '', 
         if rolling_mean_width or rolling_median_width:
             df: pd.DataFrame = pd.DataFrame({'x': x_array, 'y': y_array})
             df.sort_values(by='x', ascending=True, inplace=True, ignore_index=True)
-            width_scale: float = 1 / 2
             if rolling_mean_width:
                 plt.plot(df.x, df.y.rolling(rolling_mean_width).mean(), color=config.mean_linecolor,
-                         linewidth=style.linewidth * width_scale, linestyle=config.mean_linestyle)
+                         linewidth=style.mean_linewidth, linestyle=config.mean_linestyle)
             if rolling_median_width:
                 plt.plot(df.x, df.y.rolling(rolling_median_width).median(), color=config.median_linecolor,
-                         linewidth=style.linewidth * width_scale, linestyle=config.median_linestyle)
+                         linewidth=style.median_linewidth, linestyle=config.median_linestyle)
 
     # Adjust view & style where applicable
     xlabel_buffer: str = config.translate(xlabel, missing_response='return_input')
