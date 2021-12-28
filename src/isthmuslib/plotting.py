@@ -47,7 +47,8 @@ def adjust_axes(log_axes: Union[str, List[str]] = '', style: Style = None, xlim:
     """
     if not style:
         style = Style()
-    plt.grid(style.grid)
+    if style.grid:
+        plt.grid()
     if xlim:
         plt.xlim(xlim)
     else:

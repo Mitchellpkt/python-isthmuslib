@@ -190,3 +190,8 @@ Changelog
 -------------------
 
 * extra configurability, colors, etc
+
+0.0.41 (2021-12-28)
+-------------------
+
+* fix: boolean grid parameter

@@ -16,7 +16,7 @@ class Style(BaseModel):
     figsize: Tuple[Any, Any] = (10.0, 8.0)
     linewidth: Any = 5.0
     linestyle: Any = '-'
-    grid: str = 'on'
+    grid: bool = True
     tight_axes: bool = True
     formatter: str = '%Y-%m-%d %H:%M:%S'
     markersize: Any = 50
