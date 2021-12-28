@@ -1,12 +1,13 @@
 import pickle as pickle
 from typing import Any
 from pydantic import BaseModel
-from typing import Dict, Union, List
+from typing import Dict, Union, List, Tuple
 from datetime import datetime
 import pytz
 from dateutil import parser
 import pandas as pd
 import pathlib
+import numpy as np
 
 
 class PickleUtils(BaseModel):
@@ -150,3 +151,19 @@ def looks_like_list_of_lists(input_var: Any) -> bool:
     :return: True if it looks like a list of lists
     """
     return pd.api.types.is_list_like(input_var) and pd.api.types.is_list_like(input_var[0])
+
+
+def margin_calc(margin: float, span: Tuple[float, float], scale: str) -> float:
+    """ Helper function for ascertaining watermark or hud placements (in both linear and log environments)
+
+    :param margin: a fractional placement (e.g. 0.05 --> 5% from the left of the pane)
+    :param span: range being spanned
+    :param scale: 'linear' or 'log'
+    :return: float with the coordinate value
+    """
+    if scale == 'linear':
+        return span[0] + margin * (span[1] - span[0])
+    elif scale == 'log':
+        return 10 ** (np.log10(span[0]) + margin * (np.log10(span[1]) - np.log10(span[0])))
+    else:
+        raise ValueError(f"Unexpected {scale=}")

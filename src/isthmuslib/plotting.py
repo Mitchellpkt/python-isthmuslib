@@ -3,7 +3,7 @@ import numpy as np
 import pandas as pd
 import seaborn as sns
 from .config import Style
-from .utils import looks_like_list_of_lists
+from .utils import looks_like_list_of_lists, margin_calc
 from typing import List, Any, Union, Tuple, Callable
 
 
@@ -64,7 +64,7 @@ def adjust_axes(log_axes: Union[str, List[str]] = '', style: Style = None, xlim:
         plt.yscale('log')
 
 
-def applylabels(xlabel: str = '', ylabel: str = '', title: str = '', style: Style = None) -> None:
+def apply_plot_labels(xlabel: str = '', ylabel: str = '', title: str = '', style: Style = None) -> None:
     """ Helper function to apply labels (xlabel, ylabel, title) according to the style guide (including translation)
 
     :param xlabel: text or rosetta key for the x-axis label
@@ -106,9 +106,9 @@ def apply_watermark(watermark_text: str, style: Style = None, use_default: bool 
     else:
         raise ValueError(f"Unable to interpret watermark {style.watermark_placement=}")
 
-    margin_calc: Callable[[Union[float, int]], float] = lambda margin, span: span[0] + margin * (span[1] - span[0])
-    x_coordinate: float = margin_calc(position[0], plt.xlim())
-    y_coordinate: float = margin_calc(position[1], plt.ylim())
+    ax = plt.gca()
+    x_coordinate: float = margin_calc(position[0], plt.xlim(), ax.xaxis.get_scale())
+    y_coordinate: float = margin_calc(position[1], plt.ylim(), ax.yaxis.get_scale())
     plt.text(x_coordinate, y_coordinate, watermark_text, fontsize=style.watermark_fontsize, c=style.watermark_color,
              **kwargs)
 
@@ -176,7 +176,7 @@ def visualize_1d_distribution(data: Any, xlabel: str = '', ylabel: str = 'counts
         ylabel_buffer: str = ylabel_translated
     if kwargs.get('density'):
         ylabel_buffer += " (density)"
-    applylabels(xlabel=xlabel_buffer, ylabel=ylabel_buffer, title=title, style=config)
+    apply_plot_labels(xlabel=xlabel_buffer, ylabel=ylabel_buffer, title=title, style=config)
     if legend_strings:
         plt.legend(legend_strings, fontsize=config.legend_fontsize)
 
@@ -271,7 +271,7 @@ def visualize_x_y(x_data: Any, y_data: Any, xlabel: str = '', ylabel: str = '', 
     ylabel_buffer: str = config.translate(ylabel, missing_response='return_input')
     if 'y' in cumulative:
         ylabel_buffer += ' (cumulative)'
-    applylabels(xlabel=xlabel_buffer, ylabel=ylabel_buffer, title=title, style=config)
+    apply_plot_labels(xlabel=xlabel_buffer, ylabel=ylabel_buffer, title=title, style=config)
     if legend_strings and ('scatter' in types):
         plt.legend(scatter_handles, legend_strings, fontsize=config.legend_fontsize)
     adjust_axes(log_axes=log_axes, style=config, xlim=xlim, ylim=ylim)
@@ -374,7 +374,7 @@ def visualize_hist2d(x_data: Any, y_data: Any, xlabel: str = '', ylabel: str = '
     # Adjust view & style where applicable
     plt.xlim(xlim)
     plt.ylim(ylim)
-    applylabels(xlabel=xlabel, ylabel=ylabel, title=title, style=config)
+    apply_plot_labels(xlabel=xlabel, ylabel=ylabel, title=title, style=config)
     apply_watermark(watermark, style=config)
     if show_colorbar:
         cbar: plt.colorbar.Colorbar = plt.colorbar()
@@ -416,7 +416,7 @@ def visualize_surface(x_data, y_data, z_data, xlabel: str = '', ylabel: str = ''
     # Adjust view & style where applicable
     plt.xlim(xlim)
     plt.ylim(ylim)
-    applylabels(xlabel=xlabel, ylabel=ylabel, title=title, style=config)
+    apply_plot_labels(xlabel=xlabel, ylabel=ylabel, title=title, style=config)
     apply_watermark(watermark, style=config)
     if y_axis_ascending:
         ax.invert_yaxis()
