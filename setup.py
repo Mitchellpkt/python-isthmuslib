@@ -25,7 +25,7 @@ setup(
     name='isthmuslib',
     version='0.0.40',
     license='LGPL-3.0-only',
-    description='Misc utilities, mostly related to plotting',
+    description='Convenience utils for plotting, styling, and manipulating high-dimensional vectors',
     long_description='%s\n%s' % (
         re.compile('^.. start-badges.*^.. end-badges', re.M | re.S).sub('', read('README.rst')),
         re.sub(':[a-z]+:`~?(.*?)`', r'``\1``', read('CHANGELOG.rst'))
