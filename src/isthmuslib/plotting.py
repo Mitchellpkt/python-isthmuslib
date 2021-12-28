@@ -152,6 +152,7 @@ def visualize_1d_distribution(data: Any, xlabel: str = '', ylabel: str = 'counts
 
     # Plot the data and (and best fits if applicable)
     figure_handle: plt.Figure = plt.figure(facecolor=config.facecolor, figsize=config.figsize)
+    plt.axes().set_prop_cycle(config.cycler)
     for data_set in data:
         # plotting on log x-axis requires special pre-treatment (log-distributed bin edges)
         if 'x' in log_axes:
@@ -223,8 +224,10 @@ def visualize_x_y(x_data: Any, y_data: Any, xlabel: str = '', ylabel: str = '', 
 
     # Plot the data and (and best fits if applicable)
     figure_handle: plt.Figure = plt.figure(facecolor=config.facecolor, figsize=config.figsize)
+    plt.axes().set_prop_cycle(config.cycler)
     scatter_handles: List[Any] = []
-    for data_set in zip(x_data, y_data):
+
+    for i, data_set in enumerate(zip(x_data, y_data)):
         if 'x' in cumulative:
             x_array: np.ndarray = np.cumsum(data_set[0])
         else:
