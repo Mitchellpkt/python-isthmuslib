@@ -89,9 +89,8 @@ def apply_watermark(watermark_text: str, style: Style = None, use_default: bool 
     if not watermark_text:
         if use_default:
             watermark_text: str = style.watermark_text
-
-    if not watermark_text:
-        return None
+        else:
+            return None
 
     if not style:
         style: Style = Style()
