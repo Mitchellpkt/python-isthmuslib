@@ -49,16 +49,12 @@ def adjust_axes(log_axes: Union[str, List[str]] = '', style: Style = None, xlim:
         style = Style()
     if style.grid:
         plt.grid()
+    if style.tight_axes:
+        plt.autoscale(enable=True, axis='x', tight=True)
     if xlim:
         plt.xlim(xlim)
-    else:
-        if style.tight_axes:
-            plt.autoscale(enable=True, axis='x', tight=True)
     if ylim:
         plt.ylim(ylim)
-    else:
-        if style.tight_axes:
-            plt.autoscale(enable=True, axis='y', tight=True)
     if 'x' in log_axes:
         plt.xscale('log')
     if 'y' in log_axes:
