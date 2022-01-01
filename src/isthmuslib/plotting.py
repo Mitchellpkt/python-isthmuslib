@@ -323,9 +323,11 @@ def visualize_x_y_input_interpreter(*args, **kwargs) -> plt.Figure:
             if not all(x in args[0].keys() for x in args[1:3]):
                 raise ValueError(f"Keys {args[1]} & {args[2]} not both in dataframe with: {df.keys().tolist()}")
         else:
-            raise ValueError(f"Expected positional arguments for feature sames, got {args[1]} and {args[2]}")
+            raise ValueError(f"Expected positional arguments for feature names, got {args[1]} and {args[2]}")
         x_data = df[args[1]]
         y_data = df[args[2]]
+        kwargs.setdefault('xlabel', args[1])
+        kwargs.setdefault('ylabel', args[2])
         legend_strings = [args[1], args[2]]
 
     # Only use the auto-generated legend strings if user did not specify legend_strings
