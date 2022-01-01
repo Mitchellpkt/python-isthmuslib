@@ -195,3 +195,8 @@ Changelog
 -------------------
 
 * fix: boolean grid parameter
+
+0.0.42 (2021-12-31)
+-------------------
+
+* tweak: infer labels when scattering dataframes
