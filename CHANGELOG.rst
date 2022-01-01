@@ -200,3 +200,8 @@ Changelog
 -------------------
 
 * tweak: infer labels when scattering dataframes
+
+0.0.43 (2022-01-01)
+-------------------
+
+* tweak: no legend on viz_x_y(dataframe, x string, y string)

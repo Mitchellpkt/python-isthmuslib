@@ -328,7 +328,6 @@ def visualize_x_y_input_interpreter(*args, **kwargs) -> plt.Figure:
         y_data = df[args[2]]
         kwargs.setdefault('xlabel', args[1])
         kwargs.setdefault('ylabel', args[2])
-        legend_strings = [args[1], args[2]]
 
     # Only use the auto-generated legend strings if user did not specify legend_strings
     kwargs.setdefault("legend_strings", legend_strings)
