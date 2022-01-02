@@ -309,13 +309,17 @@ def visualize_x_y_input_interpreter(*args, **kwargs) -> plt.Figure:
 
     # Received two positional inputs (interpreted as x_data & y_data arrays, or a list of such arrays)
     elif num_positional_arguments == 2:
-        if len(args[0]) == len(args[1]):
-            # infer [x1, x2, ..., xN] and [y1, y2, ..., yN]
+        if isinstance(args[0], pd.DataFrame) and isinstance(args[1], list):
+            # infer: fxn(dataframe, [[x1name, y1name], [x2name, y2name], ...]
+            x_data = [args[0].loc[:, z[0]] for z in args[1]]
+            y_data = [args[0].loc[:, z[1]] for z in args[1]]
+        elif len(args[0]) == len(args[1]):
+            # infer: [x1, x2, ..., xN] and [y1, y2, ..., yN]   OR   [x_vec1, x_vec2, ...] and [y_vec1, y_vec2, ...]
             x_data = args[0]
             y_data = args[1]
         elif (not looks_like_list_of_lists(args[0])) or (looks_like_list_of_lists(args[0]) and (len(args[0]) == 1)):
             if len(args[1]) > 1:
-                # infer fxn([x_all], [y1, y2, ..., yN], ...); also accepts: fxn(x_all, [y1, y2, ..., yN], ...)
+                # infer: fxn([x_all], [y1, y2, ..., yN], ...); also accepts: fxn(x_all, [y1, y2, ..., yN], ...)
                 x_data = [args[0]] * len(args[1])
                 y_data = args[1]
 
