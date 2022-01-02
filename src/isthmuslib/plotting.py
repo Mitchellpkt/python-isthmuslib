@@ -296,16 +296,29 @@ def visualize_x_y_input_interpreter(*args, **kwargs) -> plt.Figure:
     # Received a single positional input (so each item value must contain both x & y data)
     if (num_positional_arguments := len(args)) == 1:
         if isinstance((solo_input := args[0]), dict):
+            # Here we have a dictionary with key=name, value=[x_data, y_data]
             x_data = [z[0] for z in solo_input.values()]
             y_data = [z[1] for z in solo_input.values()]
             legend_strings += solo_input.keys()
+        elif isinstance(solo_input, list) and looks_like_list_of_lists(solo_input):
+            # infer [[x1, y1], [x2, y2], ..., [xN, yN]]
+            x_data = [z[0] for z in solo_input]
+            y_data = [z[1] for z in solo_input]
         else:
             raise ValueError(f"Unknown input type: {type(solo_input)}")
 
     # Received two positional inputs (interpreted as x_data & y_data arrays, or a list of such arrays)
     elif num_positional_arguments == 2:
-        x_data = args[0]
-        y_data = args[1]
+        if len(args[0]) == len(args[1]):
+            # infer [x1, x2, ..., xN] and [y1, y2, ..., yN]
+            x_data = args[0]
+            y_data = args[1]
+        elif (not looks_like_list_of_lists(args[0])) or (looks_like_list_of_lists(args[0]) and (len(args[0]) == 1)):
+            if len(args[1]) > 1:
+                # infer fxn([x_all], [y1, y2, ..., yN], ...); also accepts: fxn(x_all, [y1, y2, ..., yN], ...)
+                x_data = [args[0]] * len(args[1])
+                y_data = args[1]
+
 
     # 3 inputs: for now this only handles a single x & y feature.  # TODO: extend to arbitrary number of pairs or y-axes
     elif num_positional_arguments == 3:
