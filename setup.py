@@ -69,7 +69,7 @@ setup(
     ],
     python_requires='>=3.6',
     install_requires=[
-        'numpy', 'pandas', 'matplotlib', 'seaborn', 'loguru', 'pydantic', 'statsmodels', 'pytz'
+        'numpy', 'pandas', 'matplotlib', 'seaborn', 'loguru', 'pydantic', 'statsmodels', 'pytz', 'pyarrow'
     ],
     extras_require={
         # eg:

@@ -51,7 +51,7 @@ class VectorMultiset(PickleUtils, Style, Rosetta):
         """
         return self.data
 
-    def from_dataframe(self, data_frame: pd.DataFrame, inplace: bool = True, **kwargs):
+    def from_dataframe(self, data_frame: pd.DataFrame, inplace: bool = True, **kwargs) -> Union[Any, None]:
         """ Makes an VectorMultiset from a pandas data frame
 
         :param data_frame: data frame to import
@@ -63,7 +63,7 @@ class VectorMultiset(PickleUtils, Style, Rosetta):
             for key, value in kwargs.items():
                 self.__setattr__(key, value)
         else:
-            return self.__class__(data=data_frame, **kwargs)
+            return self.construct(data=data_frame, **kwargs)
 
     def to_csv(self, file_path: Union[str, pathlib.Path] = None) -> None:
         """ Saves the data as a CSV file (note: this drops the name_root)
@@ -74,7 +74,7 @@ class VectorMultiset(PickleUtils, Style, Rosetta):
             file_path: str = f'default_filename_{time.time():.0f}.csv'
         self.data.to_csv(file_path=file_path)
 
-    def read_csv(self, file_path: Union[str, pathlib.Path], inplace: bool = True, **kwargs):
+    def read_csv(self, file_path: Union[str, pathlib.Path], inplace: bool = True, **kwargs) -> Union[Any, None]:
         """Reads data from a CSV file
 
         :param file_path: file to read
@@ -87,7 +87,29 @@ class VectorMultiset(PickleUtils, Style, Rosetta):
             for key, value in kwargs.items():
                 self.__setattr__(key, value)
         else:
-            return self.__class__(data=data, **kwargs)
+            return self.construct(data=data, **kwargs)
+
+    def to_feather(self, file_path: Union[str, pathlib.Path], inplace: bool = True, **kwargs) -> None:
+        """ Saves the data as a feather file (note: this drops the name_root). keyword
+
+        :param file_path: path to write the file
+        """
+        self.data.to_feather(file_path, **kwargs)
+
+    def read_feather(self, file_path: Union[str, pathlib.Path], inplace: bool = True, **kwargs) -> Union[Any, None]:
+        """Reads data from a CSV file
+
+        :param file_path: file to read
+        :param inplace: import inplace (default) or return the result
+        :return: Any
+        """
+        data: pd.DataFrame = pd.read_feather(file_path)
+        if inplace:
+            self.data = data
+            for key, value in kwargs.items():
+                self.__setattr__(key, value)
+        else:
+            return self.construct(data=data, **kwargs)
 
     ################
     # Visualizations
