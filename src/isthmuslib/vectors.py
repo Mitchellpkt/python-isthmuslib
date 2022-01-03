@@ -63,7 +63,7 @@ class VectorMultiset(PickleUtils, Style, Rosetta):
             for key, value in kwargs.items():
                 self.__setattr__(key, value)
         else:
-            return self.construct(data=data_frame, **kwargs)
+            return self._class__(data=data_frame, **kwargs)
 
     def to_csv(self, file_path: Union[str, pathlib.Path] = None) -> None:
         """ Saves the data as a CSV file (note: this drops the name_root)
@@ -72,14 +72,13 @@ class VectorMultiset(PickleUtils, Style, Rosetta):
         """
         if not file_path:
             file_path: str = f'default_filename_{time.time():.0f}.csv'
-        self.data.to_csv(file_path=file_path)
+        self.data.to_csv(file_path)
 
     def read_csv(self, file_path: Union[str, pathlib.Path], inplace: bool = True, **kwargs) -> Union[Any, None]:
         """Reads data from a CSV file
 
         :param file_path: file to read
         :param inplace: import inplace (default) or return the result
-        :return:
         """
         data: pd.DataFrame = pd.read_csv(file_path)
         if inplace:
@@ -87,7 +86,7 @@ class VectorMultiset(PickleUtils, Style, Rosetta):
             for key, value in kwargs.items():
                 self.__setattr__(key, value)
         else:
-            return self.construct(data=data, **kwargs)
+            return self.__class__(data=data, **kwargs)
 
     def to_feather(self, file_path: Union[str, pathlib.Path], inplace: bool = True, **kwargs) -> None:
         """ Saves the data as a feather file (note: this drops the name_root). keyword
@@ -101,7 +100,6 @@ class VectorMultiset(PickleUtils, Style, Rosetta):
 
         :param file_path: file to read
         :param inplace: import inplace (default) or return the result
-        :return: Any
         """
         data: pd.DataFrame = pd.read_feather(file_path)
         if inplace:
@@ -109,7 +107,7 @@ class VectorMultiset(PickleUtils, Style, Rosetta):
             for key, value in kwargs.items():
                 self.__setattr__(key, value)
         else:
-            return self.construct(data=data, **kwargs)
+            return self.__class__(data=data, **kwargs)
 
     ################
     # Visualizations
@@ -263,7 +261,7 @@ class VectorSequence(VectorMultiset):
     def __init__(self, **data: Any):
         super().__init__(**data)
         if self.data is not None:
-            self.sort()
+            self.sort(by=self.basis_col_name, inplace=True, reset_index=True)
             if self.error_if_basis_quality_issues:
                 is_ok, explanation = self.passes_basis_quality_checks()
                 if not is_ok:
