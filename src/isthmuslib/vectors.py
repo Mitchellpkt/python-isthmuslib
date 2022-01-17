@@ -6,7 +6,7 @@ import pandas as pd
 from loguru import logger
 from .config import Style
 from .utils import PickleUtils, Rosetta
-from .data_quality import basis_quality_checks, basis_quality_plots
+from .data_quality import basis_quality_checks, basis_quality_plots, fill_ratio
 from copy import deepcopy
 import statsmodels.api as sm
 from .plotting import visualize_x_y, visualize_1d_distribution, visualize_surface
@@ -63,7 +63,7 @@ class VectorMultiset(PickleUtils, Style, Rosetta):
             for key, value in kwargs.items():
                 self.__setattr__(key, value)
         else:
-            return self._class__(data=data_frame, **kwargs)
+            return self.__class__(data=data_frame, **kwargs)
 
     def to_csv(self, file_path: Union[str, pathlib.Path] = None) -> None:
         """ Saves the data as a CSV file (note: this drops the name_root)
@@ -283,7 +283,21 @@ class VectorSequence(VectorMultiset):
         return result
 
     def basis_quality_plots(self) -> List[plt.Figure]:
+        """ Creates a series of plots showing the basis data quality (missing data, nans, timeseries gaps, etc)
+
+        :return: figure handles for several plots
+        """
         return basis_quality_plots(self.data.loc[:, self.basis_col_name])
+
+    def fill_ratio(self) -> float:
+        """ Checks for how many data points are observed for the expected number of data points in a uniform basis.
+            Attempts to infer spacing from median of diffs. If used on non-uniform data the result is not meaningful.
+
+        Use example: [10, 20, 40, 50] has 0.8 fill ratio because it is missing the 30 to complete the set
+
+        :return: fractional amount of the array
+        """
+        return fill_ratio(self.data.loc[:, self.basis_col_name])
 
     def slice(self, start_at: Any = None, stop_at: Any = None, inplace: bool = False, reset_index: bool = True):
         """ Slices the VectorSequence according to the basis

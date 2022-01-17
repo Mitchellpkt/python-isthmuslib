@@ -66,6 +66,20 @@ def passes_basis_quality_checks(array: Any) -> bool:
     return result
 
 
+def fill_ratio(array: Any) -> float:
+    """ Helper function that identifies the ratio of missing values in a uniformly-spaced sequence of values.
+        Attempts to infer spacing from median of diffs. If used on non-uniform data the result is not meaningful.
+
+    Use example: [10, 20, 40, 50] has 0.8 fill ratio because it is missing the 30 to complete the set
+
+    :param array: Any 1D vector, like a list of integers or floats, numpy array, etc
+    :return: fractional amount of the array
+    """
+    ordered: Any = sorted(array)
+    theoretical_count = 1 + (max(array) - min(array)) / np.nanmedian([x[1] - x[0] for x in zip(ordered, ordered[1:])])
+    return len(array) / theoretical_count
+
+
 def basis_quality_plots(array: List[float], style: Style = None, which_plots: List[str] = None) -> List[plt.Figure]:
     """ Generates some standard plots for checking completeness and uniformity of an array
 
