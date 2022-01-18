@@ -119,7 +119,7 @@ def human_time(timestamp_sec: Union[float, str, int], formatter: str = '%Y-%m-%d
 
 
 def machine_time(time_or_times: Union[str, Any], units: str = 'seconds',
-                 disable_progress_bar: bool = True) -> Union[float, List[float]]:
+                 disable_progress_bar: bool = True, **kwargs) -> Union[float, List[float]]:
     """
     Convert a string to a timestamp
     @param time_or_times: datetime string to parse (or a list of them)
@@ -141,7 +141,7 @@ def machine_time(time_or_times: Union[str, Any], units: str = 'seconds',
         return float(multiplier * parser.parse(time_or_times).timestamp())
     else:
         return [float(multiplier * parser.parse(x).timestamp()) for x in
-                tqdm(time_or_times, disable=disable_progress_bar)]
+                tqdm(time_or_times, disable=disable_progress_bar, **kwargs)]
 
 
 def as_list(anything: Union[Any, List[Any]]) -> List[Any]:
