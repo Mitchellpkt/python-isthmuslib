@@ -8,6 +8,7 @@ from dateutil import parser
 import pandas as pd
 import pathlib
 import numpy as np
+from tqdm.auto import tqdm
 
 
 class PickleUtils(BaseModel):
@@ -117,20 +118,30 @@ def human_time(timestamp_sec: Union[float, str, int], formatter: str = '%Y-%m-%d
     return datetime_string
 
 
-def machine_time(time: str, units: str = 'seconds') -> float:
+def machine_time(time_or_times: Union[str, Any], units: str = 'seconds',
+                 disable_progress_bar: bool = True) -> Union[float, List[float]]:
     """
     Convert a string to a timestamp
-    @param time: datetime string to parse
+    @param time_or_times: datetime string to parse (or a list of them)
     @param units: seconds or milliseconds
+    @param disable_progress_bar: setting to False will activate a tqdm progress bar for conversions over lists
     @return: unix timestamp
     """
-    unix_time_sec: float = parser.parse(time).timestamp()
+
+    # Get the units multiplier
     if units in ['s', 'sec', 'second', 'seconds']:
-        return unix_time_sec
+        multiplier: int = 1
     elif units in ['ms', 'millisecond', 'milliseconds']:
-        return 1000 * unix_time_sec
+        multiplier: int = 1000
     else:
         raise ValueError(f"Unknown units: {units}")
+
+    # If just one string, drop it into a list
+    if isinstance(time_or_times, str):
+        return float(multiplier * parser.parse(time_or_times).timestamp())
+    else:
+        return [float(multiplier * parser.parse(x).timestamp()) for x in
+                tqdm(time_or_times, disable=disable_progress_bar)]
 
 
 def as_list(anything: Union[Any, List[Any]]) -> List[Any]:
