@@ -23,7 +23,7 @@ def read(*names, **kwargs):
 
 setup(
     name='isthmuslib',
-    version='0.0.43',
+    version='0.0.44',
     license='LGPL-3.0-only',
     description='Convenience utils for plotting, styling, and manipulating high-dimensional vectors',
     long_description='%s\n%s' % (
@@ -69,7 +69,7 @@ setup(
     ],
     python_requires='>=3.6',
     install_requires=[
-        'numpy', 'pandas', 'matplotlib', 'seaborn', 'loguru', 'pydantic', 'statsmodels', 'pytz', 'pyarrow'
+        'numpy', 'pandas', 'matplotlib', 'seaborn', 'loguru', 'pydantic', 'statsmodels', 'pytz', 'pyarrow', 'tqdm'
     ],
     extras_require={
         # eg:

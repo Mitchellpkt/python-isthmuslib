@@ -205,3 +205,8 @@ Changelog
 -------------------
 
 * tweak: no legend on viz_x_y(dataframe, x string, y string)
+
+0.0.44 (2022-01-18)
+-------------------
+
+* chore: fill ratio and vectorized machine time
