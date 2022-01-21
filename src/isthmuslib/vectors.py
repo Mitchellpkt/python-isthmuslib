@@ -170,6 +170,15 @@ class VectorMultiset(PickleUtils, Style, Rosetta):
         kwargs.setdefault('title', self.translate(z_name, missing_response='return_input'))
         return visualize_surface(self.data.loc[:, x_name], self.data.loc[:, y_name], self.data.loc[:, z_name], **kwargs)
 
+    def correlation_matrix(self, **kwargs) -> pd.DataFrame:
+        """
+        Very thin wrapper around correlation matrix (using pandas corr() method)
+
+        :param kwargs: additional keyword arguments for correlation_matrix (fed through to df.style.background_gradient)
+        :return: styled pandas dataframe
+        """
+        return correlation_matrix(self.data, **kwargs)
+
 
 class SlidingWindowResults(VectorMultiset):
     """ Results from Sequence.sliding_window(), which is a VectorMultiset with extra context baked in """
@@ -530,6 +539,47 @@ class VectorSequence(VectorMultiset):
         """
         result: InfoSurface = self.calculate_info_surface(window_widths=window_widths, cols=cols, *args, **kwargs)
         return result.plot_info_surface(singular_values=singular_values)
+
+    def correlation_matrix(self, exclude_basis: bool = True, **kwargs) -> pd.DataFrame:
+        """
+        Very thin wrapper around correlation matrix (using pandas corr() method)
+
+        :param exclude_basis: whether to exclude the basis column from correlation analysis
+        :param kwargs: additional keyword arguments for correlation_matrix (fed through to df.style.background_gradient)
+        :return: styled pandas dataframe
+        """
+        if exclude_basis:
+            if kwargs_in := kwargs.get('exclude_cols'):
+                if self.basis_col_name not in kwargs_in:
+                    kwargs['exclude_cols'] = kwargs_in + [self.basis_col_name]
+            else:
+                kwargs: dict[str, Any] = {'exclude_cols': self.basis_col_name}
+        return correlation_matrix(self.data, **kwargs)
+
+
+def correlation_matrix(dataframe: pd.DataFrame, use_cols: list[str] = None, exclude_cols: list[str] = None,
+                       correlation_method: str = 'pearson', style: Style = None, **kwargs) -> pd.DataFrame:
+    """
+    Returns a styled pandas data frame with correlation coefficients (Pearson by default), wraps pandas.corr()
+
+    :param dataframe: dataframe to analyze
+    :param use_cols: which columns to use
+    :param exclude_cols: which columns to exclude (NB: exclude overrides include)
+    :param correlation_method: Method of correlation {‘pearson’, ‘kendall’, ‘spearman’} or Callable
+    :param style: isthmuslib Style object for the colormap
+    :param kwargs: additional keyword arguments for df.style.background_gradient()
+    :return: styled pandas dataframe
+    """
+    if not use_cols:
+        use_cols: list[str] = dataframe.keys().tolist()
+    if exclude_cols:
+        use_cols: list[str] = [x for x in use_cols if x not in exclude_cols]
+    if style:
+        kwargs.setdefault('cmap', style.cmap)
+    else:
+        kwargs.setdefault('cmap', Style().cmap)
+    corr: pd.DataFrame = dataframe.loc[:, use_cols].corr(method=correlation_method)
+    return corr.style.background_gradient(**kwargs)  # noqa: misinterprets type
 
 
 def info_surface_slider(vs: VectorSequence, *args, **kwargs) -> Dict[str, Any]:

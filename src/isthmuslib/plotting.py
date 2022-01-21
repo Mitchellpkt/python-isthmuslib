@@ -280,6 +280,33 @@ def visualize_x_y(x_data: Any, y_data: Any, xlabel: str = '', ylabel: str = '', 
     return figure_handle
 
 
+def visualize_1d_distribution_interpreter(*args, **kwargs) -> plt.Figure:
+    """ Wrapper for visualize_x_y that can take as inputs:
+        + arrays
+        + lists
+        + data frame (+ feature names to plot)
+        """
+
+    data: Any = None
+    if (num_positional_arguments := len(args)) == 1:
+        data = args[0]
+
+    # Received two positional inputs (interpreted as x_data & y_data arrays, or a list of such arrays)
+    elif num_positional_arguments == 2:
+        if isinstance(args[0], pd.DataFrame):
+            if isinstance(args[1], list):
+                data = [args[0].loc[:, x].tolist() for x in args[1]]
+                kwargs.setdefault("legend_strings", args[1])
+            elif isinstance(args[1], str):
+                data = args[0].loc[:, args[1]].tolist()
+
+    # Pass through to visualize_1d_distribution
+    if data is not None:
+        return visualize_1d_distribution(data=data, **kwargs)
+    else:
+        raise ValueError("Issue encountered in visualize_1d_distribution_interpreter(), could not interpret the inputs")
+
+
 def visualize_x_y_input_interpreter(*args, **kwargs) -> plt.Figure:
     """ Wrapper for visualize_x_y that can take as inputs:
         + arrays
@@ -353,7 +380,7 @@ def visualize_x_y_input_interpreter(*args, **kwargs) -> plt.Figure:
     if (len(x_data) > 0) and (len(y_data) == len(x_data)):
         return visualize_x_y(x_data=x_data, y_data=y_data, **kwargs)
     else:
-        raise ValueError("Something went wrong in interpret_viz_inputs(), could not interpret the inputs")
+        raise ValueError("Issue encountered in visualize_x_y_input_interpreter(), could not interpret the inputs")
 
 
 def visualize_hist2d(x_data: Any, y_data: Any, xlabel: str = '', ylabel: str = '', title: str = '', style: Style = None,
@@ -379,6 +406,7 @@ def visualize_hist2d(x_data: Any, y_data: Any, xlabel: str = '', ylabel: str = '
     config: Style = Style()
     if style:
         config: Style = Style(**{**Style().dict(), **style.dict()})
+    kwargs.setdefault("cmap", config.cmap)
 
     x_data: List[Any] = to_list_if_other_array(x_data)
     y_data: List[Any] = to_list_if_other_array(y_data)
@@ -426,6 +454,7 @@ def visualize_surface(x_data, y_data, z_data, xlabel: str = '', ylabel: str = ''
     config: Style = Style()
     if style:
         config: Style = Style(**{**Style().dict(), **style.dict()})
+    kwargs.setdefault("cmap", config.cmap)
 
     x_data: List[Any] = to_list_if_other_array(x_data)
     y_data: List[Any] = to_list_if_other_array(y_data)
@@ -463,7 +492,7 @@ def surface_from_dataframe(df: pd.DataFrame, x_col_name: str = 'x', y_col_name: 
 # matplotlib.pyplot
 ###################
 
-hist: Callable[[Any], plt.Figure] = visualize_1d_distribution
+hist: Callable[[Any], plt.Figure] = visualize_1d_distribution_interpreter
 hist2d: Callable[[Any], plt.Figure] = visualize_hist2d
 surface: Callable[[Any], plt.Figure] = visualize_surface
 

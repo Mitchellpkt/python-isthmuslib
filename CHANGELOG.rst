@@ -210,3 +210,13 @@ Changelog
 -------------------
 
 * chore: fill ratio and vectorized machine time
+
+0.0.45 (2022-01-20)
+-------------------
+
+* chore: add input interpreter in front of histogram functionality
+
+0.0.46 (2022-01-21)
+-------------------
+
+* chore: attach correlation matrix wrapper
