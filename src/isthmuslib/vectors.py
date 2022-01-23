@@ -178,9 +178,9 @@ class VectorMultiset(PickleUtils, Style, Rosetta):
         kwargs.setdefault('title', self.translate(z_name, missing_response='return_input'))
         return visualize_surface(self.data.loc[:, x_name], self.data.loc[:, y_name], self.data.loc[:, z_name], **kwargs)
 
-    ##########
-    # STATS
-    ##########
+    ################
+    # Statistics
+    ################
 
     def correlation_matrix(self, **kwargs) -> pd.DataFrame:
         """
@@ -544,22 +544,6 @@ class VectorSequence(VectorMultiset):
             self.svd = svd
         return svd
 
-    # def singular_value_decomposition(self, cols: Union[str, List[str]] = None, cache_results: bool = False,
-    #                                  **kwargs) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
-    #     """ Helper function that wraps numpy svd to feed in a subset of data features (see kwarg: 'full_matrices')
-    #
-    #     :param cache_results: if True, saves u, s, and vh as the attribute 'svd' (an SVD class)
-    #     :param cols: which data features to use
-    #     :param kwargs: keyword arguments for SVD
-    #     :return: u, s, vh arrays
-    #     """
-    #     if not cols:
-    #         cols = [x for x in self.data.keys().tolist() if x != self.basis_col_name]
-    #     u, s, vh = np.linalg.svd(deepcopy(self.data.loc[:, cols]), **kwargs)
-    #     if cache_results:
-    #         self.svd = SVD(u=u, s=s, vh=vh)
-    #     return u, s, vh
-
     def calculate_info_surface(self, window_widths: List[float] = None, cols: Union[str, List[str]] = None, *args,
                                **kwargs) -> InfoSurface:
         """ Calculates the info surface by sliding the SVD function along the basis
@@ -610,9 +594,9 @@ class VectorSequence(VectorMultiset):
                 kwargs: dict[str, Any] = {'exclude_cols': self.basis_col_name}
         return correlation_matrix(self.data, **kwargs)
 
-    ############
-    # STATS
-    ############
+    ################
+    # Statistics
+    ################
 
 
 def correlation_matrix(dataframe: pd.DataFrame, use_cols: list[str] = None, exclude_cols: list[str] = None,
