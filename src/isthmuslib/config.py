@@ -1,6 +1,7 @@
 from pydantic import BaseModel
-from typing import Tuple, Dict, Any
+from typing import Tuple, Any
 from .utils import Rosetta
+from copy import deepcopy
 
 
 class Style(BaseModel):
@@ -38,6 +39,7 @@ class Style(BaseModel):
     good_color: Any = 'navy'
     bad_color: Any = 'firebrick'
     cmap: Any = 'inferno'
+    sequential_cmap: Any = 'Greens'
 
     def translate(self, key: str, **kwargs) -> str:
         """ Helper function that allows Style objects to translate text according to the provided Rosetta mappings
@@ -51,10 +53,29 @@ class Style(BaseModel):
         else:
             return key
 
-    def override(self, overrides: Dict[str, Any]):
+    def override(self, *args):
         """ Helper function that overrides specific style features
 
-        :param overrides: feature names and new values, e.g. ... = style.override({'color':'k', 'size':50})
         :return: returns a fresh copy of a Style object with the updated values
         """
-        return Style(**{**self.dict(), **overrides})
+
+        if not args:
+            return deepcopy(self)
+
+        elif len(args) == 1:
+            if args[0] is None:
+                return deepcopy(self)
+            elif isinstance(args[0], dict):
+                override_dict: dict[str, any] = args[0]
+            elif getattr(args[0], 'dict', None):
+                override_dict: dict[str, any] = args[0].dict()
+            else:
+                raise ValueError(f"Unsure how to interpret override input of type {type(args[0])}")
+
+        elif (len(args) == 2) and isinstance(args[0], str):
+            override_dict: dict[str, any] = {args[0]: args[1]}
+
+        else:
+            raise ValueError(f"Unsure how to interpret 3+ inputs to override")
+
+        return Style(**{**self.dict(), **override_dict})

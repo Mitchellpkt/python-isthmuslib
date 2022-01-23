@@ -5,6 +5,7 @@ import seaborn as sns
 from .config import Style
 from .utils import looks_like_list_of_lists, margin_calc, to_list_if_other_array
 from typing import List, Any, Union, Tuple, Callable
+import matplotlib
 
 
 ##################
@@ -135,10 +136,9 @@ def visualize_1d_distribution(data: Any, xlabel: str = '', ylabel: str = 'counts
     :param kwargs: additional keyword arguments for matplotlib.pyplot.hist()
     :return: figure handle for the plot
     """
-    # Use package style defaults for any fields not specified in style (or all fields if style object is not provided)
-    config: Style = Style()
-    if style:
-        config: Style = Style(**{**Style().dict(), **style.dict()})
+    # Set style. Overrides: kwargs > style input > Style() defaults
+    config: Style = Style(**Style().override(style).dict() | kwargs)
+    kwargs: dict[str, Any] = {k: v for k, v in kwargs.items() if k not in config.dict()}
 
     # If not specified, try to ascertain whether one or multiple data sets are being provided
     if multi or ((multi is None) and looks_like_list_of_lists(data)):
@@ -205,13 +205,13 @@ def visualize_x_y(x_data: Any, y_data: Any, xlabel: str = '', ylabel: str = '', 
     :param xlim: optional bound for the x-axis
     :param ylim: optional bound for the y-axis
     :param kwargs: additional keyword arguments for matplotlib.pyplot.scatter()
+    :param rolling_median_width: window width for rolling average taken by df.y.rolling(rolling_mean_width).mean()
+    :param rolling_mean_width: window width for rolling average taken by df.y.rolling(rolling_median_width).median()
     :return: figure handle for the plot
     """
-
-    # Use package style defaults for any fields not specified in style (or all fields if style object is not provided)
-    config: Style = Style()
-    if style:
-        config: Style = Style(**{**Style().dict(), **style.dict()})
+    # Set style. Overrides: kwargs > style input > Style() defaults
+    config: Style = Style(**Style().override(style).dict() | kwargs)
+    kwargs: dict[str, Any] = {k: v for k, v in kwargs.items() if k not in config.dict()}
 
     x_data: List[Any] = to_list_if_other_array(x_data)
     y_data: List[Any] = to_list_if_other_array(y_data)
@@ -299,6 +299,7 @@ def visualize_1d_distribution_interpreter(*args, **kwargs) -> plt.Figure:
                 kwargs.setdefault("legend_strings", args[1])
             elif isinstance(args[1], str):
                 data = args[0].loc[:, args[1]].tolist()
+                kwargs.setdefault("xlabel", args[1])
 
     # Pass through to visualize_1d_distribution
     if data is not None:
@@ -350,7 +351,6 @@ def visualize_x_y_input_interpreter(*args, **kwargs) -> plt.Figure:
                 x_data = [args[0]] * len(args[1])
                 y_data = args[1]
 
-
     # 3 inputs: for now this only handles a single x & y feature.  # TODO: extend to arbitrary number of pairs or y-axes
     elif num_positional_arguments == 3:
         # Check that the 2nd and 3rd inputs are strings (feature names)
@@ -386,7 +386,7 @@ def visualize_x_y_input_interpreter(*args, **kwargs) -> plt.Figure:
 def visualize_hist2d(x_data: Any, y_data: Any, xlabel: str = '', ylabel: str = '', title: str = '', style: Style = None,
                      watermark: str = '', plot_best_fit: Union[bool, int] = False,
                      xlim: Any = None, ylim: Any = None, show_colorbar: bool = True,
-                     colorbar_label: str = 'counts', **kwargs) -> plt.Figure:
+                     colorbar_label: str = 'counts', zscale: str = 'linear', **kwargs) -> plt.Figure:
     """ Visualize a 2-dimensional histogram (basically a heatmap of counts)
 
     :param x_data: can be an list-like object or a list of list-like objects (for multiple traces)
@@ -399,20 +399,26 @@ def visualize_hist2d(x_data: Any, y_data: Any, xlabel: str = '', ylabel: str = '
     :param plot_best_fit: whether to plot the best fit lines (specify degree, or pass True for degree 1)
     :param xlim: optional bound for the x-axis
     :param ylim: optional bound for the y-axis
+    :param zscale: whether the colormap should be 'linear' or 'log'
+    :param colorbar_label: text label to place next to the colorbar
+    :param show_colorbar: whether to include the colorbar on teh plot
     :param kwargs: additional keyword arguments for matplotlib.pyplot.hist2d()
     :return: figure handle for the plot
     """
-    # Use package style defaults for any fields not specified in style (or all fields if style object is not provided)
-    config: Style = Style()
-    if style:
-        config: Style = Style(**{**Style().dict(), **style.dict()})
-    kwargs.setdefault("cmap", config.cmap)
+    # Set style. Overrides: kwargs > style input > Style() defaults
+    config: Style = Style(**Style().override(style).dict() | kwargs)
+    kwargs: dict[str, Any] = {k: v for k, v in kwargs.items() if (k not in config.dict()) or (k == 'cmap')}
+    kwargs.setdefault("cmap", config.sequential_cmap)
 
     x_data: List[Any] = to_list_if_other_array(x_data)
     y_data: List[Any] = to_list_if_other_array(y_data)
 
     # Make the plot
     figure_handle: plt.Figure = plt.figure(facecolor=config.facecolor, figsize=config.figsize)
+    if zscale.lower() == 'log':
+        kwargs.setdefault('norm', matplotlib.colors.LogNorm())
+    elif zscale.lower() != 'linear':
+        raise ValueError(f"zscale should be 'linear' or 'log' but received: {zscale}")
     plt.hist2d(x_data, y_data, **kwargs)
     if plot_best_fit:
         if isinstance(plot_best_fit, int):
@@ -447,14 +453,14 @@ def visualize_surface(x_data, y_data, z_data, xlabel: str = '', ylabel: str = ''
     :param ylim: optional bound for the y-axis
     :param style: configuration object (optional)
     :param watermark: watermark text
+    :param y_axis_ascending: sort the axis low to high values bottom to top
     :param kwargs: additional keyword arguments for seaborn heatmap()
     :return: figure handle for the plot
     """
-    # Use package style defaults for any fields not specified in style (or all fields if style object is not provided)
-    config: Style = Style()
-    if style:
-        config: Style = Style(**{**Style().dict(), **style.dict()})
-    kwargs.setdefault("cmap", config.cmap)
+    # Set style. Overrides: kwargs > style input > Style() defaults
+    config: Style = Style(**Style().override(style).dict() | kwargs)
+    kwargs: dict[str, Any] = {k: v for k, v in kwargs.items() if (k not in config.dict()) or (k == 'cmap')}
+    kwargs.setdefault("cmap", config.sequential_cmap)
 
     x_data: List[Any] = to_list_if_other_array(x_data)
     y_data: List[Any] = to_list_if_other_array(y_data)

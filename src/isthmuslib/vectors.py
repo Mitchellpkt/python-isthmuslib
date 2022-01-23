@@ -11,12 +11,20 @@ from copy import deepcopy
 import statsmodels.api as sm
 from .plotting import visualize_x_y, visualize_1d_distribution, visualize_surface
 import pathlib
+from pydantic import BaseModel
+
+
+class SVD(BaseModel):
+    u: Any
+    s: Any
+    vh: Any
 
 
 class VectorMultiset(PickleUtils, Style, Rosetta):
     """ A set of vectors (which may or may not be ordered)"""
     data: pd.DataFrame = None
     name_root: str = None
+    svd: SVD = None
 
     class Config:
         arbitrary_types_allowed = True
@@ -88,7 +96,7 @@ class VectorMultiset(PickleUtils, Style, Rosetta):
         else:
             return self.__class__(data=data, **kwargs)
 
-    def to_feather(self, file_path: Union[str, pathlib.Path], inplace: bool = True, **kwargs) -> None:
+    def to_feather(self, file_path: Union[str, pathlib.Path], **kwargs) -> None:
         """ Saves the data as a feather file (note: this drops the name_root). keyword
 
         :param file_path: path to write the file
@@ -170,6 +178,10 @@ class VectorMultiset(PickleUtils, Style, Rosetta):
         kwargs.setdefault('title', self.translate(z_name, missing_response='return_input'))
         return visualize_surface(self.data.loc[:, x_name], self.data.loc[:, y_name], self.data.loc[:, z_name], **kwargs)
 
+    ##########
+    # STATS
+    ##########
+
     def correlation_matrix(self, **kwargs) -> pd.DataFrame:
         """
         Very thin wrapper around correlation matrix (using pandas corr() method)
@@ -178,6 +190,23 @@ class VectorMultiset(PickleUtils, Style, Rosetta):
         :return: styled pandas dataframe
         """
         return correlation_matrix(self.data, **kwargs)
+
+    def singular_value_decomposition(self, cols: Union[str, List[str]] = None,
+                                     cache_results: bool = False,
+                                     **kwargs) -> SVD:
+        """ Applies singular value decomposition
+
+        :param cache_results: if True, saves u, s, and vh as the attribute 'svd' (an SVD class)
+        :param cols: which data features to use
+        :param kwargs: keyword arguments for SVD
+        :return: u, s, vh arrays
+        """
+        if not cols:
+            cols = self.data.keys().tolist()
+        svd: SVD = singular_value_decomposition(self.data, cols, **kwargs)
+        if cache_results:
+            self.svd = svd
+        return svd
 
 
 class SlidingWindowResults(VectorMultiset):
@@ -193,7 +222,6 @@ class SlidingWindowResults(VectorMultiset):
         """ Plot any sequence (based on the data frame column name)
 
         :param col_name: dataframe column to plot
-        :param title: specify a custom title if desired
         :param legend_override: specify custom legend keys if desired
         :return: figure handle
         """
@@ -246,7 +274,7 @@ class SlidingWindowResults(VectorMultiset):
 class InfoSurface(SlidingWindowResults):
     """ Wrapper for SlidingWindowResults that knows how to plot the infosurface """
 
-    def plot_info_surface(self, singular_values: List[int] = None) -> List[plt.Figure]:
+    def plot_info_surface(self, singular_values: List[int] = None, **kwargs) -> List[plt.Figure]:
         """ Plot the info surface showing value of singular vectors as a function of window start and width
 
         :param singular_values: Which singular values to plot [1, 2, 3] by default
@@ -256,7 +284,7 @@ class InfoSurface(SlidingWindowResults):
         if not singular_values:
             singular_values: List[int] = [1, 2, 3]
         for s in singular_values:
-            figure_handles.append(self.heatmap_feature(f"singular_value_{s}", title=f'Singular value # {s}'))
+            figure_handles.append(self.heatmap_feature(f"singular_value_{s}", title=f'Singular value # {s}', **kwargs))
         return figure_handles
 
 
@@ -456,10 +484,10 @@ class VectorSequence(VectorMultiset):
         if not title:
             title: str = self.translate(self.name_root)
 
-        def add_labels(xlabel: str, ylabel: str) -> None:
-            plt.xlabel(xlabel, size=self.label_fontsize)
+        def add_labels(x_label: str, y_label: str) -> None:
+            plt.xlabel(x_label, size=self.label_fontsize)
+            plt.ylabel(y_label, size=self.label_fontsize)
             plt.legend(fontsize=self.legend_fontsize)
-            plt.ylabel(ylabel, size=self.label_fontsize)
 
         decomposition = self.seasonal_decompose(col, period, **kwargs)
         figure_handles: List[plt.Figure] = []
@@ -500,17 +528,37 @@ class VectorSequence(VectorMultiset):
 
         return figure_handles
 
-    def singular_value_decomposition(self, cols: Union[str, List[str]] = None,
-                                     **kwargs) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
-        """ Helper function that wraps numpy svd to feed in a subset of data features (see kwarg: 'full_matrices')
+    def singular_value_decomposition(self, cols: Union[str, List[str]] = None, cache_results: bool = False,
+                                     **kwargs) -> SVD:
+        """ Applies singular value decomposition, skipping the basis column
 
+        :param cache_results: if True, saves u, s, and vh as the attribute 'svd' (an SVD class)
         :param cols: which data features to use
         :param kwargs: keyword arguments for SVD
         :return: u, s, vh arrays
         """
         if not cols:
             cols = [x for x in self.data.keys().tolist() if x != self.basis_col_name]
-        return np.linalg.svd(deepcopy(self.data.loc[:, cols]), **kwargs)
+        svd: SVD = singular_value_decomposition(self.data, cols, **kwargs)
+        if cache_results:
+            self.svd = svd
+        return svd
+
+    # def singular_value_decomposition(self, cols: Union[str, List[str]] = None, cache_results: bool = False,
+    #                                  **kwargs) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+    #     """ Helper function that wraps numpy svd to feed in a subset of data features (see kwarg: 'full_matrices')
+    #
+    #     :param cache_results: if True, saves u, s, and vh as the attribute 'svd' (an SVD class)
+    #     :param cols: which data features to use
+    #     :param kwargs: keyword arguments for SVD
+    #     :return: u, s, vh arrays
+    #     """
+    #     if not cols:
+    #         cols = [x for x in self.data.keys().tolist() if x != self.basis_col_name]
+    #     u, s, vh = np.linalg.svd(deepcopy(self.data.loc[:, cols]), **kwargs)
+    #     if cache_results:
+    #         self.svd = SVD(u=u, s=s, vh=vh)
+    #     return u, s, vh
 
     def calculate_info_surface(self, window_widths: List[float] = None, cols: Union[str, List[str]] = None, *args,
                                **kwargs) -> InfoSurface:
@@ -527,7 +575,7 @@ class VectorSequence(VectorMultiset):
         return InfoSurface(**result.dict())
 
     def plot_info_surface(self, window_widths: List[float] = None, cols: Union[str, List[str]] = None,
-                          singular_values: List[int] = None, *args, **kwargs) -> List[plt.Figure]:
+                          singular_values: List[int] = None, style: Style = None, *args, **kwargs) -> List[plt.Figure]:
         """ Calculates and plots the info surface: value of singular vectors as a function of window start and width
 
         :param window_widths: window widths for the sliding window analysis
@@ -535,10 +583,16 @@ class VectorSequence(VectorMultiset):
         :param singular_values: singular values for which to plot the surface (default: [1, 2, 3])
         :param args: args for sliding window analysis and eval function
         :param kwargs: kwargs for sliding window analysis and eval function
+        :param style: isthmuslib Style object for the colormap
         :return: list of figure handles
         """
-        result: InfoSurface = self.calculate_info_surface(window_widths=window_widths, cols=cols, *args, **kwargs)
-        return result.plot_info_surface(singular_values=singular_values)
+        # Set style. Overrides: kwargs > style input > Style() defaults
+        config: Style = Style(**Style().override(style).dict() | kwargs)
+        svd_kwargs: dict[str, Any] = {k: v for k, v in kwargs.items() if k not in config.dict()}
+        style_kwargs: dict[str, Any] = {k: v for k, v in kwargs.items() if k in config.dict()}
+
+        result: InfoSurface = self.calculate_info_surface(window_widths=window_widths, cols=cols, *args, **svd_kwargs)
+        return result.plot_info_surface(singular_values=singular_values, **style_kwargs)
 
     def correlation_matrix(self, exclude_basis: bool = True, **kwargs) -> pd.DataFrame:
         """
@@ -555,6 +609,10 @@ class VectorSequence(VectorMultiset):
             else:
                 kwargs: dict[str, Any] = {'exclude_cols': self.basis_col_name}
         return correlation_matrix(self.data, **kwargs)
+
+    ############
+    # STATS
+    ############
 
 
 def correlation_matrix(dataframe: pd.DataFrame, use_cols: list[str] = None, exclude_cols: list[str] = None,
@@ -590,8 +648,19 @@ def info_surface_slider(vs: VectorSequence, *args, **kwargs) -> Dict[str, Any]:
     :param kwargs: kwargs for svd
     :return: dictionary with singular values
     """
-    _, s, _ = vs.singular_value_decomposition(*args, **kwargs)
-    return {f"singular_value_{i + 1}": value for i, value in enumerate(s)}
+    svd: SVD = vs.singular_value_decomposition(*args, **kwargs)
+    return {f"singular_value_{i + 1}": value for i, value in enumerate(svd.s)}
+
+
+def singular_value_decomposition(df: pd.DataFrame, cols: Union[str, List[str]] = None, **kwargs) -> SVD:
+    """ Helper function that wraps numpy svd to feed in a subset of data features (see kwarg: 'full_matrices')
+
+    :param cols: which data features to use
+    :param kwargs: keyword arguments for SVD
+    :return: u, s, vh arrays
+    """
+    u, s, vh = np.linalg.svd(deepcopy(df.loc[:, cols]), **kwargs)
+    return SVD(u=u, s=s, vh=vh)
 
 
 class OrderedSeries:

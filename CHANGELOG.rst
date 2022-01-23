@@ -220,3 +220,8 @@ Changelog
 -------------------
 
 * chore: attach correlation matrix wrapper
+
+0.0.47 (2022-01-21)
+-------------------
+
+* tweak: kwargs > style > Style()
