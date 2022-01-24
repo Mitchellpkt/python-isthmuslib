@@ -225,3 +225,8 @@ Changelog
 -------------------
 
 * tweak: kwargs > style > Style()
+
+0.0.48 (2022-01-23)
+-------------------
+
+* chore: surfaces, svd container, and feature selection / aggregation

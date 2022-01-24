@@ -9,9 +9,10 @@ from .utils import PickleUtils, Rosetta
 from .data_quality import basis_quality_checks, basis_quality_plots, fill_ratio
 from copy import deepcopy
 import statsmodels.api as sm
-from .plotting import visualize_x_y, visualize_1d_distribution, visualize_surface
+from .plotting import visualize_x_y, visualize_1d_distribution, visualize_surface, visualize_embedded_surface
 import pathlib
 from pydantic import BaseModel
+from sklearn.feature_selection import SelectKBest, chi2
 
 
 class SVD(BaseModel):
@@ -178,6 +179,11 @@ class VectorMultiset(PickleUtils, Style, Rosetta):
         kwargs.setdefault('title', self.translate(z_name, missing_response='return_input'))
         return visualize_surface(self.data.loc[:, x_name], self.data.loc[:, y_name], self.data.loc[:, z_name], **kwargs)
 
+    def visualize_embedded_surface(self, x_col_name: str, y_col_name: str, z_col_name: str, **kwargs) -> plt.Figure:
+        """ Plots a surface (2D embedded in 3D) based on vector features"""
+        return visualize_embedded_surface(self.data.loc[:, x_col_name], self.data.loc[:, y_col_name],
+                                          self.data.loc[:, z_col_name], **kwargs)
+
     ################
     # Statistics
     ################
@@ -207,6 +213,52 @@ class VectorMultiset(PickleUtils, Style, Rosetta):
         if cache_results:
             self.svd = svd
         return svd
+
+    def to_surface_df(self, group_by_col_names: list[str], aggregation_method: str = 'max', **kwargs) -> pd.DataFrame:
+        """ Thin wrapper that aggregates the data to a surface, using pandas methods like mean, median, max, etc
+
+        :param group_by_col_names: axes for the surface (i.e. how to bin the data)
+        :param aggregation_method: how to combine multiple data points in the same bin
+        :param kwargs: additional keyword arguments for pandas groupby method
+        :return: data frame with combined according `aggregation_method` into bins of `group_by_col_names`
+        """
+        return getattr(self.data.groupby(by=group_by_col_names, **kwargs), aggregation_method)().reset_index(drop=False)
+
+    def plot_projection_to_surface(self, surface_axes_names: list[str] | tuple[str, str], z_axis_name: str,
+                                   aggregation_method: str = 'max', **kwargs) -> plt.Figure:
+        if len(surface_axes_names) != 2:
+            raise ValueError(f"plot_projection is intended to be used with 2D surfaces")
+        df_surface: pd.DataFrame = self.to_surface_df(group_by_col_names=surface_axes_names,
+                                                      aggregation_method=aggregation_method,
+                                                      **kwargs)
+        return visualize_x_y(df_surface.loc[:, surface_axes_names[0]],
+                             df_surface.loc[:, surface_axes_names[1]],
+                             c=df_surface.loc[:, z_axis_name].tolist(),
+                             xlabel=self.translate(surface_axes_names[0]),
+                             ylabel=self.translate(surface_axes_names[1]),
+                             colorbar_label=self.translate(z_axis_name))
+
+    def feature_selection_univariate(self, target_feature_name: str, input_feature_names: list[str] = None,
+                                     k_best: int = 3, normalize: bool = True, **kwargs) -> any:
+        """ Feature selection of k best using univariate methods.
+
+        :param target_feature_name: column name of the target feature
+        :param input_feature_names: column names of the input features
+        :param k_best: how many features to return
+        :param normalize: if True, scales input features to unit mean
+        :param kwargs: additional keyword arguments passed through to scikit-learn SelectKBest
+        :return: trimmed input feature data set
+        """
+        if not input_feature_names:
+            input_feature_names = [x for x in self.data.keys() if x != target_feature_name]
+        input_feature_data = self.data.loc[:, input_feature_names]
+        if normalize:
+            for fieldname in input_feature_data.keys():
+                std_dev: float = float(np.std(this_field_data := self.data.loc[:, fieldname]))
+                input_feature_data[fieldname] = [x / std_dev for x in this_field_data]
+
+        target_feature_data = self.data.loc[:, target_feature_name].to_numpy()
+        return SelectKBest(chi2, k=k_best).fit_transform(input_feature_data, target_feature_data, **kwargs)
 
 
 class SlidingWindowResults(VectorMultiset):
@@ -639,6 +691,7 @@ def info_surface_slider(vs: VectorSequence, *args, **kwargs) -> Dict[str, Any]:
 def singular_value_decomposition(df: pd.DataFrame, cols: Union[str, List[str]] = None, **kwargs) -> SVD:
     """ Helper function that wraps numpy svd to feed in a subset of data features (see kwarg: 'full_matrices')
 
+    :param df: pandas dataframe to analyze
     :param cols: which data features to use
     :param kwargs: keyword arguments for SVD
     :return: u, s, vh arrays

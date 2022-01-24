@@ -5,6 +5,7 @@ import seaborn as sns
 from .config import Style
 from .utils import looks_like_list_of_lists, margin_calc, to_list_if_other_array
 from typing import List, Any, Union, Tuple, Callable
+from mpl_toolkits.mplot3d import Axes3D
 import matplotlib
 
 
@@ -186,8 +187,10 @@ def visualize_x_y(x_data: Any, y_data: Any, xlabel: str = '', ylabel: str = '', 
                   log_axes: Union[str, List[str]] = '', types: Union[str, List[str]] = 'scatter', style: Style = None,
                   watermark: str = '', multi: bool = None, legend_strings: Union[Tuple[str], List[str]] = None,
                   xlim: Any = None, ylim: Any = None, plot_best_fit: Union[bool, int] = False,
-                  rolling_mean_width: int = None, rolling_median_width: int = None, **kwargs) -> plt.Figure:
+                  rolling_mean_width: int = None, rolling_median_width: int = None, show_colorbar: bool = False,
+                  log_norm_colors: bool = False, colorbar_label: str = None, **kwargs) -> plt.Figure:
     """ Core function for visualizing 2-dimensional data sets
+
 
     :param x_data: can be an array-like object or a list of array-like objects (for multiple traces)
     :param y_data: can be an array-like object or a list of array-like objects (for multiple traces)
@@ -208,6 +211,9 @@ def visualize_x_y(x_data: Any, y_data: Any, xlabel: str = '', ylabel: str = '', 
     :param rolling_median_width: window width for rolling average taken by df.y.rolling(rolling_mean_width).mean()
     :param rolling_mean_width: window width for rolling average taken by df.y.rolling(rolling_median_width).median()
     :return: figure handle for the plot
+    :param colorbar_label: optional label for the colorbar
+    :param log_norm_colors: set to True to normalize the colorbar scale
+    :param show_colorbar: set to True to show colorbar
     """
     # Set style. Overrides: kwargs > style input > Style() defaults
     config: Style = Style(**Style().override(style).dict() | kwargs)
@@ -239,7 +245,11 @@ def visualize_x_y(x_data: Any, y_data: Any, xlabel: str = '', ylabel: str = '', 
             y_array: np.ndarray = np.asarray(data_set[1])
 
         if 'scatter' in types:
-            scatter_handles.append(plt.scatter(x_array, y_array, config.markersize, color=config.color, **kwargs))
+            if log_norm_colors:
+                kwargs.setdefault('norm', matplotlib.colors.LogNorm())
+            if kwargs.get("c") is None:
+                kwargs.setdefault("color", config.color)
+            scatter_handles.append(plt.scatter(x_array, y_array, config.markersize, **kwargs))
 
         if includes_line_plot := any(x in types for x in ['plot', 'line']):
             p = plt.plot(x_array, y_array, color=config.color, linewidth=config.linewidth)
@@ -273,6 +283,9 @@ def visualize_x_y(x_data: Any, y_data: Any, xlabel: str = '', ylabel: str = '', 
     if 'y' in cumulative:
         ylabel_buffer += ' (cumulative)'
     apply_plot_labels(xlabel=xlabel_buffer, ylabel=ylabel_buffer, title=title, style=config)
+    if show_colorbar:
+        cbar: plt.colorbar.Colorbar = plt.colorbar()
+        cbar.set_label(colorbar_label, rotation=90, fontsize=config.label_fontsize)
     if legend_strings and ('scatter' in types):
         plt.legend(scatter_handles, legend_strings, fontsize=config.legend_fontsize)
     adjust_axes(log_axes=log_axes, style=config, xlim=xlim, ylim=ylim)
@@ -477,10 +490,57 @@ def visualize_surface(x_data, y_data, z_data, xlabel: str = '', ylabel: str = ''
     # Adjust view & style where applicable
     plt.xlim(xlim)
     plt.ylim(ylim)
+
     apply_plot_labels(xlabel=xlabel, ylabel=ylabel, title=title, style=config)
     apply_watermark(watermark, style=config)
     if y_axis_ascending:
         ax.invert_yaxis()
+    return figure_handle
+
+
+def visualize_embedded_surface(x_data, y_data, z_data, xlabel: str = '', ylabel: str = '', title: str = '',
+                               xlim: Any = None, ylim: Any = None, style: Style = None,
+                               show_colorbar: bool = True, log_norm_colors: bool = True, **kwargs) -> plt.Figure:
+    """ Plots a 2D surface in 3D
+
+    :param x_data: can be an list-like object or a list of list-like objects (for multiple traces)
+    :param y_data: can be an list-like object or a list of list-like objects (for multiple traces)
+    :param z_data: can be an list-like object or a list of list-like objects (for multiple traces)
+    :param xlabel: label text for the x-axis
+    :param ylabel: label text for the y-axis
+    :param title: title text
+    :param xlim: optional bound for the x-axis
+    :param ylim: optional bound for the y-axis
+    :param style: configuration object (optional)
+    :param kwargs: additional keyword arguments for seaborn heatmap()
+    :param log_norm_colors: set to True to normalize the colorbar scale
+    :param show_colorbar: set to True to show colorbar
+    :return: figure handle for the plot
+    """
+    # Set style. Overrides: kwargs > style input > Style() defaults
+    config: Style = Style(**Style().override(style).dict() | kwargs)
+    kwargs: dict[str, Any] = {k: v for k, v in kwargs.items() if (k not in config.dict()) or (k == 'cmap')}
+    kwargs.setdefault("cmap", config.sequential_cmap)
+
+    x_data: List[Any] = to_list_if_other_array(x_data)
+    y_data: List[Any] = to_list_if_other_array(y_data)
+    z_data: List[Any] = to_list_if_other_array(z_data)
+
+    # Make the plot
+    figure_handle: plt.Figure = plt.figure(facecolor=config.facecolor, figsize=config.figsize)
+    ax = Axes3D(figure_handle)
+    if log_norm_colors:
+        kwargs.setdefault('norm', matplotlib.colors.LogNorm())
+    figure_surface = ax.plot_trisurf(x_data, y_data, z_data, **kwargs)
+
+    # Adjust view & style where applicable
+    plt.xlim(xlim)
+    plt.ylim(ylim)
+
+    if show_colorbar:
+        figure_handle.colorbar(figure_surface, shrink=0.5, aspect=5)
+    apply_plot_labels(xlabel=xlabel, ylabel=ylabel, title=title, style=config)
+    plt.show()
     return figure_handle
 
 

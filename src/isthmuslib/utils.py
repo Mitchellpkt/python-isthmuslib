@@ -191,3 +191,14 @@ def to_list_if_other_array(array: Any) -> List[Any]:
     if isinstance(array, (np.ndarray, pd.Series)):
         return array.tolist()
     return array
+
+
+def zero_mean_unit_deviation(array: any) -> list[float]:
+    """ Helper function that maps a vector to zero mean and unit standard deviation
+
+    :param array: anything that looks like an array
+    :return: list with the normalized values
+    """
+    std_dev: float = float(np.std(array))
+    mean: float = float(np.mean(array))
+    return [(x - std_dev) / mean for x in array]

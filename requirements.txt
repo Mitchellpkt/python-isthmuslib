@@ -7,3 +7,4 @@ pydantic
 statsmodels
 pytz
 tqdm
+scikit-learn
