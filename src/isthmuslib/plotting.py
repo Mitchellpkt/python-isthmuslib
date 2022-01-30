@@ -138,9 +138,7 @@ def visualize_1d_distribution(data: Any, xlabel: str = '', ylabel: str = 'counts
     :return: figure handle for the plot
     """
     # Set style. Overrides: kwargs > style input > Style() defaults
-
     config: Style = Style(**{**Style().dict(), **make_dict(style), **make_dict(kwargs)})
-
     kwargs: Dict[str, Any] = {k: v for k, v in kwargs.items() if k not in config.dict()}
 
     # If not specified, try to ascertain whether one or multiple data sets are being provided
@@ -301,7 +299,7 @@ def visualize_1d_distribution_interpreter(*args, **kwargs) -> plt.Figure:
         + lists
         + data frame (+ feature names to plot)
         """
-
+    config: Style = kwargs.get("style", Style())
     data: Any = None
     if (num_positional_arguments := len(args)) == 1:
         data = args[0]
@@ -311,10 +309,10 @@ def visualize_1d_distribution_interpreter(*args, **kwargs) -> plt.Figure:
         if isinstance(args[0], pd.DataFrame):
             if isinstance(args[1], list):
                 data = [args[0].loc[:, x].tolist() for x in args[1]]
-                kwargs.setdefault("legend_strings", args[1])
+                kwargs.setdefault("legend_strings", [config.translate(x) for x in args[1]])
             elif isinstance(args[1], str):
                 data = args[0].loc[:, args[1]].tolist()
-                kwargs.setdefault("xlabel", args[1])
+                kwargs.setdefault("xlabel", config.translate(args[1]))
 
     # Pass through to visualize_1d_distribution
     if data is not None:
@@ -332,7 +330,7 @@ def visualize_x_y_input_interpreter(*args, **kwargs) -> plt.Figure:
         + VectorMultiSet
         + VectorSequence
         """
-
+    config: Style = kwargs.get("style", Style())
     x_data: list = []
     y_data: list = []
     legend_strings: List[str] = []
@@ -385,8 +383,8 @@ def visualize_x_y_input_interpreter(*args, **kwargs) -> plt.Figure:
             raise ValueError(f"Expected positional arguments for feature names, got {args[1]} and {args[2]}")
         x_data = df[args[1]]
         y_data = df[args[2]]
-        kwargs.setdefault('xlabel', args[1])
-        kwargs.setdefault('ylabel', args[2])
+        kwargs.setdefault('xlabel', config.translate(args[1]))
+        kwargs.setdefault('ylabel', config.translate(args[2]))
 
     # Only use the auto-generated legend strings if user did not specify legend_strings
     kwargs.setdefault("legend_strings", legend_strings)
