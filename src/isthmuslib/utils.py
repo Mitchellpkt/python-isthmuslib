@@ -90,6 +90,12 @@ class Rosetta(BaseModel):
             raise KeyError(f"Key {key} is already in mappings, and silent_overwrite is False")
         self.stone[key] = value
 
+    def human_time(self, *args, **kwargs) -> str:
+        return human_time(*args, **kwargs)
+
+    def machine_time(self, *args, **kwargs) -> float:
+        return machine_time(*args, **kwargs)
+
     def __add__(self, other):
         """ Rosetta objects can be combined. Note: if both stones have the same key with a different value,
             the output will reflect the value from the second (`other`) stone """
@@ -201,7 +207,7 @@ def zero_mean_unit_deviation(array: any) -> List[float]:
     """
     std_dev: float = float(np.std(array))
     mean: float = float(np.mean(array))
-    return [(x - std_dev) / mean for x in array]
+    return [(x - mean) / std_dev for x in array]
 
 
 def make_dict(d: Union[Dict, object, None]) -> Dict[Any, Any]:
