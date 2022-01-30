@@ -4,9 +4,9 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from loguru import logger
-from .config import Style
-from .utils import PickleUtils, Rosetta
-from .data_quality import basis_quality_checks, basis_quality_plots, fill_ratio
+from src.isthmuslib.config import Style
+from src.isthmuslib.utils import PickleUtils, Rosetta, make_dict
+from src.isthmuslib.data_quality import basis_quality_checks, basis_quality_plots, fill_ratio
 from copy import deepcopy
 import statsmodels.api as sm
 from .plotting import visualize_x_y, visualize_1d_distribution, visualize_surface, visualize_embedded_surface
@@ -214,7 +214,7 @@ class VectorMultiset(PickleUtils, Style, Rosetta):
             self.svd = svd
         return svd
 
-    def to_surface_df(self, group_by_col_names: list[str], aggregation_method: str = 'max', **kwargs) -> pd.DataFrame:
+    def to_surface_df(self, group_by_col_names: List[str], aggregation_method: str = 'max', **kwargs) -> pd.DataFrame:
         """ Thin wrapper that aggregates the data to a surface, using pandas methods like mean, median, max, etc
 
         :param group_by_col_names: axes for the surface (i.e. how to bin the data)
@@ -224,7 +224,7 @@ class VectorMultiset(PickleUtils, Style, Rosetta):
         """
         return getattr(self.data.groupby(by=group_by_col_names, **kwargs), aggregation_method)().reset_index(drop=False)
 
-    def plot_projection_to_surface(self, surface_axes_names: list[str] | tuple[str, str], z_axis_name: str,
+    def plot_projection_to_surface(self, surface_axes_names: Union[List[str], Tuple[str, str]], z_axis_name: str,
                                    aggregation_method: str = 'max', **kwargs) -> plt.Figure:
         if len(surface_axes_names) != 2:
             raise ValueError(f"plot_projection is intended to be used with 2D surfaces")
@@ -238,7 +238,7 @@ class VectorMultiset(PickleUtils, Style, Rosetta):
                              ylabel=self.translate(surface_axes_names[1]),
                              colorbar_label=self.translate(z_axis_name))
 
-    def feature_selection_univariate(self, target_feature_name: str, input_feature_names: list[str] = None,
+    def feature_selection_univariate(self, target_feature_name: str, input_feature_names: List[str] = None,
                                      k_best: int = 3, normalize: bool = True, **kwargs) -> any:
         """ Feature selection of k best using univariate methods.
 
@@ -469,7 +469,7 @@ class VectorSequence(VectorMultiset):
             # First, figure out where to place the windows:
             if not window_starts:
                 if step_size:
-                    window_starts: List[float] = list(np.arange(min(basis), max(basis) - step_size, step_size))
+                    window_starts: List[float] = list(np.arange(min(basis), max(basis) - window_width, step_size))  # !
                 else:
                     if overlapping:
                         window_starts: List[float] = [x for x in basis if basis[-1] - x >= window_width]
@@ -482,8 +482,8 @@ class VectorSequence(VectorMultiset):
                 window_data: VectorSequence = self.slice(start_at=window_start, stop_at=window_start + window_width,
                                                          inplace=False, reset_index=True)
                 evaluation: Dict[str, Any] = function(window_data, *args, **kwargs)
-                df = df.append({'window_width': window_width, 'window_start': window_start,
-                                **evaluation}, ignore_index=True)
+                new_entry: Dict[Any, Any] = {'window_width': window_width, 'window_start': window_start, **evaluation}
+                df = pd.concat([df, pd.DataFrame(new_entry, index=[0])], ignore_index=True)
 
                 if verbose:
                     logger.info(f"\nWindow width: {window_width} ({i + 1} of {len(window_widths)})\n"
@@ -623,12 +623,13 @@ class VectorSequence(VectorMultiset):
         :return: list of figure handles
         """
         # Set style. Overrides: kwargs > style input > Style() defaults
-        config: Style = Style(**Style().override(style).dict() | kwargs)
-        svd_kwargs: dict[str, Any] = {k: v for k, v in kwargs.items() if k not in config.dict()}
-        style_kwargs: dict[str, Any] = {k: v for k, v in kwargs.items() if k in config.dict()}
+
+        config: Style = Style(**{**Style().dict(), **make_dict(style), **make_dict(kwargs)})
+        svd_kwargs: Dict[str, Any] = {k: v for k, v in kwargs.items() if k not in config.dict()}
+        style_kwargs: Dict[str, Any] = {k: v for k, v in kwargs.items() if k in config.dict()}
 
         result: InfoSurface = self.calculate_info_surface(window_widths=window_widths, cols=cols, *args, **svd_kwargs)
-        return result.plot_info_surface(singular_values=singular_values, **style_kwargs)
+        return result.plot_info_surface(singular_values=singular_values, **{**make_dict(style), **make_dict(kwargs)})
 
     def correlation_matrix(self, exclude_basis: bool = True, **kwargs) -> pd.DataFrame:
         """
@@ -643,7 +644,7 @@ class VectorSequence(VectorMultiset):
                 if self.basis_col_name not in kwargs_in:
                     kwargs['exclude_cols'] = kwargs_in + [self.basis_col_name]
             else:
-                kwargs: dict[str, Any] = {'exclude_cols': self.basis_col_name}
+                kwargs: Dict[str, Any] = {'exclude_cols': self.basis_col_name}
         return correlation_matrix(self.data, **kwargs)
 
     ################
@@ -651,7 +652,7 @@ class VectorSequence(VectorMultiset):
     ################
 
 
-def correlation_matrix(dataframe: pd.DataFrame, use_cols: list[str] = None, exclude_cols: list[str] = None,
+def correlation_matrix(dataframe: pd.DataFrame, use_cols: List[str] = None, exclude_cols: List[str] = None,
                        correlation_method: str = 'pearson', style: Style = None, **kwargs) -> pd.DataFrame:
     """
     Returns a styled pandas data frame with correlation coefficients (Pearson by default), wraps pandas.corr()
@@ -665,9 +666,9 @@ def correlation_matrix(dataframe: pd.DataFrame, use_cols: list[str] = None, excl
     :return: styled pandas dataframe
     """
     if not use_cols:
-        use_cols: list[str] = dataframe.keys().tolist()
+        use_cols: List[str] = dataframe.keys().tolist()
     if exclude_cols:
-        use_cols: list[str] = [x for x in use_cols if x not in exclude_cols]
+        use_cols: List[str] = [x for x in use_cols if x not in exclude_cols]
     if style:
         kwargs.setdefault('cmap', style.cmap)
     else:

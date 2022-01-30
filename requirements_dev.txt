@@ -1,7 +1,2 @@
 pytest
 jupyter
-jupyterlab-kite>=2.0.2
-jupyter_contrib_nbextensions
-jupyter_nbextensions_configurator
-autopep8
-texlive-xetex

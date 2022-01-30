@@ -9,6 +9,7 @@ import pandas as pd
 import pathlib
 import numpy as np
 from tqdm.auto import tqdm
+from copy import deepcopy
 
 
 class PickleUtils(BaseModel):
@@ -193,7 +194,7 @@ def to_list_if_other_array(array: Any) -> List[Any]:
     return array
 
 
-def zero_mean_unit_deviation(array: any) -> list[float]:
+def zero_mean_unit_deviation(array: any) -> List[float]:
     """ Helper function that maps a vector to zero mean and unit standard deviation
 
     :param array: anything that looks like an array
@@ -202,3 +203,18 @@ def zero_mean_unit_deviation(array: any) -> list[float]:
     std_dev: float = float(np.std(array))
     mean: float = float(np.mean(array))
     return [(x - std_dev) / mean for x in array]
+
+
+def make_dict(d: Union[Dict, object, None]) -> Dict[Any, Any]:
+    """
+    Converts inputs to a dictionary if possible (or provides an empty one if None
+
+    :param d: either a dictionary or None
+    :return: passes through input, or an empty dictionary if input is None
+    """
+    if not d:
+        return dict()
+    elif isinstance(d, object) and ('dict' in dir(d)):
+        return d.dict()  # noqa
+    else:
+        return d

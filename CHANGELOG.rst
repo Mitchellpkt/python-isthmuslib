@@ -230,3 +230,8 @@ Changelog
 -------------------
 
 * chore: surfaces, svd container, and feature selection / aggregation
+
+0.0.49 (2022-01-30)
+-------------------
+
+* chore: rework back down to python 3.8 compatibility

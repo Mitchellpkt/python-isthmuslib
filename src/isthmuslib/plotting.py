@@ -2,9 +2,9 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import seaborn as sns
-from .config import Style
-from .utils import looks_like_list_of_lists, margin_calc, to_list_if_other_array
-from typing import List, Any, Union, Tuple, Callable
+from src.isthmuslib.config import Style
+from src.isthmuslib.utils import looks_like_list_of_lists, margin_calc, to_list_if_other_array, make_dict
+from typing import List, Any, Union, Tuple, Callable, Dict
 from mpl_toolkits.mplot3d import Axes3D
 import matplotlib
 
@@ -138,8 +138,10 @@ def visualize_1d_distribution(data: Any, xlabel: str = '', ylabel: str = 'counts
     :return: figure handle for the plot
     """
     # Set style. Overrides: kwargs > style input > Style() defaults
-    config: Style = Style(**Style().override(style).dict() | kwargs)
-    kwargs: dict[str, Any] = {k: v for k, v in kwargs.items() if k not in config.dict()}
+
+    config: Style = Style(**{**Style().dict(), **make_dict(style), **make_dict(kwargs)})
+
+    kwargs: Dict[str, Any] = {k: v for k, v in kwargs.items() if k not in config.dict()}
 
     # If not specified, try to ascertain whether one or multiple data sets are being provided
     if multi or ((multi is None) and looks_like_list_of_lists(data)):
@@ -216,8 +218,8 @@ def visualize_x_y(x_data: Any, y_data: Any, xlabel: str = '', ylabel: str = '', 
     :param show_colorbar: set to True to show colorbar
     """
     # Set style. Overrides: kwargs > style input > Style() defaults
-    config: Style = Style(**Style().override(style).dict() | kwargs)
-    kwargs: dict[str, Any] = {k: v for k, v in kwargs.items() if k not in config.dict()}
+    config: Style = Style(**{**Style().dict(), **make_dict(style), **make_dict(kwargs)})
+    kwargs: Dict[str, Any] = {k: v for k, v in kwargs.items() if k not in config.dict()}
 
     x_data: List[Any] = to_list_if_other_array(x_data)
     y_data: List[Any] = to_list_if_other_array(y_data)
@@ -419,8 +421,8 @@ def visualize_hist2d(x_data: Any, y_data: Any, xlabel: str = '', ylabel: str = '
     :return: figure handle for the plot
     """
     # Set style. Overrides: kwargs > style input > Style() defaults
-    config: Style = Style(**Style().override(style).dict() | kwargs)
-    kwargs: dict[str, Any] = {k: v for k, v in kwargs.items() if (k not in config.dict()) or (k == 'cmap')}
+    config: Style = Style(**{**Style().dict(), **make_dict(style), **make_dict(kwargs)})
+    kwargs: Dict[str, Any] = {k: v for k, v in kwargs.items() if (k not in config.dict()) or (k == 'cmap')}
     kwargs.setdefault("cmap", config.sequential_cmap)
 
     x_data: List[Any] = to_list_if_other_array(x_data)
@@ -471,8 +473,9 @@ def visualize_surface(x_data, y_data, z_data, xlabel: str = '', ylabel: str = ''
     :return: figure handle for the plot
     """
     # Set style. Overrides: kwargs > style input > Style() defaults
-    config: Style = Style(**Style().override(style).dict() | kwargs)
-    kwargs: dict[str, Any] = {k: v for k, v in kwargs.items() if (k not in config.dict()) or (k == 'cmap')}
+    config: Style = Style(**{**Style().dict(), **make_dict(style), **make_dict(kwargs)})
+
+    kwargs: Dict[str, Any] = {k: v for k, v in kwargs.items() if (k not in config.dict()) or (k == 'cmap')}
     kwargs.setdefault("cmap", config.sequential_cmap)
 
     x_data: List[Any] = to_list_if_other_array(x_data)
@@ -518,8 +521,8 @@ def visualize_embedded_surface(x_data, y_data, z_data, xlabel: str = '', ylabel:
     :return: figure handle for the plot
     """
     # Set style. Overrides: kwargs > style input > Style() defaults
-    config: Style = Style(**Style().override(style).dict() | kwargs)
-    kwargs: dict[str, Any] = {k: v for k, v in kwargs.items() if (k not in config.dict()) or (k == 'cmap')}
+    config: Style = Style(**{**Style().dict(), **make_dict(style), **make_dict(kwargs)})
+    kwargs: Dict[str, Any] = {k: v for k, v in kwargs.items() if (k not in config.dict()) or (k == 'cmap')}
     kwargs.setdefault("cmap", config.sequential_cmap)
 
     x_data: List[Any] = to_list_if_other_array(x_data)

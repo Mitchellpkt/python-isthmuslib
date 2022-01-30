@@ -66,14 +66,14 @@ class Style(BaseModel):
             if args[0] is None:
                 return deepcopy(self)
             elif isinstance(args[0], dict):
-                override_dict: dict[str, any] = args[0]
+                override_dict: Dict[str, any] = args[0]
             elif getattr(args[0], 'dict', None):
-                override_dict: dict[str, any] = args[0].dict()
+                override_dict: Dict[str, any] = args[0].dict()
             else:
                 raise ValueError(f"Unsure how to interpret override input of type {type(args[0])}")
 
         elif (len(args) == 2) and isinstance(args[0], str):
-            override_dict: dict[str, any] = {args[0]: args[1]}
+            override_dict: Dict[str, any] = {args[0]: args[1]}
 
         else:
             raise ValueError(f"Unsure how to interpret 3+ inputs to override")
