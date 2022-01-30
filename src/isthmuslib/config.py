@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import Tuple, Any
+from typing import Tuple, Any, Dict
 from .utils import Rosetta
 from copy import deepcopy
 
