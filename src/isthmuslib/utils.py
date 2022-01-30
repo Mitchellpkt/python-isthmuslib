@@ -9,7 +9,6 @@ import pandas as pd
 import pathlib
 import numpy as np
 from tqdm.auto import tqdm
-from copy import deepcopy
 
 
 class PickleUtils(BaseModel):
