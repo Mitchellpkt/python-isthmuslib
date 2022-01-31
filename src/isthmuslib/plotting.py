@@ -2,8 +2,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import seaborn as sns
-from src.isthmuslib.config import Style
-from src.isthmuslib.utils import looks_like_list_of_lists, margin_calc, to_list_if_other_array, make_dict
+from .config import Style
+from .utils import looks_like_list_of_lists, margin_calc, to_list_if_other_array, make_dict
 from typing import List, Any, Union, Tuple, Callable, Dict
 from mpl_toolkits.mplot3d import Axes3D
 import matplotlib

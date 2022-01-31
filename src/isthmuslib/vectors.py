@@ -4,9 +4,9 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from loguru import logger
-from src.isthmuslib.config import Style
-from src.isthmuslib.utils import PickleUtils, Rosetta, make_dict
-from src.isthmuslib.data_quality import basis_quality_checks, basis_quality_plots, fill_ratio
+from .config import Style
+from .utils import PickleUtils, Rosetta, make_dict
+from .data_quality import basis_quality_checks, basis_quality_plots, fill_ratio
 from copy import deepcopy
 import statsmodels.api as sm
 from .plotting import visualize_x_y, visualize_1d_distribution, visualize_surface, visualize_embedded_surface

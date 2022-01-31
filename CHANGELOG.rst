@@ -245,3 +245,8 @@ Changelog
 -------------------
 
 * chore: set >=3.8 in setup.py
+
+0.0.52 (2022-01-31)
+-------------------
+
+* fix: module imports
