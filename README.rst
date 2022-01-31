@@ -45,7 +45,7 @@ Overview
 Convenience utils for plotting, styling, and manipulating high-dimensional vectors.
 
 * Analyses and plotting methods are one line to call, and produce consistently-formatted publication-ready plots.
-* Enables rapid exploratory data analysis (EDA) and prototyping, perfect for taking a quick peek at data or making a quick figure to stash in the lab book (with labels and titles automatically included). See `examples here <https://github.com/Mitchellpkt/python-isthmuslib/blob/main/tutorial.ipynb>`_.
+* Enables rapid exploratory data analysis (EDA) and prototyping, perfect for taking a quick peek at data or making a quick figure to stash in the lab book (with labels and titles automatically included). See `examples here <https://github.com/Mitchellpkt/python-isthmuslib/blob/main/isthmuslib_tutorial.ipynb>`_.
 * Designed for easy drop-in use for other projects, whether using internally to the code or for clean notebooks. Import isthmuslib to avoid writing many lines of plotting code when it would distract or detract from the main focus of your project.
 * The visual and text configuration objects (:code:`Style` and :code:`Rosetta`, respectively) can be directly attached to a given data set, so you can "set it and forget it" at instantiation. All subsequent outputs will automatically have matching colors, sizes, labels, etc.
 * The :code:`VectorSequence` object is designed for handling, plotting, and manipulating timeseries-like high-dimensional vectors. Its functionality includes: dimensionality reduction via singular vealue decomposition, seasonal (e.g. weekly, monthly, ...) timeseries decomposition, infosurface generation, and more.
@@ -73,7 +73,7 @@ To use the project:
 
 Demo one-liners
 =============
-A complete tutorial notebook is available here: https://github.com/Mitchellpkt/python-isthmuslib/blob/main/tutorial.ipynb
+A complete tutorial notebook is available here: https://github.com/Mitchellpkt/python-isthmuslib/blob/main/isthmuslib_tutorial.ipynb
 
 Below are a few demos of one-line helper functions for plot generation and statistical analyses.
 
