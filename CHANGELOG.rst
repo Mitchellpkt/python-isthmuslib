@@ -235,3 +235,13 @@ Changelog
 -------------------
 
 * chore: rework back down to python 3.8 compatibility
+
+0.0.50 (2022-01-30)
+-------------------
+
+* chore: vectors from text
+
+0.0.51 (2022-01-31)
+-------------------
+
+* chore: set >=3.8 in setup.py
