@@ -47,8 +47,8 @@ Convenience utils for plotting, styling, and manipulating high-dimensional vecto
 * Analyses and plotting methods are one line to call, and produce consistently-formatted publication-ready plots.
 * Enables rapid exploratory data analysis (EDA) and prototyping, perfect for taking a quick peek at data or making a quick figure to stash in the lab book (with labels and titles automatically included). See `examples here <https://github.com/Mitchellpkt/python-isthmuslib/blob/main/tutorial.ipynb>`_.
 * Designed for easy drop-in use for other projects, whether using internally to the code or for clean notebooks. Import isthmuslib to avoid writing many lines of plotting code when it would distract or detract from the main focus of your project.
-* The visual and text configuration objects (`Style` and `Rosetta`, respectively) can be directly attached to a given data set, so you can "set it and forget it" at instantiation. All subsequent outputs will automatically have matching colors, sizes, labels, etc.
-* The `VectorSequence` object is designed for handling, plotting, and manipulating timeseries-like high-dimensional vectors. Its functionality includes: dimensionality reduction via singular vealue decomposition, seasonal (e.g. weekly, monthly, ...) timeseries decomposition, infosurface generation, and more.
+* The visual and text configuration objects (:code:`Style` and :code:`Rosetta`, respectively) can be directly attached to a given data set, so you can "set it and forget it" at instantiation. All subsequent outputs will automatically have matching colors, sizes, labels, etc.
+* The :code:`VectorSequence` object is designed for handling, plotting, and manipulating timeseries-like high-dimensional vectors. Its functionality includes: dimensionality reduction via singular vealue decomposition, seasonal (e.g. weekly, monthly, ...) timeseries decomposition, infosurface generation, and more.
 * Uses industry standard libraries (pyplot, numpy, seaborn, pandas, etc) under the hood, and exposes their underlying functionality through the wrappers.
 
 Free software for personal or academic use: **GNU Lesser General Public License v3 (LGPLv3).** Contact licensing@mitchellpkt.com for commercial applications.
@@ -75,7 +75,9 @@ Demo one-liners
 =============
 A complete tutorial notebook is available here: https://github.com/Mitchellpkt/python-isthmuslib/blob/main/tutorial.ipynb
 
-We can plot multiple distributions with the `hist()` wrapper around matplotlib:
+Below are a few demos of one-line helper functions for plot generation and statistical analyses.
+
+We can plot multiple distributions with the :code:`hist()` wrapper around :code:`matplotlib.pyplot`:
 
 .. code-block:: python
 
@@ -84,7 +86,7 @@ We can plot multiple distributions with the `hist()` wrapper around matplotlib:
 
 .. image:: ./readme_images/hist2.png
 
-Additional keyword arguments are passed through to the pyplot histogram function, for example `density` and `cumulative`.
+Additional keyword arguments are passed through to the pyplot histogram function, for example :code:`density` and :code:`cumulative`.
 
 .. code-block:: python
 
@@ -93,7 +95,7 @@ Additional keyword arguments are passed through to the pyplot histogram function
 
 .. image:: ./readme_images/hist3.png
 
-Likewise, we have a wrapper for matplotlib's scatter,
+Likewise, we have a wrapper for :code:`matplotlib`'s scatter,
 
 .. code-block:: python
 
@@ -113,13 +115,13 @@ We can also cast a single x & y vector pair into a 2D histogram (essentially a s
 
 .. image:: ./readme_images/heatmap.png
 
-We can also load a dataframe or CSV file into the `VectorSequence` class for working with multivariate timeseries and similarly shaped data with some physically-interpretable strictly ordered axis, for example:
+We can also load a dataframe or CSV file into the :code:`VectorSequence` class for working with multivariate timeseries and similarly shaped data with some physically-interpretable strictly ordered axis, for example:
 
 + Multiple physical features (temperature, pressure, and irradiation) measured simultaneously at 3 different heights
 + Multiple stock values observed over time
 + Fluorescence intensity measured simultaneously at different wavelengths
 
-(If the data does not have an inherent ordering, use the isthmuslib `VectorMultiSet` instead of the `VectorSequence`).
+(If the data does not have an inherent ordering, use the isthmuslib :code:`VectorMultiSet` instead of the :code:`VectorSequence`).
 
 .. code-block:: python
 
@@ -138,7 +140,7 @@ The isthmuslib plotting features demoed above are directly attached to the vecto
 .. image:: ./readme_images/ts1.png
 .. image:: ./readme_images/ts2.png
 
-We can take a peek at correlation between the columns (wraps `corr` from `pandas`).
+We can take a peek at correlation between the columns (wraps :code:`corr` from :code:`pandas`).
 
 .. code-block:: python
 
@@ -146,7 +148,7 @@ We can take a peek at correlation between the columns (wraps `corr` from `pandas
 
 .. image:: ./readme_images/corr.png
 
-We can visualize seasonal decomposition analyses with a single line, wrapping `statsmodel.tsa` logic with styled plots.
+We can visualize seasonal decomposition analyses with a single line, wrapping :code:`statsmodel.tsa` logic with styled plots.
 
 .. code-block:: python
 
@@ -157,7 +159,7 @@ We can visualize seasonal decomposition analyses with a single line, wrapping `s
 .. image:: ./readme_images/decomp3.png
 .. image:: ./readme_images/decomp4.png
 
-The VectorSequence timeseries class contains logic for sliding window analyses with arbitrary functions. Here we'll use a throwaway lambda `appreciation` to demonstrate, and apply that function over sliding windows with 2, 4, and 8 week durations.
+The VectorSequence timeseries class contains logic for sliding window analyses with arbitrary functions. Here we'll use a throwaway lambda :code:`appreciation` to demonstrate, and apply that function over sliding windows with 2, 4, and 8 week durations.
 
 .. code-block:: python
 
@@ -167,7 +169,7 @@ The VectorSequence timeseries class contains logic for sliding window analyses w
                                                                   [x * 60 * 60 * 24 * 7 for x in window_widths_weeks],
                                                                   overlapping=True)
 
-The `SlidingWindowResult.plot_results()` method automatically plots results separated by window width.
+The :code:`SlidingWindowResult.plot_results()` method automatically plots results separated by window width.
 
 .. code-block:: python
 
@@ -175,7 +177,7 @@ The `SlidingWindowResult.plot_results()` method automatically plots results sepa
 
 .. image:: ./readme_images/sliding1.png
 
-Likewise, the `sliding_window.plot_pdfs()` method plots distributions separated by window width.
+Likewise, the :code:`sliding_window.plot_pdfs()` method plots distributions separated by window width.
 
 .. code-block:: python
 
@@ -184,7 +186,7 @@ Likewise, the `sliding_window.plot_pdfs()` method plots distributions separated 
 
 .. image:: ./readme_images/sliding2.png
 
-Dimensionality reduction (SVD) logic over sliding windows is built into the `VectorSequence` class, allowing easy calculation and visualization of information surfaces (first 3 singular value surfaces shown below). The timeseries basis (specified in `basis_col_name`) is automatically excluded from the SVD analysis. The `cols` keyword argument can be specified when only certain data features should be taken into account.
+Dimensionality reduction (SVD) logic over sliding windows is built into the :code:`VectorSequence` class, allowing easy calculation and visualization of information surfaces (first 3 singular value surfaces shown below). The timeseries basis (specified in :code:`basis_col_name`) is automatically excluded from the SVD analysis. The :code:`cols` keyword argument can be specified when only certain data features should be taken into account.
 
 
 .. code-block:: python
