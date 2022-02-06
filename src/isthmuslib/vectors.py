@@ -694,7 +694,7 @@ def auto_extract_from_text(input_string: str, return_type: str = 'dataframe', re
             chunk_buffer.setdefault(key, value)  # Add the value to this row
         if chunk_buffer:
             df_output = pd.concat([df_output, pd.DataFrame(chunk_buffer, index=[-1])], ignore_index=True)
-    if 'dataframee' in return_type.lower():
+    if 'dataframe' in return_type.lower():
         return df_output
     elif 'multiset' in return_type.lower():
         return VectorMultiset(data=df_output)
