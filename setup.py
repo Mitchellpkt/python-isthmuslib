@@ -23,7 +23,7 @@ def read(*names, **kwargs):
 
 setup(
     name='isthmuslib',
-    version='0.0.53',
+    version='0.0.54',
     license='LGPL-3.0-only',
     description='Convenience utils for plotting, styling, and manipulating high-dimensional vectors',
     long_description='%s\n%s' % (

@@ -255,3 +255,8 @@ Changelog
 -------------------
 
 * fix: attach extraction code to vectors module
+
+0.0.54 (2022-01-06)
+-------------------
+
+* chore: automatic parsing
