@@ -250,3 +250,8 @@ Changelog
 -------------------
 
 * fix: module imports
+
+0.0.53 (2022-01-31)
+-------------------
+
+* fix: attach extraction code to vectors module
