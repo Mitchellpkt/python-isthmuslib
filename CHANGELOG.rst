@@ -260,3 +260,13 @@ Changelog
 -------------------
 
 * chore: automatic parsing
+
+0.0.55 (2022-01-06)
+-------------------
+
+* chore: add progress bar
+
+0.0.56 (2022-01-06)
+-------------------
+
+* chore: progress bar where I meant to put it in 0.0.55
