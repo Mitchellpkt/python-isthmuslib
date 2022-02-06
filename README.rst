@@ -202,7 +202,7 @@ The one-liner:
 
 .. code-block:: python
 
-    isli.auto_extract_from_text(input_string)
+    isthmuslib.auto_extract_from_text(input_string)
 
 extracts the dataframe:
 
