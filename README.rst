@@ -188,7 +188,6 @@ Likewise, the :code:`sliding_window.plot_pdfs()` method plots distributions sepa
 
 Dimensionality reduction (SVD) logic over sliding windows is built into the :code:`VectorSequence` class, allowing easy calculation and visualization of information surfaces (first 3 singular value surfaces shown below). The timeseries basis (specified in :code:`basis_col_name`) is automatically excluded from the SVD analysis. The :code:`cols` keyword argument can be specified when only certain data features should be taken into account.
 
-
 .. code-block:: python
 
     timeseries.plot_info_surface()
@@ -196,6 +195,18 @@ Dimensionality reduction (SVD) logic over sliding windows is built into the :cod
 .. image:: ./readme_images/svd1.png
 .. image:: ./readme_images/svd2.png
 .. image:: ./readme_images/svd3.png
+
+This library includes log extraction tooling from mostly unstructured strings or files. For example, take the string: "It was the best of times, [@@@] it was the worst [<<x=5>>]of times, it was the age of wisdom, [<<y='foo'>>] it was the age of foolishness, [@@@] it was the epoch of belief, it was the epoch of incredulity, [<<y='bar'>>] it was the season of Light, it was the season of Darkness"
+
+The one-liner:
+
+.. code-block:: python
+
+    isli.auto_extract_from_text(input_string)
+
+extracts the dataframe:
+
+.. image:: ./readme_images/df.png
 
 We have some tools for quickly checking the quality of a data feature intended for use as a basis. Whether missing or unevenely-spaced data is OK or problematic is 100% context dependent.
 
