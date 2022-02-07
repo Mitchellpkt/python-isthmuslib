@@ -672,7 +672,7 @@ def auto_extract_from_text(input_string: str, return_type: str = 'dataframe',
     :param input_string: string to be parsed
     :param record_delimiter: substring between rows
     :param left: left side of a record
-    :param key_value_delimiter: marker between name and
+    :param key_value_delimiter: marker between the variable name and its value
     :param right: right side of a record
     :param basis_col_name: optional, specify a basis column name for a VectorSequence (otherwise ignored)
     :param return_type: what format to return the data in
