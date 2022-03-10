@@ -3,7 +3,6 @@ from typing import List, Any, Tuple, Callable, Dict, Union
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-from loguru import logger
 from .config import Style
 from .utils import PickleUtils, Rosetta, make_dict
 from .data_quality import basis_quality_checks, basis_quality_plots, fill_ratio
@@ -13,8 +12,8 @@ from .plotting import visualize_x_y, visualize_1d_distribution, visualize_surfac
 import pathlib
 from pydantic import BaseModel
 from sklearn.feature_selection import SelectKBest, chi2
+from multiprocessing import Pool, cpu_count
 from tqdm.auto import tqdm
-
 
 class SVD(BaseModel):
     u: Any
@@ -434,9 +433,25 @@ class VectorSequence(VectorMultiset):
         else:
             return VectorSequence(basis_col_name=self.basis_col_name, name_root=self.name_root, data=result)
 
+    def evaluate_over_window(self, function: Callable, start_at: float, window_width: float, args: Tuple,
+                             kwargs: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Helper function that evaluates a function over a given window
+
+        :param function: function to be applied to the window
+        :param start_at: start time for the window
+        :param window_width: width of the window
+        :param args: positional arguments for the function (NB: args, not *args)
+        :param kwargs: keyword arguments for the function (NB: kwargs, not **kwargs)
+        :return: The evaluation of the function (along with a note of the window start and width)
+        """
+        window_data: VectorSequence = self.slice(start_at=start_at, stop_at=start_at + window_width,
+                                                 inplace=False, reset_index=True)
+        return {**function(window_data, *args, **kwargs), 'window_start': start_at, 'window_width': window_width}
+
     def sliding_window(self, function: Callable[[Any, List[Any], Dict[str, Any]], Dict[str, Any]],
                        window_widths: List[float] = None, window_starts: List[Any] = None, step_size: float = None,
-                       overlapping: bool = False, verbose: bool = False, *args, **kwargs) -> SlidingWindowResults:
+                       parallelize_sliding_window: Union[bool, int] = True, *args, **kwargs) -> SlidingWindowResults:
         """ Apply function in a sliding window over the sequence
 
         :param function: callable to be applied
@@ -445,11 +460,8 @@ class VectorSequence(VectorMultiset):
         :param step_size: how far apart to space windows
         :param args: positional arguments for the function
         :param kwargs: keyword arguments for the function
-        :param verbose: verbose output?
-        :param overlapping: whether the windows should overlap
+        :param parallelize_sliding_window: Whether to use multiprocessing for the sliding window
         :return: SlidingWindowResults (see the dataframe attribute for results)
-
-        Note: `window_starts` overrides `step_size` overrides `overlapping`
         """
 
         # Validation
@@ -458,42 +470,59 @@ class VectorSequence(VectorMultiset):
         if self.basis_col_name not in self.data.keys():
             raise AttributeError(f'basis_col_name {self.basis_col_name} not a column in data frame:\n{self.data}')
 
-        df: pd.DataFrame = pd.DataFrame()
         basis: Tuple[float] = (self.data.loc[:, self.basis_col_name].tolist())
 
         if not window_widths:
             duration: float = max(self.data.loc[:, self.basis_col_name]) - min(self.data.loc[:, self.basis_col_name])
-            window_widths: List[float] = [duration / x for x in range(20, 401, 20)]
+            window_widths: List[float] = [duration / x for x in range(20, 401, 20)]  # TODO: move vals to vars
 
-        # Loop over window widths
+        # First, figure out where to place the windows based on the window widths and/or steps size:
+        list_of_start_and_width_tuples: List[Tuple[float, float]] = []
         for i, window_width in enumerate(window_widths):
-            # First, figure out where to place the windows:
             if not window_starts:
                 if step_size:
-                    window_starts: List[float] = list(np.arange(min(basis), max(basis) - window_width, step_size))  # !
+                    window_starts: List[float] = list(np.arange(min(basis), max(basis) - window_width, step_size))
                 else:
-                    if overlapping:
-                        window_starts: List[float] = [x for x in basis if basis[-1] - x >= window_width]
-                    else:
-                        window_starts: List[float] = list(
-                            np.arange(min(basis), max(basis) - window_width, window_width))
+                    window_starts: List[float] = list(np.arange(min(basis), max(basis) - window_width, window_width))
+            list_of_start_and_width_tuples += [(start_time, window_width) for start_time in window_starts]
 
-            # Loop over window starts
-            for j, window_start in enumerate(window_starts):
-                window_data: VectorSequence = self.slice(start_at=window_start, stop_at=window_start + window_width,
-                                                         inplace=False, reset_index=True)
-                evaluation: Dict[str, Any] = function(window_data, *args, **kwargs)
-                new_entry: Dict[Any, Any] = {'window_width': window_width, 'window_start': window_start, **evaluation}
-                df = pd.concat([df, pd.DataFrame(new_entry, index=[0])], ignore_index=True)
+        # If evaluating in parallel, use at most the number of CPUs (and use all of them if count not specified)
+        if parallelize_sliding_window and (cpu_count() > 1):
+            if isinstance(parallelize_sliding_window, bool):
+                num_workers: int = cpu_count()
+            else:
+                num_workers: int = min(cpu_count(), parallelize_sliding_window)
 
-                if verbose:
-                    logger.info(f"\nWindow width: {window_width} ({i + 1} of {len(window_widths)})\n"
-                                f"Starting at: {window_start} ({j + 1} of {len(window_starts)})")
+            with Pool(num_workers) as pool:
+                evaluations: List[Dict[Any, Any]] = pool.starmap(
+                    func=self.evaluate_over_window,
+                    iterable=[(function, start, width, args, kwargs) for start, width in list_of_start_and_width_tuples]
+                )
+
+        # If evaluating in serial, it's simply a `for` loop
+        else:
+            evaluations: List[Dict[Any, Any]] = []
+            for start, width in list_of_start_and_width_tuples:
+                evaluations.append(self.evaluate_over_window(
+                    function=function,
+                    start_at=start,
+                    window_width=width,
+                    args=args,
+                    kwargs=kwargs
+                ))
 
         return SlidingWindowResults(window_width_col_name='window_width', window_start_col_name='window_start',
-                                    data=df, name_root=self.name_root)
+                                    data=pd.DataFrame(evaluations), name_root=self.name_root)
 
     def repackage(self, instance: Any, sequence_attribute: str = 'series', basis_name: str = 'basis') -> Any:
+        """
+        Helper function for repackaging similar (BaseModel-like) objects into the top class
+
+        :param instance: thing to be repackaged
+        :param sequence_attribute: the name of the sequence (read: values) attribute
+        :param basis_name: the name of the basis (read: time-like) attribute
+        :return: repackaged instance with new class (if applicable)
+        """
         cache: Dict[str, Any] = instance.dict()
         cache['data'] = pd.DataFrame({x: input.__getattribute__(x) for x in [sequence_attribute, basis_name]})
         cache['basis_col_name'] = basis_name
@@ -630,7 +659,8 @@ class VectorSequence(VectorMultiset):
         style_kwargs: Dict[str, Any] = {k: v for k, v in kwargs.items() if k in config.dict()}
 
         result: InfoSurface = self.calculate_info_surface(window_widths=window_widths, cols=cols, *args, **svd_kwargs)
-        return result.plot_info_surface(singular_values=singular_values, **{**make_dict(style), **make_dict(kwargs)})
+        return result.plot_info_surface(singular_values=singular_values,
+                                        **{**make_dict(style), **make_dict(style_kwargs)})
 
     def correlation_matrix(self, exclude_basis: bool = True, **kwargs) -> pd.DataFrame:
         """
@@ -739,7 +769,8 @@ def auto_extract_from_file(file_path: Union[str, pathlib.Path], record_delimiter
 
 def extract_text_to_dataframe(input_string: str, tokens_dictionary: Dict[str, Tuple[str, str]],
                               record_delimiter: str = '[@@@]', disable_progress_bar: bool = None) -> pd.DataFrame:
-    """ Extracts a pandas dataframe from a string
+    """
+    Extracts a pandas dataframe from a string
 
     :param input_string: string (e.g. logs file) to be parsed
     :param record_delimiter: The string that should be used to chunk up the string into observations / rows
@@ -763,7 +794,8 @@ def extract_text_to_dataframe(input_string: str, tokens_dictionary: Dict[str, Tu
 def extract_text_to_vector(input_string: str, tokens_dictionary: Dict[str, Tuple[str, str]],
                            record_delimiter: str = '[@@@]', disable_progress_bar: bool = None,
                            basis_col_name: str = None) -> Union[VectorMultiset, VectorSequence]:
-    """ Extracts a VectorMultiset from a string (or a VectorSequence if you specify `basis_col_name`)
+    """
+    Extracts a VectorMultiset from a string (or a VectorSequence if you specify `basis_col_name`)
 
     :param input_string: string (e.g. logs file) to be parsed
     :param record_delimiter: The string that should be used to chunk up the string into observations / rows
@@ -784,7 +816,8 @@ def extract_text_to_vector(input_string: str, tokens_dictionary: Dict[str, Tuple
 def extract_file_to_vector(file_path: Union[str, pathlib.Path], record_delimiter: str,
                            tokens_dictionary: Dict[str, Tuple[str, str]], disable_progress_bar: bool = None,
                            basis_col_name: str = None) -> Union[VectorSequence, VectorMultiset]:
-    """ Wrapper for extract_from_text that pulls vector data out of a file, such as raw log output
+    """
+    Wrapper for extract_from_text that pulls vector data out of a file, such as raw log output
 
     :param file_path: file to read
     :param record_delimiter: The string that should be used to chunk up the string into observations / rows
@@ -825,7 +858,8 @@ def correlation_matrix(dataframe: pd.DataFrame, use_cols: List[str] = None, excl
 
 
 def info_surface_slider(vs: VectorSequence, *args, **kwargs) -> Dict[str, Any]:
-    """ Helper function for sliding window SVD analysis
+    """
+     Helper function for sliding window SVD analysis
 
     :param vs: vector sequence
     :param args: args for svd
@@ -837,7 +871,8 @@ def info_surface_slider(vs: VectorSequence, *args, **kwargs) -> Dict[str, Any]:
 
 
 def singular_value_decomposition(df: pd.DataFrame, cols: Union[str, List[str]] = None, **kwargs) -> SVD:
-    """ Helper function that wraps numpy svd to feed in a subset of data features (see kwarg: 'full_matrices')
+    """
+    Helper function that wraps numpy svd to feed in a subset of data features (see kwarg: 'full_matrices')
 
     :param df: pandas dataframe to analyze
     :param cols: which data features to use
