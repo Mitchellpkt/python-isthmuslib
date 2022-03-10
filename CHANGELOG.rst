@@ -270,3 +270,8 @@ Changelog
 -------------------
 
 * chore: progress bar where I meant to put it in 0.0.55
+
+0.0.57 (2022-03-10)
+-------------------
+
+* chore: optionally parallel sliding windows
