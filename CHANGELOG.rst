@@ -275,3 +275,8 @@ Changelog
 -------------------
 
 * chore: optionally parallel sliding windows
+
+0.0.58 (2022-03-10)
+-------------------
+
+* chore: slice out dataframes from vector sequence
