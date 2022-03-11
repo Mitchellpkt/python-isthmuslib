@@ -1,5 +1,5 @@
 import time as time
-from typing import List, Any, Tuple, Callable, Dict, Union
+from typing import List, Any, Tuple, Callable, Dict, Union, Iterable
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -14,6 +14,7 @@ from pydantic import BaseModel
 from sklearn.feature_selection import SelectKBest, chi2
 from multiprocessing import Pool, cpu_count
 from tqdm.auto import tqdm
+
 
 class SVD(BaseModel):
     u: Any
@@ -388,7 +389,8 @@ class VectorSequence(VectorMultiset):
         """
         return fill_ratio(self.data.loc[:, self.basis_col_name])
 
-    def slice(self, start_at: Any = None, stop_at: Any = None, inplace: bool = False, reset_index: bool = True):
+    def slice(self, start_at: Any = None, stop_at: Any = None, inplace: bool = False, reset_index: bool = True,
+              return_type: str = 'VectorSequence') -> Union[None, pd.DataFrame, Tuple[Iterable, Iterable], Any]:
         """ Slices the VectorSequence according to the basis
 
         :param start_at: Start point (can be None)
@@ -409,7 +411,12 @@ class VectorSequence(VectorMultiset):
         if inplace:
             self.data = in_range
         else:
-            return VectorSequence(basis_col_name=self.basis_col_name, name_root=self.name_root, data=in_range)
+            if 'sequence' in (return_type_lower := return_type.lower()):
+                return VectorSequence(basis_col_name=self.basis_col_name, name_root=self.name_root, data=in_range)
+            elif 'dataframe' in return_type_lower:
+                return in_range
+            else:
+                raise ValueError(f"Unknown return type: {return_type}")
 
     def index_to_basis(self) -> None:
         """  Adds (or overwrites) 'basis' column with a default index [0, 1, 2, ...] """
