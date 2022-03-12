@@ -456,7 +456,8 @@ class VectorSequence(VectorMultiset):
                                                  inplace=False, reset_index=True)
         return {**function(window_data, *args, **kwargs), 'window_start': start_at, 'window_width': window_width}
 
-    def sliding_window(self, function: Callable[[Any, List[Any], Dict[str, Any]], Dict[str, Any]],
+    #                                       vv sequence vv       vv args vv          vv kwargs vv
+    def sliding_window(self, function: Callable[[Any, Union[Tuple[Any], List[Any]], Dict[str, Any]], Dict[str, Any]],
                        window_widths: List[float] = None, window_starts: List[Any] = None, step_size: float = None,
                        parallelize_sliding_window: Union[bool, int] = True, *args, **kwargs) -> SlidingWindowResults:
         """ Apply function in a sliding window over the sequence
