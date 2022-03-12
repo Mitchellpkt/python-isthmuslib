@@ -493,30 +493,25 @@ class VectorSequence(VectorMultiset):
                     window_starts: List[float] = list(np.arange(min(basis), max(basis) - window_width, window_width))
             list_of_start_and_width_tuples += [(start_time, window_width) for start_time in window_starts]
 
-        # If evaluating in parallel, use at most the number of CPUs (and use all of them if count not specified)
-        if parallelize_sliding_window and (cpu_count() > 1):
+        # If parallelize_sliding_window != False, run in parallel using starmap() from multiprocessing library `Pool`
+        if parallelize_sliding_window and (cpu_count() > 1):  # (if only have one core, no benefit from multiprocessing)
             if isinstance(parallelize_sliding_window, bool):
-                num_workers: int = cpu_count()
+                num_workers: int = cpu_count()  # If param value is boolean `True` use all CPU cores
             else:
-                num_workers: int = min(cpu_count(), parallelize_sliding_window)
+                num_workers: int = min(cpu_count(), parallelize_sliding_window)  # Don't make more workers than cores
 
+            # Create a Pool and process the evaluations in parallel
             with Pool(num_workers) as pool:
                 evaluations: List[Dict[Any, Any]] = pool.starmap(
                     func=self.evaluate_over_window,
                     iterable=[(function, start, width, args, kwargs) for start, width in list_of_start_and_width_tuples]
                 )
 
-        # If evaluating in serial, it's simply a `for` loop
+        # If parallelize_sliding_window == False (or None) use `for` loop in list comprehension -> serial processing
         else:
-            evaluations: List[Dict[Any, Any]] = []
-            for start, width in list_of_start_and_width_tuples:
-                evaluations.append(self.evaluate_over_window(
-                    function=function,
-                    start_at=start,
-                    window_width=width,
-                    args=args,
-                    kwargs=kwargs
-                ))
+            evaluations: List[Dict[Any, Any]] = [self.evaluate_over_window(
+                function=function, start_at=start, window_width=width, args=args, kwargs=kwargs
+            ) for start, width in list_of_start_and_width_tuples]
 
         return SlidingWindowResults(window_width_col_name='window_width', window_start_col_name='window_start',
                                     data=pd.DataFrame(evaluations), name_root=self.name_root)
