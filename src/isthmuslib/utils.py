@@ -9,6 +9,7 @@ import pandas as pd
 import pathlib
 import numpy as np
 from tqdm.auto import tqdm
+from multiprocessing import cpu_count
 
 
 class PickleUtils(BaseModel):
@@ -223,3 +224,19 @@ def make_dict(d: Union[Dict, object, None]) -> Dict[Any, Any]:
         return d.dict()  # noqa
     else:
         return d
+
+
+def get_num_workers(parallelize_sliding_window: Union[bool, int]) -> int:
+    """
+    This is a helper function to ascertain the number of workers based on the parallelize_sliding_window input
+
+    :param parallelize_sliding_window: Whether to use multiprocessing for the sliding window. If True, uses # CPU cores.
+    :return: number of parallel workers to instantiate
+    """
+    if parallelize_sliding_window and (cpu_count() > 1):  # (if only have one core, no benefit from multiprocessing)
+        if isinstance(parallelize_sliding_window, bool):
+            return cpu_count()
+        else:
+            return min(cpu_count(), parallelize_sliding_window)
+    else:
+        return 1

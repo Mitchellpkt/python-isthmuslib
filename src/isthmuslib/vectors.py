@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from .config import Style
-from .utils import PickleUtils, Rosetta, make_dict
+from .utils import PickleUtils, Rosetta, make_dict, get_num_workers
 from .data_quality import basis_quality_checks, basis_quality_plots, fill_ratio
 from copy import deepcopy
 import statsmodels.api as sm
@@ -495,11 +495,8 @@ class VectorSequence(VectorMultiset):
             list_of_start_and_width_tuples += [(start_time, window_width) for start_time in window_starts]
 
         # If parallelize_sliding_window != False, run in parallel using starmap() from multiprocessing library `Pool`
-        if parallelize_sliding_window and (cpu_count() > 1):  # (if only have one core, no benefit from multiprocessing)
-            if isinstance(parallelize_sliding_window, bool):
-                num_workers: int = cpu_count()  # If param value is boolean `True` use all CPU cores
-            else:
-                num_workers: int = min(cpu_count(), parallelize_sliding_window)  # Don't make more workers than cores
+        if parallelize_sliding_window:
+            num_workers: int = get_num_workers(parallelize_sliding_window)
 
             # Create a Pool and process the evaluations in parallel
             with Pool(num_workers) as pool:
