@@ -196,6 +196,7 @@ def auto_extract_from_text(input_string: str, return_type: str = 'dataframe', le
 def auto_extract_from_file(file_path: Union[str, pathlib.Path], record_delimiter: str = None,
                            left_token: str = None, key_value_delimiter: str = None, right_token: str = None,
                            basis_col_name: str = None, disable_progress_bar: bool = None,
+                           parallelize: Union[bool, int] = False,
                            return_type: str = 'dataframe') -> Union[pd.DataFrame, VectorSequence, VectorMultiset]:
     """
     Extracts a data frame from a file
@@ -238,7 +239,7 @@ def auto_extract_from_file(file_path: Union[str, pathlib.Path], record_delimiter
         input_string: str = f.read()
 
     return auto_extract_from_text(input_string=input_string, return_type=return_type,
-                                  record_delimiter=record_delimiter, left_token=left_token,
+                                  record_delimiter=record_delimiter, left_token=left_token, parallelize=parallelize,
                                   key_value_delimiter=key_value_delimiter, right_token=right_token,
                                   basis_col_name=basis_col_name, disable_progress_bar=disable_progress_bar)
 
