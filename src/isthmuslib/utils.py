@@ -1,7 +1,7 @@
 import pickle as pickle
 from typing import Any
 from pydantic import BaseModel
-from typing import Dict, Union, List, Tuple
+from typing import Dict, Union, List, Tuple, Iterable
 from datetime import datetime
 import pytz
 from dateutil import parser
@@ -226,23 +226,23 @@ def make_dict(d: Union[Dict, object, None]) -> Dict[Any, Any]:
         return d
 
 
-def get_num_workers(parallelize_sliding_window: Union[bool, int]) -> int:
+def get_num_workers(parallelize_arg: Union[bool, int]) -> int:
     """
     This is a helper function to ascertain the number of workers based on the parallelize_sliding_window input
 
-    :param parallelize_sliding_window: Whether to use multiprocessing for the sliding window. If True, uses # CPU cores.
+    :param parallelize_arg: Whether to use multiprocessing for the sliding window. If True, uses # CPU cores.
     :return: number of parallel workers to instantiate
     """
-    if parallelize_sliding_window and (cpu_count() > 1):  # (if only have one core, no benefit from multiprocessing)
-        if isinstance(parallelize_sliding_window, bool):
+    if parallelize_arg and (cpu_count() > 1):  # (if only have one core, no benefit from multiprocessing)
+        if isinstance(parallelize_arg, bool):
             return cpu_count()
         else:
-            return min(cpu_count(), parallelize_sliding_window)
+            return min(cpu_count(), parallelize_arg)
     else:
         return 1
 
 
-def divvy_workload(num_tasks: int, num_workers: int) -> List[int]:
+def determine_load_per_worker(num_tasks: int, num_workers: int) -> List[int]:
     """
     This is a helper function to split up tasks across workers for batching. Example:
         Input: 83 tasks and 8 workers
@@ -254,3 +254,20 @@ def divvy_workload(num_tasks: int, num_workers: int) -> List[int]:
     """
     remainder: int = num_tasks % num_workers
     return remainder * [1 + (num_tasks // num_workers)] + (num_workers - remainder) * [num_tasks // num_workers]
+
+
+def divvy_workload(num_workers: int, tasks: List[Any]) -> List[List[Any]]:
+    """
+    Helper function that divvies up some tasks among a specific number of workers
+
+    :param num_workers: number of workers available in the pool (usually = number of workers)
+    :param tasks: task list to be carried out
+    :return: task list broken up into num_workers segments
+    """
+    load_per_worker: List[int] = determine_load_per_worker(num_tasks=len(tasks), num_workers=num_workers)
+    i: int = 0
+    task_list_all: List[List[Any]] = []
+    for load_amount in load_per_worker:
+        task_list_all.append(tasks[i:i + load_amount])
+        i += load_amount
+    return task_list_all

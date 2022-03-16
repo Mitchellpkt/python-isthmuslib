@@ -5,6 +5,7 @@ from tqdm.auto import tqdm
 from src.isthmuslib.vectors import VectorSequence, VectorMultiset
 from src.isthmuslib.utils import divvy_workload, get_num_workers
 from pydantic import BaseModel
+from multiprocessing import Pool
 
 
 class LogIO(BaseModel):
@@ -94,6 +95,32 @@ class LogIO(BaseModel):
                                            basis_col_name=basis_col_name, disable_progress_bar=disable_progress_bar)
 
 
+def chunk_processor_lambda(input_chunk: str, left_token: str = None, key_value_delimiter: str = None,
+                           right_token: str = None) -> Dict[str, Any]:
+    """ Helper lambda so we can do this in parallel or series """
+    output_chunk_dict: Dict[str, Any] = dict()
+    raw_breaks: List[str] = input_chunk.split(left_token)[1:]
+    middle: List[str] = [x.split(right_token)[0] for x in raw_breaks]
+    # Loop over possible tokens
+    for entry in middle:
+        if key_value_delimiter not in entry:
+            continue  # Do not attempt to parse if the delimiter is not present
+        substrings: List[str] = entry.split(key_value_delimiter)
+        key: str = substrings[0]
+        if not key:
+            continue  # Do not continue to parse if the key is known
+        value: str = ''.join([x + key_value_delimiter for x in substrings[1:]])[:-1]
+        output_chunk_dict.setdefault(key, value)  # Add the value to this row
+    return output_chunk_dict
+
+
+def multi_chunk_processor_lambda(args: Tuple[List[str], str, str, str]) -> List[Dict[str, Any]]:
+    """ Helper function that works through a queue of chunks (for parallelization) """
+    input_chunks, left_token, key_value_delimiter, right_token = args
+    return [chunk_processor_lambda(x, left_token=left_token, key_value_delimiter=key_value_delimiter,
+                                   right_token=right_token) for x in input_chunks]
+
+
 def auto_extract_from_text(input_string: str, return_type: str = 'dataframe', left_token: str = None,
                            key_value_delimiter: str = None, right_token: str = None, basis_col_name: str = None,
                            record_delimiter: str = None, parallelize: Union[bool, int] = False,
@@ -121,40 +148,37 @@ def auto_extract_from_text(input_string: str, return_type: str = 'dataframe', le
     :return: pandas.DataFrame or VectorMultiset or VectorSequence
     """
 
-    # Use the default tokens if not specified
-    for token in ['left_token', 'right_token', 'key_value_delimiter', 'record_delimiter']:
-        if not locals().get(token):
-            locals()[token] = getattr(LogIO(), token)
+    # # Use the default tokens if not specified
+    # for token in ['left_token', 'right_token', 'key_value_delimiter', 'record_delimiter']:
+    #     if not locals().get(token):
+    #         locals()[token] = getattr(LogIO(), token)
+    # TODO: Troubleshoot the above later. Meanwhile:
+    if not left_token:
+        left_token = LogIO().left_token
+    if not right_token:
+        right_token = LogIO().right_token
+    if not key_value_delimiter:
+        key_value_delimiter = LogIO().key_value_delimiter
+    if not record_delimiter:
+        record_delimiter = LogIO().record_delimiter
 
     df_output: pd.DataFrame = pd.DataFrame()
     record_chunks: List[str] = input_string.split(record_delimiter)[1:]
     chunk_buffers: List[Dict[str, Any]] = []
 
-    def chunk_processor_lambda(chunk: str):
-        chunk_buffer: Dict[str, Any] = dict()
-        raw_breaks: List[str] = chunk.split(left_token)[1:]
-        middle: List[str] = [x.split(right_token)[0] for x in raw_breaks]
-        # Loop over possible tokens
-        for entry in middle:
-            if key_value_delimiter not in entry:
-                continue  # Do not attempt to parse if the delimiter is not present
-            substrings: List[str] = entry.split(key_value_delimiter)
-            key: str = substrings[0]
-            if not key:
-                continue  # Do not continue to parse if the key is known
-            value: str = ''.join([x + key_value_delimiter for x in substrings[1:]])[:-1]
-            chunk_buffer.setdefault(key, value)  # Add the value to this row
-        return chunk_buffer
-
     # Process the chunks
     num_workers: int = get_num_workers(parallelize_arg=parallelize)
     if parallelize and (num_workers > 1):
-        # Parallel processing
-        pass
+        batches: List[List[Any]] = divvy_workload(num_workers=num_workers, tasks=record_chunks)
+        i: List[Tuple[List[str], str, str, str]] = [(b, left_token, key_value_delimiter, right_token) for b in batches]
+        with Pool(num_workers) as pool:
+            chunk_buffers: Any = pool.map(func=multi_chunk_processor_lambda, iterable=i)
+
     else:
         # Serial processing
         for chunk in tqdm(record_chunks, disable=disable_progress_bar):
-            chunk_buffers.append(chunk_processor_lambda(chunk))
+            chunk_buffers.append(chunk_processor_lambda(chunk, left_token=left_token, right_token=right_token,
+                                                        key_value_delimiter=key_value_delimiter))
 
     # Convert the buffers to a dataframe
     for chunk_buffer in chunk_buffers:
@@ -195,10 +219,19 @@ def auto_extract_from_file(file_path: Union[str, pathlib.Path], record_delimiter
     :return: pandas.DataFrame or VectorMultiset or VectorSequence
     """
 
-    # Use the default tokens if not specified
-    for token in ['left_token', 'right_token', 'key_value_delimiter', 'record_delimiter']:
-        if not locals().get(token):
-            locals()[token] = getattr(LogIO(), token)
+    # # Use the default tokens if not specified
+    # for token in ['left_token', 'right_token', 'key_value_delimiter', 'record_delimiter']:
+    #     if not locals().get(token):
+    #         locals()[token] = getattr(LogIO(), token)
+    # TODO: Troubleshoot the above later. Meanwhile:
+    if not left_token:
+        left_token = LogIO().left_token
+    if not right_token:
+        right_token = LogIO().right_token
+    if not key_value_delimiter:
+        key_value_delimiter = LogIO().key_value_delimiter
+    if not record_delimiter:
+        record_delimiter = LogIO().record_delimiter
 
     # Read in the file
     with open(file_path, 'r') as f:
