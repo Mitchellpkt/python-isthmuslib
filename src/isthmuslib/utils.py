@@ -240,3 +240,17 @@ def get_num_workers(parallelize_sliding_window: Union[bool, int]) -> int:
             return min(cpu_count(), parallelize_sliding_window)
     else:
         return 1
+
+
+def divvy_workload(num_tasks: int, num_workers: int) -> List[int]:
+    """
+    This is a helper function to split up tasks across workers for batching. Example:
+        Input: 83 tasks and 8 workers
+        Output: [11, 11, 11, 10, 10, 10, 10, 10]
+
+    :param num_tasks: Number of tasks to be tackled
+    :param num_workers: Number of workers available in the pool (usually = number of CPU cores)
+    :return: List designating how many tasks each worker should take
+    """
+    remainder: int = num_tasks % num_workers
+    return remainder * [1 + (num_tasks // num_workers)] + (num_workers - remainder) * [num_tasks // num_workers]
