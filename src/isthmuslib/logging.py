@@ -6,7 +6,7 @@ from .vectors import VectorSequence, VectorMultiset
 from .utils import divvy_workload, get_num_workers
 from pydantic import BaseModel
 from multiprocessing import Pool
-from time import perf_counter
+from time import perf_counter_ns, perf_counter
 
 
 class LogIO(BaseModel):
@@ -150,7 +150,7 @@ def auto_extract_from_text(input_string: str, return_type: str = 'dataframe', le
     :param disable_progress_bar: pass anything True to silence the progress bar
     :return: pandas.DataFrame or VectorMultiset or VectorSequence
     """
-
+    times_ns: List[int] = []
     # # Use the default tokens if not specified
     # for token in ['left_token', 'right_token', 'key_value_delimiter', 'record_delimiter']:
     #     if not locals().get(token):
@@ -183,7 +183,8 @@ def auto_extract_from_text(input_string: str, return_type: str = 'dataframe', le
             chunk_buffers.append(chunk_processor_lambda(chunk, left_token=left_token, right_token=right_token,
                                                         key_value_delimiter=key_value_delimiter))
 
-    # # I would expect this to be the cleaner way to implement flattening, but the performance of the next block wins
+    # # I would expect this to be the cleaner way to implement flattening, but the performance of the next block wins.
+    # # However I might experiment with this later to parallelize the flattening specifically, to see if that helps.
     # all_keys_nested: List[List[str]] = [list(buffer.keys()) for buffer in chunk_buffers]
     # all_keys_flat: List[str] = [item for sublist in all_keys_nested for item in sublist]
     # # (this next line is the one that is very slow at scale)
@@ -191,21 +192,16 @@ def auto_extract_from_text(input_string: str, return_type: str = 'dataframe', le
     # df_output: pd.DataFrame = pd.DataFrame(reshaped)
 
     num_reshape_workers: int = get_num_workers(parallelize_arg=parallelize_processing)
-    print('   reshaping...')
-    tic: float = perf_counter()
     if parallelize_processing and (num_reshape_workers > 1):
-        print('   ... in parallel')
         batches: List[List[Any]] = divvy_workload(num_workers=num_reshape_workers, tasks=chunk_buffers)
         with Pool(num_reshape_workers) as pool:
             dataframes: List[pd.DataFrame] = pool.map(func=dicts_to_dataframe, iterable=batches)
         df: pd.DataFrame = pd.concat(dataframes, ignore_index=True)
     else:
-        print('   ... in serial')
         df: pd.DataFrame = pd.DataFrame()
         for chunk_buffer in chunk_buffers:
             if chunk_buffer:
                 df: pd.DataFrame = pd.concat([df, pd.DataFrame(chunk_buffer, index=[-1])], ignore_index=True)
-    print(f'... Reshaping done in {perf_counter() - tic:.4f} seconds')
 
     if 'dataframe' in return_type.lower():
         return df
