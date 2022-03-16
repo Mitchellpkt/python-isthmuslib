@@ -280,3 +280,8 @@ Changelog
 -------------------
 
 * chore: slice out dataframes from vector sequence
+
+0.0.59 (2022-03-16)
+-------------------
+
+* chore: parsing optimizations
