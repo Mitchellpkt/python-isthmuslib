@@ -2,8 +2,8 @@ import pathlib
 from typing import Union, Dict, Any, List, Tuple
 import pandas as pd
 from tqdm.auto import tqdm
-from src.isthmuslib.vectors import VectorSequence, VectorMultiset
-from src.isthmuslib.utils import divvy_workload, get_num_workers
+from .vectors import VectorSequence, VectorMultiset
+from .utils import divvy_workload, get_num_workers
 from pydantic import BaseModel
 from multiprocessing import Pool
 
