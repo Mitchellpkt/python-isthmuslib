@@ -271,3 +271,6 @@ def divvy_workload(num_workers: int, tasks: List[Any]) -> List[List[Any]]:
         task_list_all.append(tasks[i:i + load_amount])
         i += load_amount
     return task_list_all
+
+def v() -> int:
+    return 55
