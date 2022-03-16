@@ -6,7 +6,7 @@ from .vectors import VectorSequence, VectorMultiset
 from .utils import divvy_workload, get_num_workers
 from pydantic import BaseModel
 from multiprocessing import Pool
-from time import perf_counter_ns, perf_counter
+from copy import deepcopy
 
 
 class LogIO(BaseModel):
@@ -222,6 +222,26 @@ def dicts_to_dataframe(dictionaries: List[Dict[str, Any]]) -> pd.DataFrame:
     for dictionary in [d for d in dictionaries if d]:
         df = pd.concat([df, pd.DataFrame(dictionary, index=[-1])], ignore_index=True)
     return df
+
+
+def batch_dicts_to_dataframe(dictionaries: List[Dict[str, Any]], batch_dicts_to_dataframe: int = 1000) -> pd.DataFrame:
+    """
+    Helper function that converts a list of dictionaries into a dataframe (each dictionary = 1 row)
+
+    :param dictionaries: list of dictionaries, with one value per key per row
+    :param batch_dicts_to_dataframe: how many rows to batch together
+    :return: dataframe representation
+    """
+
+    batches: List[pd.DataFrame] = []
+    df_in_progress: pd.DataFrame = pd.DataFrame()
+    for i, dictionary in enumerate([d for d in dictionaries if d]):
+        df_in_progress = pd.concat([df_in_progress, pd.DataFrame(dictionary, index=[-1])], ignore_index=True)
+        if i % batch_dicts_to_dataframe == 0:
+            batches.append(deepcopy(df_in_progress))
+            df_in_progress = pd.DataFrame()
+
+    return pd.concat(batches, ignore_index=True)
 
 
 def auto_extract_from_file(file_path: Union[str, pathlib.Path], record_delimiter: str = None,
