@@ -3,6 +3,7 @@ from typing import Union, Dict, Any, List, Tuple
 import pandas as pd
 from tqdm.auto import tqdm
 from src.isthmuslib.vectors import VectorSequence, VectorMultiset
+from src.isthmuslib.utils import divvy_workload
 from pydantic import BaseModel
 
 
@@ -93,9 +94,9 @@ class LogIO(BaseModel):
                                            basis_col_name=basis_col_name, disable_progress_bar=disable_progress_bar)
 
 
-def auto_extract_from_text(input_string: str, return_type: str = 'dataframe',
-                           left_token: str = None, key_value_delimiter: str = None, right_token: str = None,
-                           basis_col_name: str = None, record_delimiter: str = None,
+def auto_extract_from_text(input_string: str, return_type: str = 'dataframe', left_token: str = None,
+                           key_value_delimiter: str = None, right_token: str = None, basis_col_name: str = None,
+                           record_delimiter: str = None, parallelize: Union[bool, int] = False,
                            disable_progress_bar: bool = None) -> Union[pd.DataFrame, VectorSequence, VectorMultiset]:
     """
     Extracts a data frame from a string
@@ -115,33 +116,44 @@ def auto_extract_from_text(input_string: str, return_type: str = 'dataframe',
     :param right_token: right side of a record
     :param basis_col_name: optional, specify a basis column name for a VectorSequence (otherwise ignored)
     :param return_type: what format to return the data in
+    :param parallelize: whether to parallelize calculations. Can be an integer (# workers) or bool True / False
     :param disable_progress_bar: pass anything True to silence the progress bar
     :return: pandas.DataFrame or VectorMultiset or VectorSequence
     """
 
     # Use the default tokens if not specified
     for token in ['left_token', 'right_token', 'key_value_delimiter', 'record_delimiter']:
-        if token not in locals():
+        if not locals().get(token):
             locals()[token] = getattr(LogIO(), token)
 
     df_output: pd.DataFrame = pd.DataFrame()
-    # Loop over rows
-    for chunk in tqdm(input_string.split(record_delimiter)[1:], disable=disable_progress_bar):
-        chunk_buffer: Dict[str, Any] = dict()
-        raw_breaks: List[str] = chunk.split(left_token)[1:]
-        middle: List[str] = [x.split(right_token)[0] for x in raw_breaks]
-        # Loop over possible tokens
-        for entry in middle:
-            if key_value_delimiter not in entry:
-                continue  # Do not attempt to parse if the delimiter is not present
-            substrings: List[str] = entry.split(key_value_delimiter)
-            key: str = substrings[0]
-            if not key:
-                continue  # Do not continue to parse if the key is known
-            value: str = ''.join([x + key_value_delimiter for x in substrings[1:]])[:-1]
-            chunk_buffer.setdefault(key, value)  # Add the value to this row
+    record_chunks: List[str] = input_string.split(record_delimiter)[1:]
+    chunk_buffers: List[Dict[str, Any]] = []
+    # Process the chunks
+    if parallelize:
+        pass
+    else:
+        for chunk in tqdm(record_chunks, disable=disable_progress_bar):
+            chunk_buffer: Dict[str, Any] = dict()
+            raw_breaks: List[str] = chunk.split(left_token)[1:]
+            middle: List[str] = [x.split(right_token)[0] for x in raw_breaks]
+            # Loop over possible tokens
+            for entry in middle:
+                if key_value_delimiter not in entry:
+                    continue  # Do not attempt to parse if the delimiter is not present
+                substrings: List[str] = entry.split(key_value_delimiter)
+                key: str = substrings[0]
+                if not key:
+                    continue  # Do not continue to parse if the key is known
+                value: str = ''.join([x + key_value_delimiter for x in substrings[1:]])[:-1]
+                chunk_buffer.setdefault(key, value)  # Add the value to this row
+            chunk_buffers.append(chunk_buffer)
+
+    # Convert the buffers to a dataframe
+    for chunk_buffer in chunk_buffers:
         if chunk_buffer:
             df_output = pd.concat([df_output, pd.DataFrame(chunk_buffer, index=[-1])], ignore_index=True)
+
     if 'dataframe' in return_type.lower():
         return df_output
     elif 'multiset' in return_type.lower():
@@ -178,8 +190,8 @@ def auto_extract_from_file(file_path: Union[str, pathlib.Path], record_delimiter
 
     # Use the default tokens if not specified
     for token in ['left_token', 'right_token', 'key_value_delimiter', 'record_delimiter']:
-        if token not in locals():
-            locals()[token] = getattr(LogIO, token)
+        if not locals().get(token):
+            locals()[token] = getattr(LogIO(), token)
 
     # Read in the file
     with open(file_path, 'r') as f:
