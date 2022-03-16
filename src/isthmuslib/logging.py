@@ -172,7 +172,8 @@ def auto_extract_from_text(input_string: str, return_type: str = 'dataframe', le
         batches: List[List[Any]] = divvy_workload(num_workers=num_workers, tasks=record_chunks)
         i: List[Tuple[List[str], str, str, str]] = [(b, left_token, key_value_delimiter, right_token) for b in batches]
         with Pool(num_workers) as pool:
-            chunk_buffers: Any = pool.map(func=multi_chunk_processor_lambda, iterable=i)
+            chunk_buffers_nested: List[List[Dict[str, Any]]] = pool.map(func=multi_chunk_processor_lambda, iterable=i)
+        chunk_buffers: List[Dict[str, Any]] = [item for sublist in chunk_buffers_nested for item in sublist]
 
     else:
         # Serial processing
