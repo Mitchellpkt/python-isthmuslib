@@ -7,7 +7,6 @@ from .utils import divvy_workload, get_num_workers
 from pydantic import BaseModel
 from multiprocessing import Pool
 
-
 class LogIO(BaseModel):
     record_delimiter: str = '[@@@]'
     left_token: str = '[<<'
@@ -181,7 +180,13 @@ def auto_extract_from_text(input_string: str, return_type: str = 'dataframe', le
             chunk_buffers.append(chunk_processor_lambda(chunk, left_token=left_token, right_token=right_token,
                                                         key_value_delimiter=key_value_delimiter))
 
-    # Convert the buffers to a dataframe
+    # # I would expect this to be the cleaner way to implement flattening, but the performance of the next block wins
+    # all_keys_nested: List[List[str]] = [list(buffer.keys()) for buffer in chunk_buffers]
+    # all_keys_flat: List[str] = [item for sublist in all_keys_nested for item in sublist]
+    # # (this next line is the one that is very slow at scale)
+    # reshaped: Dict[str, List[Any]] = {key: [chunk.get(key, None) for chunk in chunk_buffers] for key in all_keys_flat}
+    # df_output: pd.DataFrame = pd.DataFrame(reshaped)
+
     for chunk_buffer in chunk_buffers:
         if chunk_buffer:
             df_output = pd.concat([df_output, pd.DataFrame(chunk_buffer, index=[-1])], ignore_index=True)
