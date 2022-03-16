@@ -3,7 +3,7 @@ from typing import Union, Dict, Any, List, Tuple
 import pandas as pd
 from tqdm.auto import tqdm
 from src.isthmuslib.vectors import VectorSequence, VectorMultiset
-from src.isthmuslib.utils import divvy_workload
+from src.isthmuslib.utils import divvy_workload, get_num_workers
 from pydantic import BaseModel
 
 
@@ -129,25 +129,32 @@ def auto_extract_from_text(input_string: str, return_type: str = 'dataframe', le
     df_output: pd.DataFrame = pd.DataFrame()
     record_chunks: List[str] = input_string.split(record_delimiter)[1:]
     chunk_buffers: List[Dict[str, Any]] = []
+
+    def chunk_processor_lambda(chunk: str):
+        chunk_buffer: Dict[str, Any] = dict()
+        raw_breaks: List[str] = chunk.split(left_token)[1:]
+        middle: List[str] = [x.split(right_token)[0] for x in raw_breaks]
+        # Loop over possible tokens
+        for entry in middle:
+            if key_value_delimiter not in entry:
+                continue  # Do not attempt to parse if the delimiter is not present
+            substrings: List[str] = entry.split(key_value_delimiter)
+            key: str = substrings[0]
+            if not key:
+                continue  # Do not continue to parse if the key is known
+            value: str = ''.join([x + key_value_delimiter for x in substrings[1:]])[:-1]
+            chunk_buffer.setdefault(key, value)  # Add the value to this row
+        return chunk_buffer
+
     # Process the chunks
-    if parallelize:
+    num_workers: int = get_num_workers(parallelize_arg=parallelize)
+    if parallelize and (num_workers > 1):
+        # Parallel processing
         pass
     else:
+        # Serial processing
         for chunk in tqdm(record_chunks, disable=disable_progress_bar):
-            chunk_buffer: Dict[str, Any] = dict()
-            raw_breaks: List[str] = chunk.split(left_token)[1:]
-            middle: List[str] = [x.split(right_token)[0] for x in raw_breaks]
-            # Loop over possible tokens
-            for entry in middle:
-                if key_value_delimiter not in entry:
-                    continue  # Do not attempt to parse if the delimiter is not present
-                substrings: List[str] = entry.split(key_value_delimiter)
-                key: str = substrings[0]
-                if not key:
-                    continue  # Do not continue to parse if the key is known
-                value: str = ''.join([x + key_value_delimiter for x in substrings[1:]])[:-1]
-                chunk_buffer.setdefault(key, value)  # Add the value to this row
-            chunk_buffers.append(chunk_buffer)
+            chunk_buffers.append(chunk_processor_lambda(chunk))
 
     # Convert the buffers to a dataframe
     for chunk_buffer in chunk_buffers:
