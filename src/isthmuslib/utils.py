@@ -107,6 +107,15 @@ class Rosetta(BaseModel):
             the output will reflect the value from the second (`other`) stone """
         self.stone = {**self.stone, **other.stone}
 
+    def merge(self, string: str, **kwargs) -> str:
+        """
+        Helper function that replaces merge fields in a string
+
+        :param string: string to be modified, e.g. "Records from [[start_date]] for [[first_name]]"
+        :return: merged string, e.g. "Records from 2011-05-06 for Foobar
+        """
+        return object_string_merge(string=string, values_from=self.stone, **kwargs)
+
 
 def human_time(timestamp_sec: Union[float, str, int], formatter: str = '%Y-%m-%d %H:%M:%S',
                timezone: str = 'US/Pacific', include_timezone: bool = True) -> str:
@@ -272,5 +281,27 @@ def divvy_workload(num_workers: int, tasks: List[Any]) -> List[List[Any]]:
         i += load_amount
     return task_list_all
 
-def v() -> int:
-    return 55
+
+def object_string_merge(string: str, values_from: Any, left_merge_token: str = '[[',
+                        right_merge_token: str = ']]') -> str:
+    """
+    Helper function that replaces merge fields in a string
+
+
+    :param string: string to be modified, e.g. "Records from [[start_date]] for [[first_name]]"
+    :param values_from: source of values, can be dictionary or BaseModel-like object with dict() method.
+    :param left_merge_token: token to indicate left end of a merge field
+    :param right_merge_token: token to indicate right end of a merge field
+    :return: merged string, e.g. "Records from 2011-05-06 for Foobar
+    """
+    if isinstance(values_from, dict):
+        values_dict: Dict[str, Any] = values_from
+    elif hasattr(values_from, 'dict'):
+        values_dict: Dict[str, Any] = values_from.dict()
+    else:
+        raise ValueError(f"Unsure how to interpret `values_from`. Expecting a dictionary or BaseModel-like object.")
+
+    for k, v in values_dict.items():
+        if k in string:
+            string = string.replace(f"{left_merge_token}{k}{right_merge_token}", f"{v}")
+    return string
