@@ -357,9 +357,9 @@ class VectorSequence(VectorMultiset):
     basis_col_name: str = 'basis'
     error_if_basis_quality_issues: bool = False
 
-    def __init__(self, **data: Any):
+    def __init__(self, skip_vector_sequence_init: bool = False, **data: Any):
         super().__init__(**data)
-        if self.data is not None:
+        if (self.data is not None) and (not skip_vector_sequence_init):
             self.sort(by=self.basis_col_name, inplace=True, reset_index=True)
             if self.error_if_basis_quality_issues:
                 is_ok, explanation = self.passes_basis_quality_checks()
