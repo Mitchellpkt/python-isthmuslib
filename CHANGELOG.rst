@@ -285,3 +285,8 @@ Changelog
 -------------------
 
 * chore: parsing optimizations
+
+0.0.60 (2022-03-17)
+-------------------
+
+* tweak: plot arg hondling
