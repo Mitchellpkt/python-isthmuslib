@@ -145,7 +145,8 @@ class VectorMultiset(PickleUtils, Style, Rosetta):
             y_data: Any = y
 
         kwargs.setdefault('title', self.translate(self.name_root))
-        return visualize_x_y(x_data, y_data, style=Style(**self.dict()), **kwargs)
+        style: Style = kwargs.pop('style', Style(**self.dict()))
+        return visualize_x_y(x_data, y_data, style=style, **kwargs)
 
     def scatter(self, *args, **kwargs) -> plt.Figure:
         """ Creates a 2D scatter plot of x and y data (wraps visualize_x_y) """
