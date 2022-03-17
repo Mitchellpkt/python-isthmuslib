@@ -179,7 +179,8 @@ def auto_extract_from_text(input_string: str, return_type: str = 'dataframe', le
 
     else:
         # Serial processing
-        for chunk in tqdm(record_chunks, disable=disable_progress_bar):
+        for chunk in (p1 := tqdm(record_chunks, disable=disable_progress_bar)):
+            p1.set_description('Scanning file (step 1 of 2)')
             chunk_buffers.append(chunk_processor_lambda(chunk, left_token=left_token, right_token=right_token,
                                                         key_value_delimiter=key_value_delimiter))
 
@@ -199,7 +200,8 @@ def auto_extract_from_text(input_string: str, return_type: str = 'dataframe', le
         df: pd.DataFrame = pd.concat(dataframes, ignore_index=True)
     else:
         df: pd.DataFrame = pd.DataFrame()
-        for chunk_buffer in chunk_buffers:
+        for chunk_buffer in (p2 := tqdm(chunk_buffers, disable=disable_progress_bar)):
+            p2.set_description('Reshaping data (step 2 of 2)')
             if chunk_buffer:
                 df: pd.DataFrame = pd.concat([df, pd.DataFrame(chunk_buffer, index=[-1])], ignore_index=True)
 
