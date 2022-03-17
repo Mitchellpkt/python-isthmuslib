@@ -122,19 +122,28 @@ class VectorMultiset(PickleUtils, Style, Rosetta):
     # Visualizations
     ################
 
-    def visualize_x_y(self, x_name: str, y_name: str, cumulative: Union[str, List[str]] = '', **kwargs) -> plt.Figure:
+    def visualize_x_y(self, x: Union[str, List[Any], Any], y: Union[str, List[Any], Any],
+                      cumulative: Union[str, List[str]] = '', **kwargs) -> plt.Figure:
         """ Visualize in two dimensions
 
-        :param x_name: name of the x-axis data feature
-        :param y_name: name of the y-axis data feature
+        :param x: name of the x-axis data feature (or the data itself)
+        :param y: name of the y-axis data feature (or the data itself)
         :param cumulative: Which (if any) dimensions should be cumulative, e.g. 'x' or ['x','y'] or 'xy'
         :param kwargs: additional kwargs for isthmuslib.visualize_x_y, passed through to matplotlib.pyplot.scatter()
         :return: figure handle for the plot
         """
-        x_data: List[Any] = self.values(x_name, cumulative='x' in cumulative)
-        y_data: List[Any] = self.values(y_name, cumulative='y' in cumulative)
-        kwargs.setdefault('xlabel', self.translate(x_name))
-        kwargs.setdefault('ylabel', self.translate(y_name))
+        if isinstance(x, str):
+            x_data: List[Any] = self.values(x, cumulative='x' in cumulative)
+            kwargs.setdefault('xlabel', self.translate(x))
+        else:
+            x_data: Any = x
+
+        if isinstance(y, str):
+            y_data: List[Any] = self.values(y, cumulative='y' in cumulative)
+            kwargs.setdefault('ylabel', self.translate(x))
+        else:
+            y_data: Any = y
+
         kwargs.setdefault('title', self.translate(self.name_root))
         return visualize_x_y(x_data, y_data, style=Style(**self.dict()), **kwargs)
 
