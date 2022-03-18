@@ -1,7 +1,7 @@
 import pickle as pickle
 from typing import Any
 from pydantic import BaseModel
-from typing import Dict, Union, List, Tuple, Iterable
+from typing import Dict, Union, List, Tuple
 from datetime import datetime
 import pytz
 from dateutil import parser
@@ -115,6 +115,10 @@ class Rosetta(BaseModel):
         :return: merged string, e.g. "Records from 2011-05-06 for Foobar
         """
         return object_string_merge(string=string, values_from=self.stone, **kwargs)
+
+    def risky_cast(self, x: Any) -> Any:  # noqa: it is static, attached here only for convenience.
+        """ Reckless helper function that tries to cast the input to a number (float) or boolean """
+        return risky_cast(x)
 
 
 def human_time(timestamp_sec: Union[float, str, int], formatter: str = '%Y-%m-%d %H:%M:%S',
@@ -305,3 +309,14 @@ def object_string_merge(string: str, values_from: Any, left_merge_token: str = '
         if k in string:
             string = string.replace(f"{left_merge_token}{k}{right_merge_token}", f"{v}")
     return string
+
+
+def risky_cast(x: Any) -> Any:
+    """ Reckless helper function that tries to cast the input to a number (float) or boolean """
+    try:
+        return float(x)
+    except:  # noqa: it literally says 'risky' in the name...
+        try:
+            return bool(x)
+        except:  # noqa: it literally says 'risky' in the name...
+            return x
