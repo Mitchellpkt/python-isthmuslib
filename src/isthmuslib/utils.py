@@ -314,9 +314,12 @@ def object_string_merge(string: str, values_from: Any, left_merge_token: str = '
 def risky_cast(x: Any) -> Any:
     """ Reckless helper function that tries to cast the input to a number (float) or boolean """
     try:
-        return float(x)
+        return {k[0]: risky_cast(k[1]) for k in [j.split('=') for j in x.split(', ')]}  # "a=5, b=6"
     except:  # noqa: it literally says 'risky' in the name...
         try:
-            return bool(x)
+            return float(x)
         except:  # noqa: it literally says 'risky' in the name...
-            return x
+            try:
+                return bool(x)
+            except:  # noqa: it literally says 'risky' in the name...
+                return x
