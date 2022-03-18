@@ -319,8 +319,8 @@ def risky_cast(x: Any) -> Any:
         try:
             return float(x)
         except:  # noqa: it literally says 'risky' in the name...
-            try:
-                str_to_bool_mapper: Dict[str, Any] = {'true': True, 'false': False}
-                return str_to_bool_mapper[x.lower()]
-            except:  # noqa: it literally says 'risky' in the name...
+            str_to_bool_mapper: Dict[str, Any] = {'true': True, 'false': False}
+            if x.lower() in str_to_bool_mapper:
+                return str_to_bool_mapper[x]
+            else:
                 return x
