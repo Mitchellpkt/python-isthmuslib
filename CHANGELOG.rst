@@ -289,4 +289,9 @@ Changelog
 0.0.60 (2022-03-17)
 -------------------
 
-* tweak: plot arg hondling
+* tweak: plot arg handling
+
+0.0.61 (2022-03-17)
+-------------------
+
+* tweak: better type handling
