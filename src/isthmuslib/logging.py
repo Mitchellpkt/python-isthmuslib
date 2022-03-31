@@ -150,7 +150,6 @@ def auto_extract_from_text(input_string: str, return_type: str = 'dataframe', le
     :param disable_progress_bar: pass anything True to silence the progress bar
     :return: pandas.DataFrame or VectorMultiset or VectorSequence
     """
-    times_ns: List[int] = []
     # # Use the default tokens if not specified
     # for token in ['left_token', 'right_token', 'key_value_delimiter', 'record_delimiter']:
     #     if not locals().get(token):
@@ -192,9 +191,40 @@ def auto_extract_from_text(input_string: str, return_type: str = 'dataframe', le
     # reshaped: Dict[str, List[Any]] = {key: [chunk.get(key, None) for chunk in chunk_buffers] for key in all_keys_flat}
     # df_output: pd.DataFrame = pd.DataFrame(reshaped)
 
+    df: pd.DataFrame = process_chunk_buffers(chunk_buffers, disable_progress_bar, parallelize_processing)
+
+    if 'dataframe' in return_type.lower():
+        return df
+    elif 'multiset' in return_type.lower():
+        return VectorMultiset(data=df)
+    elif 'sequence' in return_type.lower():
+        return VectorSequence(data=df, basis_col_name=basis_col_name)
+
+
+def process_chunk_buffers(chunk_buffers, parallelize_processing: Union[bool, int] = False,
+                          disable_progress_bar: bool = None) -> pd.DataFrame:
+    """
+     Extracts a data frame from a string
+
+    Input: "the [@@@] quick [<<x='foo'>>] brown[<<y=9>>] [@@@]fox [<<y=93>>]"
+    Output: (data frame)
+                   x   y
+            0  'foo'   9
+            1    NaN  93
+
+    Hint, write your logs using python fstrings like f"Foo [<<{x=}>>] and [<<{y=}>>]"
+
+    :param chunk_buffers: list of dictionaries to be added to a dataframe
+    :param parallelize_processing: whether to parallelize flattening. Can be an integer (# workers) or bool True / False
+    :param disable_progress_bar: pass anything True to silence the progress bar
+    :return: pandas.DataFrame or VectorMultiset or VectorSequence
+    """
+
     num_reshape_workers: int = get_num_workers(parallelize_arg=parallelize_processing)
     if parallelize_processing and (num_reshape_workers > 1):
         batches: List[List[Any]] = divvy_workload(num_workers=num_reshape_workers, tasks=chunk_buffers)
+        if not disable_progress_bar:
+            print(f"Reshaping data (step 2 of 2) in parallel")
         with Pool(num_reshape_workers) as pool:
             dataframes: List[pd.DataFrame] = pool.map(func=dicts_to_dataframe, iterable=batches)
         df: pd.DataFrame = pd.concat(dataframes, ignore_index=True)
@@ -204,13 +234,7 @@ def auto_extract_from_text(input_string: str, return_type: str = 'dataframe', le
             p2.set_description('Reshaping data (step 2 of 2)')
             if chunk_buffer:
                 df: pd.DataFrame = pd.concat([df, pd.DataFrame(chunk_buffer, index=[-1])], ignore_index=True)
-
-    if 'dataframe' in return_type.lower():
-        return df
-    elif 'multiset' in return_type.lower():
-        return VectorMultiset(data=df)
-    elif 'sequence' in return_type.lower():
-        return VectorSequence(data=df, basis_col_name=basis_col_name)
+    return df
 
 
 def dicts_to_dataframe(dictionaries: List[Dict[str, Any]]) -> pd.DataFrame:
@@ -226,12 +250,12 @@ def dicts_to_dataframe(dictionaries: List[Dict[str, Any]]) -> pd.DataFrame:
     return df
 
 
-def batch_dicts_to_dataframe(dictionaries: List[Dict[str, Any]], batch_dicts_to_dataframe: int = 1000) -> pd.DataFrame:
+def batch_dicts_to_dataframe(dictionaries: List[Dict[str, Any]], batch_size: int = 1000) -> pd.DataFrame:
     """
     Helper function that converts a list of dictionaries into a dataframe (each dictionary = 1 row)
 
     :param dictionaries: list of dictionaries, with one value per key per row
-    :param batch_dicts_to_dataframe: how many rows to batch together
+    :param batch_size: how many rows to batch together
     :return: dataframe representation
     """
 
@@ -239,7 +263,7 @@ def batch_dicts_to_dataframe(dictionaries: List[Dict[str, Any]], batch_dicts_to_
     df_in_progress: pd.DataFrame = pd.DataFrame()
     for i, dictionary in enumerate([d for d in dictionaries if d]):
         df_in_progress = pd.concat([df_in_progress, pd.DataFrame(dictionary, index=[-1])], ignore_index=True)
-        if i % batch_dicts_to_dataframe == 0:
+        if i % batch_size == 0:
             batches.append(deepcopy(df_in_progress))
             df_in_progress = pd.DataFrame()
 
@@ -301,7 +325,8 @@ def auto_extract_from_file(file_path: Union[str, pathlib.Path], record_delimiter
 
 
 def extract_text_to_dataframe(input_string: str, tokens_dictionary: Dict[str, Tuple[str, str]],
-                              record_delimiter: str = '[@@@]', disable_progress_bar: bool = None) -> pd.DataFrame:
+                              record_delimiter: str = '[@@@]', disable_progress_bar: bool = None,
+                              parallelize_processing: Union[bool, int] = False) -> pd.DataFrame:
     """
     Extracts a pandas dataframe from a string
 
@@ -309,10 +334,13 @@ def extract_text_to_dataframe(input_string: str, tokens_dictionary: Dict[str, Tu
     :param record_delimiter: The string that should be used to chunk up the string into observations / rows
     :param tokens_dictionary: Extraction rules. Key = label for column, value = (before token, after token)
     :param disable_progress_bar: pass anything True to silence the progress bar
+    :param parallelize_processing: whether to parallelize flattening. Can be an integer (# workers) or bool True / False
     :return: Vector data set extracted from the input string
     """
-    df_output: pd.DataFrame = pd.DataFrame()
-    for chunk in tqdm(input_string.split(record_delimiter), disable=disable_progress_bar):
+    # df_output: pd.DataFrame = pd.DataFrame()
+    chunk_buffers_list: List[Dict[str, Any]] = []
+    for chunk in (p := tqdm(input_string.split(record_delimiter), disable=disable_progress_bar)):
+        p.set_description('Reading and parsing (step 1 of 2)')
         chunk_buffer: Dict[str, Any] = dict()
         for key, (before_token, after_token) in tokens_dictionary.items():
             if before_token in chunk:
@@ -320,8 +348,10 @@ def extract_text_to_dataframe(input_string: str, tokens_dictionary: Dict[str, Tu
                 if after_token in target_chunk:
                     chunk_buffer.setdefault(key, target_chunk.split(after_token)[0])
         if chunk_buffer:
-            df_output = pd.concat([df_output, pd.DataFrame(chunk_buffer, index=[-1])], ignore_index=True)
-    return df_output
+            chunk_buffers_list.append(chunk_buffer)
+
+    return process_chunk_buffers(chunk_buffers=chunk_buffers_list, disable_progress_bar=disable_progress_bar,
+                                 parallelize_processing=parallelize_processing)
 
 
 def extract_text_to_vector(input_string: str, tokens_dictionary: Dict[str, Tuple[str, str]],
@@ -350,7 +380,7 @@ def extract_file_to_vector(file_path: Union[str, pathlib.Path], record_delimiter
                            tokens_dictionary: Dict[str, Tuple[str, str]], disable_progress_bar: bool = None,
                            basis_col_name: str = None) -> Union[VectorSequence, VectorMultiset]:
     """
-    Wrapper for extract_from_text that pulls vector data out of a file, such as raw log output
+    Wrapper for extract_from_text that pulls vector data out of a file, such as raw log output.
 
     :param file_path: file to read
     :param record_delimiter: The string that should be used to chunk up the string into observations / rows
