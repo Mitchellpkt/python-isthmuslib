@@ -295,3 +295,9 @@ Changelog
 -------------------
 
 * tweak: better type handling
+
+
+0.0.62 (2022-03-31)
+-------------------
+
+* tweak: more efficient parsing with tokens
