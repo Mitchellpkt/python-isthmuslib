@@ -312,15 +312,41 @@ def object_string_merge(string: str, values_from: Any, left_merge_token: str = '
 
 
 def risky_cast(x: Any) -> Any:
-    """ Reckless helper function that tries to cast the input to a number (float) or boolean """
-    try:
-        return {k[0]: risky_cast(k[1]) for k in [j.split('=') for j in x.split(', ')]}  # "a=5, b=6"
-    except:  # noqa: it literally says 'risky' in the name...
+    """
+    Reckless helper function that tries to cast the input to a dictionary or number (float) or boolean.
+
+    """
+
+    # If not a string, send it back
+    if not isinstance(x, str):
+        return x
+
+    # Try to parse model representations
+    if all(substr in x for substr in ['=', ',']):
         try:
-            return float(x)
-        except:  # noqa: it literally says 'risky' in the name...
-            str_to_bool_mapper: Dict[str, Any] = {'true': True, 'false': False}
-            if x.lower() in str_to_bool_mapper:
-                return str_to_bool_mapper[x]
-            else:
-                return x
+            return {k[0]: risky_cast(k[1]) for k in [j.split('=') for j in x.split(', ')]}  # "a=5, b=6"
+        except:
+            pass
+
+    # Float?
+    if x.replace('.', '', 1).isdigit():
+        if '.' in x:
+            try:
+                return float(x)
+            except:
+                pass
+
+        # Integer?
+        else:
+            try:
+                return int(x)
+            except:
+                pass
+
+    # Bool?
+    str_to_bool_mapper: Dict[str, Any] = {'true': True, 'false': False}
+    if x.lower() in str_to_bool_mapper:
+        return str_to_bool_mapper[x.lower()]
+
+    # Give up
+    return x
