@@ -183,15 +183,8 @@ def auto_extract_from_text(input_string: str, return_type: str = 'dataframe', le
             chunk_buffers.append(chunk_processor_lambda(chunk, left_token=left_token, right_token=right_token,
                                                         key_value_delimiter=key_value_delimiter))
 
-    # # I would expect this to be the cleaner way to implement flattening, but the performance of the next block wins.
-    # # However I might experiment with this later to parallelize the flattening specifically, to see if that helps.
-    # all_keys_nested: List[List[str]] = [list(buffer.keys()) for buffer in chunk_buffers]
-    # all_keys_flat: List[str] = [item for sublist in all_keys_nested for item in sublist]
-    # # (this next line is the one that is very slow at scale)
-    # reshaped: Dict[str, List[Any]] = {key: [chunk.get(key, None) for chunk in chunk_buffers] for key in all_keys_flat}
-    # df_output: pd.DataFrame = pd.DataFrame(reshaped)
-
-    df: pd.DataFrame = process_chunk_buffers(chunk_buffers, disable_progress_bar, parallelize_processing)
+    df: pd.DataFrame = process_chunk_buffers(chunk_buffers, disable_progress_bar=disable_progress_bar,
+                                             parallelize_processing=parallelize_processing)
 
     if 'dataframe' in return_type.lower():
         return df
@@ -356,7 +349,7 @@ def extract_text_to_dataframe(input_string: str, tokens_dictionary: Dict[str, Tu
 
 def extract_text_to_vector(input_string: str, tokens_dictionary: Dict[str, Tuple[str, str]],
                            record_delimiter: str = '[@@@]', disable_progress_bar: bool = None,
-                           basis_col_name: str = None) -> Union[VectorMultiset, VectorSequence]:
+                           basis_col_name: str = None, **kwargs) -> Union[VectorMultiset, VectorSequence]:
     """
     Extracts a VectorMultiset from a string (or a VectorSequence if you specify `basis_col_name`)
 
@@ -369,7 +362,7 @@ def extract_text_to_vector(input_string: str, tokens_dictionary: Dict[str, Tuple
     """
     df_output: pd.DataFrame = extract_text_to_dataframe(input_string=input_string, record_delimiter=record_delimiter,
                                                         tokens_dictionary=tokens_dictionary,
-                                                        disable_progress_bar=disable_progress_bar)
+                                                        disable_progress_bar=disable_progress_bar, **kwargs)
     if basis_col_name:
         return VectorSequence(data=df_output, basis_col_name=basis_col_name)
     else:
@@ -378,7 +371,7 @@ def extract_text_to_vector(input_string: str, tokens_dictionary: Dict[str, Tuple
 
 def extract_file_to_vector(file_path: Union[str, pathlib.Path], record_delimiter: str,
                            tokens_dictionary: Dict[str, Tuple[str, str]], disable_progress_bar: bool = None,
-                           basis_col_name: str = None) -> Union[VectorSequence, VectorMultiset]:
+                           basis_col_name: str = None, **kwargs) -> Union[VectorSequence, VectorMultiset]:
     """
     Wrapper for extract_from_text that pulls vector data out of a file, such as raw log output.
 
@@ -392,4 +385,4 @@ def extract_file_to_vector(file_path: Union[str, pathlib.Path], record_delimiter
     with open(file_path, 'r') as f:
         return extract_text_to_vector(input_string=f.read(), record_delimiter=record_delimiter,
                                       tokens_dictionary=tokens_dictionary, basis_col_name=basis_col_name,
-                                      disable_progress_bar=disable_progress_bar)
+                                      disable_progress_bar=disable_progress_bar, **kwargs)
