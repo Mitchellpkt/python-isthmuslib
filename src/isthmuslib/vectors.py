@@ -140,7 +140,7 @@ class VectorMultiset(PickleUtils, Style, Rosetta):
 
         if isinstance(y, str):
             y_data: List[Any] = self.values(y, cumulative='y' in cumulative)
-            kwargs.setdefault('ylabel', self.translate(x))
+            kwargs.setdefault('ylabel', self.translate(y))
         else:
             y_data: Any = y
 

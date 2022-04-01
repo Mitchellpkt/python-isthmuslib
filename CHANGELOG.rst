@@ -306,3 +306,8 @@ Changelog
 -------------------
 
 * tweak: kwargs passthrough
+
+0.0.64 (2022-04-01)
+-------------------
+
+* fix: vector multiset viz y label
