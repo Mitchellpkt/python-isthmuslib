@@ -366,12 +366,16 @@ class VectorSequence(VectorMultiset):
                 if not is_ok:
                     raise ValueError(f"Issues with basis:\n{explanation}\nSee: `error_if_basis_quality_issues`")
 
+    def basis(self) -> List[Any]:
+        """ Thin wrapper that returns the basis as a list """
+        return self.data.loc[:, self.basis_col_name].tolist()
+
     def basis_quality_checks(self) -> Tuple[bool, str]:
-        """ Checks basis data quality and returns both a True/False flag and a string with an explanation
+        """ Checks basis data quality and returns both a self.data.loc[:, self.basis_col_name]True/False flag and a string with an explanation
 
         :return: True if OK, and a string with explanation either way
         """
-        return basis_quality_checks(self.data.loc[:, self.basis_col_name])
+        return basis_quality_checks(self.basis())
 
     def passes_basis_quality_checks(self) -> bool:
         """ Super thin wrapper around basis_quality_checks that drops the explanation string
@@ -386,7 +390,7 @@ class VectorSequence(VectorMultiset):
 
         :return: figure handles for several plots
         """
-        return basis_quality_plots(self.data.loc[:, self.basis_col_name])
+        return basis_quality_plots(self.basis())
 
     def fill_ratio(self) -> float:
         """ Checks for how many data points are observed for the expected number of data points in a uniform basis.
@@ -405,6 +409,7 @@ class VectorSequence(VectorMultiset):
         :param start_at: Start point (can be None)
         :param stop_at: Stop point (can be None)
         :param inplace: slice inplace or return the result (default --> return)
+        :param return_type: how to return the data ('VectorMultiset', 'VectorSequence', 'dataframe', etc)
         :param reset_index: indicate whether or not to reset the data frame index (default --> True)
         :return: VectorSequence if not inplace
         """
@@ -448,6 +453,41 @@ class VectorSequence(VectorMultiset):
             self.data = result
         else:
             return VectorSequence(basis_col_name=self.basis_col_name, name_root=self.name_root, data=result)
+
+    def downsample(self, interval: Union[int, float], method: str = 'by_basis', inplace=True):
+        """
+        Downsamples a VectorSequence
+
+        :param interval: interval by which to downsample (either by N rows, or by some basis interval)
+        :param method: 'by_basis' or 'by_row'
+        :param inplace: whether to update the dataframe data attribute in place or return an updated copy of self
+        :return:
+        """
+        result_vector: Any = deepcopy(self)
+        result_vector.sort(inplace=True, reset_index=True)
+
+        if 'by_row' in method.lower():
+            if not isinstance(interval, int):
+                raise ValueError(f"downsample with method='by_row' requires integer interval")
+            keep_indices: List[int] = list(range(0, len(result_vector.data), interval))
+
+        elif 'by_basis' in method:
+            keep_indices: List[int] = []
+            last: float = result_vector.basis()[0]
+            for i, basis_value in enumerate(self.basis()):
+                if basis_value >= last + interval:
+                    keep_indices.append(i)
+                    last = basis_value
+
+        else:
+            raise ValueError(f"Unknown downsample method {method}; try 'by_row' or 'by_basis'.")
+
+        # Downsample and record or return the result
+        result_vector.data = result_vector.data.iloc[keep_indices, :]
+        if inplace:
+            self.data = result_vector.data
+        else:
+            return result_vector
 
     def evaluate_over_window(self, function: Callable, start_at: float, window_width: float, args: Tuple,
                              kwargs: Dict[str, Any]) -> Dict[str, Any]:

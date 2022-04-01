@@ -311,3 +311,8 @@ Changelog
 -------------------
 
 * fix: vector multiset viz y label
+
+0.0.65 (2022-04-01)
+-------------------
+
+* chore: vector sequence basis manipulation
