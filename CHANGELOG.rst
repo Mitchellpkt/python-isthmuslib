@@ -301,3 +301,8 @@ Changelog
 -------------------
 
 * tweak: more efficient parsing with tokens
+
+0.0.63 (2022-04-01)
+-------------------
+
+* tweak: kwargs passthrough
