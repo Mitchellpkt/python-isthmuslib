@@ -125,7 +125,7 @@ def multi_chunk_processor_lambda(args: Tuple[List[str], str, str, str]) -> List[
 def auto_extract_from_text(input_string: str, return_type: str = 'dataframe', left_token: str = None,
                            key_value_delimiter: str = None, right_token: str = None, basis_col_name: str = None,
                            record_delimiter: str = None, parallelize_read: Union[bool, int] = False,
-                           parallelize_processing: Union[bool, int] = False,
+                           parallelize_processing: Union[bool, int] = False, limit: int = None,
                            disable_progress_bar: bool = None) -> Union[pd.DataFrame, VectorSequence, VectorMultiset]:
     """
     Extracts a data frame from a string
@@ -148,6 +148,7 @@ def auto_extract_from_text(input_string: str, return_type: str = 'dataframe', le
     :param parallelize_read: whether to parallelize reading. Can be an integer (# workers) or bool True / False
     :param parallelize_processing: whether to parallelize flattening. Can be an integer (# workers) or bool True / False
     :param disable_progress_bar: pass anything True to silence the progress bar
+    :param limit: maximum number of rows to process
     :return: pandas.DataFrame or VectorMultiset or VectorSequence
     """
     # # Use the default tokens if not specified
@@ -165,6 +166,8 @@ def auto_extract_from_text(input_string: str, return_type: str = 'dataframe', le
         record_delimiter = LogIO().record_delimiter
 
     record_chunks: List[str] = input_string.split(record_delimiter)[1:]
+    if limit and (limit < len(record_chunks)):
+        record_chunks = record_chunks[:limit + 1]
     chunk_buffers: List[Dict[str, Any]] = []
 
     # Process the chunks
@@ -317,7 +320,7 @@ def auto_extract_from_file(file_path: Union[str, pathlib.Path], record_delimiter
                                   basis_col_name=basis_col_name, disable_progress_bar=disable_progress_bar)
 
 
-def extract_text_to_dataframe(input_string: str, tokens_dictionary: Dict[str, Tuple[str, str]],
+def extract_text_to_dataframe(input_string: str, tokens_dictionary: Dict[str, Tuple[str, str]], limit: int = None,
                               record_delimiter: str = '[@@@]', disable_progress_bar: bool = None,
                               parallelize_processing: Union[bool, int] = False) -> pd.DataFrame:
     """
@@ -328,11 +331,15 @@ def extract_text_to_dataframe(input_string: str, tokens_dictionary: Dict[str, Tu
     :param tokens_dictionary: Extraction rules. Key = label for column, value = (before token, after token)
     :param disable_progress_bar: pass anything True to silence the progress bar
     :param parallelize_processing: whether to parallelize flattening. Can be an integer (# workers) or bool True / False
+    :param limit: maximum number of rows to process
     :return: Vector data set extracted from the input string
     """
     # df_output: pd.DataFrame = pd.DataFrame()
     chunk_buffers_list: List[Dict[str, Any]] = []
-    for chunk in (p := tqdm(input_string.split(record_delimiter), disable=disable_progress_bar)):
+    record_chunks: List[str] = input_string.split(record_delimiter)
+    if limit and (limit < len(record_chunks)):
+        record_chunks = record_chunks[:limit + 1]
+    for chunk in (p := tqdm(record_chunks, disable=disable_progress_bar)):
         p.set_description('Reading and parsing (step 1 of 2)')
         chunk_buffer: Dict[str, Any] = dict()
         for key, (before_token, after_token) in tokens_dictionary.items():
