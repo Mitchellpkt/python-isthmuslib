@@ -266,11 +266,11 @@ def batch_dicts_to_dataframe(dictionaries: List[Dict[str, Any]], batch_size: int
     return pd.concat(batches, ignore_index=True)
 
 
-def auto_extract_from_file(file_path: Union[str, pathlib.Path], record_delimiter: str = None,
-                           left_token: str = None, key_value_delimiter: str = None, right_token: str = None,
+def auto_extract_from_file(file_path: Union[str, pathlib.Path], record_delimiter: str = None, right_token: str = None,
+                           left_token: str = None, key_value_delimiter: str = None, return_type: str = 'dataframe',
                            basis_col_name: str = None, disable_progress_bar: bool = None,
                            parallelize_read: Union[bool, int] = False, parallelize_processing: Union[bool, int] = False,
-                           return_type: str = 'dataframe') -> Union[pd.DataFrame, VectorSequence, VectorMultiset]:
+                           **kwargs) -> Union[pd.DataFrame, VectorSequence, VectorMultiset]:
     """
     Extracts a data frame from a file
 
@@ -317,7 +317,7 @@ def auto_extract_from_file(file_path: Union[str, pathlib.Path], record_delimiter
                                   record_delimiter=record_delimiter, left_token=left_token,
                                   parallelize_read=parallelize_read, parallelize_processing=parallelize_processing,
                                   key_value_delimiter=key_value_delimiter, right_token=right_token,
-                                  basis_col_name=basis_col_name, disable_progress_bar=disable_progress_bar)
+                                  basis_col_name=basis_col_name, disable_progress_bar=disable_progress_bar, **kwargs)
 
 
 def extract_text_to_dataframe(input_string: str, tokens_dictionary: Dict[str, Tuple[str, str]], limit: int = None,
