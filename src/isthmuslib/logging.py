@@ -167,7 +167,7 @@ def auto_extract_from_text(input_string: str, return_type: str = 'dataframe', le
 
     record_chunks: List[str] = input_string.split(record_delimiter)[1:]
     if limit and (limit < len(record_chunks)):
-        record_chunks = record_chunks[:limit + 1]
+        record_chunks = record_chunks[:limit]
     chunk_buffers: List[Dict[str, Any]] = []
 
     # Process the chunks
@@ -338,7 +338,7 @@ def extract_text_to_dataframe(input_string: str, tokens_dictionary: Dict[str, Tu
     chunk_buffers_list: List[Dict[str, Any]] = []
     record_chunks: List[str] = input_string.split(record_delimiter)
     if limit and (limit < len(record_chunks)):
-        record_chunks = record_chunks[:limit + 1]
+        record_chunks = record_chunks[:limit]
     for chunk in (p := tqdm(record_chunks, disable=disable_progress_bar)):
         p.set_description('Reading and parsing (step 1 of 2)')
         chunk_buffer: Dict[str, Any] = dict()
