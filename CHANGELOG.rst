@@ -316,3 +316,8 @@ Changelog
 -------------------
 
 * chore: vector sequence basis manipulation
+
+0.0.66 (2022-04-05)
+-------------------
+
+* fix: misc tweaks for kwargs and type robustness
