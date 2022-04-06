@@ -357,9 +357,12 @@ class VectorSequence(VectorMultiset):
     basis_col_name: str = 'basis'
     error_if_basis_quality_issues: bool = False
 
-    def __init__(self, skip_vector_sequence_init: bool = False, **data: Any):
-        super().__init__(**data)
-        if (self.data is not None) and (not skip_vector_sequence_init):
+    def __init__(self, skip_vector_sequence_init: bool = False, **kwargs: Any):
+        super().__init__(**kwargs)
+        if (self.data is not None) and len(self.data) and (not skip_vector_sequence_init):
+            if (not self.basis_col_name) or (self.basis_col_name not in self.data.keys()):
+                raise ValueError(f"{self.basis_col_name=} not in known keys: {self.data.keys().tolist()=}\n" +
+                                 "Pass skip_vector_sequence_init=True to suppress")
             self.sort(by=self.basis_col_name, inplace=True, reset_index=True)
             if self.error_if_basis_quality_issues:
                 is_ok, explanation = self.passes_basis_quality_checks()
