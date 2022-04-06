@@ -1,12 +1,13 @@
-import pathlib
 from typing import Union, Dict, Any, List, Tuple
 import pandas as pd
 from tqdm.auto import tqdm
-from .vectors import VectorSequence, VectorMultiset
 from .utils import divvy_workload, get_num_workers
 from pydantic import BaseModel
 from multiprocessing import Pool
 from copy import deepcopy
+import json
+from .vectors import VectorSequence, VectorMultiset
+import pathlib
 
 
 class LogIO(BaseModel):
@@ -15,6 +16,9 @@ class LogIO(BaseModel):
     key_value_delimiter: str = '='
     right_token: str = '>>]'
     parallelize_imports: bool = True
+    embedded_json_line_prefix: str = '[[EMBEDDED_JSON_LINE]]'
+    embedded_csv_line_prefix: str = '[[EMBEDDED_CSV_LINE]]'  # spoiler alert
+    log_formatter: str = "\n@@ {time:x} AT: {time} | LEVEL: {level} | IN: {name}.{function}\n\n{message} |\n"  # TODO: unify this object's string fields with Config?? # noqa
 
     def single_feature_to_log(self, key: str, value: str) -> str:
         return f"{self.left_token}{key}{self.key_value_delimiter}{value}{self.right_token}"
@@ -25,79 +29,180 @@ class LogIO(BaseModel):
             s += f"{self.single_feature_to_log(key=key, value=value)}"
         return s
 
-    def auto_extract_from_text(self, input_string: str, return_type: str = 'dataframe', left_token: str = None,
-                               key_value_delimiter: str = None, right_token: str = None,
-                               basis_col_name: str = None, disable_progress_bar: bool = None,
-                               record_delimiter: str = None) -> Union[pd.DataFrame, VectorSequence, VectorMultiset]:
-        """
-        Extracts a data frame from a string (wrapper for standalone function below)
 
-        Input: "the [@@@] quick [<<x='foo'>>] brown[<<y=9>>] [@@@]fox [<<y=93>>]"
-        Output: (data frame)
-                       x   y
-                0  'foo'   9
-                1    NaN  93
+def parse_string_with_manual_tokens(input_string: str, tokens_dictionary: Dict[str, Tuple[str, str]], limit: int = None,
+                               record_delimiter: str = '[@@@]', disable_progress_bar: bool = None,
+                               parallelize_processing: Union[bool, int] = False) -> pd.DataFrame:
+    """
+    Extracts a pandas dataframe from a string
 
-        Hint, write your logs using python fstrings like f"Foo [<<{x=}>>] and [<<{y=}>>]"
+    :param input_string: string (e.g. logs file) to be parsed
+    :param record_delimiter: The string that should be used to chunk up the string into observations / rows
+    :param tokens_dictionary: Extraction rules. Key = label for column, value = (before token, after token)
+    :param disable_progress_bar: pass anything True to silence the progress bar
+    :param parallelize_processing: whether to parallelize flattening. Can be an integer (# workers) or bool True / False
+    :param limit: maximum number of rows to process
+    :return: Vector data set extracted from the input string
+    """
 
-        :param input_string: string to be parsed
-        :param record_delimiter: substring between rows
-        :param left_token: left side of a record
-        :param key_value_delimiter: marker between the variable name and its value
-        :param right_token: right side of a record
-        :param basis_col_name: optional, specify a basis column name for a VectorSequence (otherwise ignored)
-        :param return_type: what format to return the data in
-        :param disable_progress_bar: pass anything True to silence the progress bar
-        :return: pandas.DataFrame or VectorMultiset or VectorSequence
-        """
-        return auto_extract_from_text(
-            input_string=input_string, return_type=return_type,
-            basis_col_name=basis_col_name,
-            disable_progress_bar=disable_progress_bar,
-            left_token=left_token if left_token else self.left_token,
-            right_token=right_token if right_token else self.right_token,
-            key_value_delimiter=key_value_delimiter if key_value_delimiter else self.key_value_delimiter,
-            record_delimiter=record_delimiter if record_delimiter else self.record_delimiter
-        )
+    # Initialize, split the string, and trim the list if longer than 'limit'
+    row_buffers_list: List[Dict[str, Any]] = []
+    raw_row_texts_list: List[str] = input_string.split(record_delimiter)
+    if limit and (limit < len(raw_row_texts_list)):
+        raw_row_texts_list = raw_row_texts_list[:limit]
 
-    def auto_extract_from_file(self, file_path: Union[str, pathlib.Path], record_delimiter: str = None,
-                               left_token: str = None, key_value_delimiter: str = None, right_token: str = None,
-                               basis_col_name: str = None, disable_progress_bar: bool = None,
-                               return_type: str = 'dataframe') -> Union[pd.DataFrame, VectorSequence, VectorMultiset]:
-        """
-        Extracts a data frame from a file (wrapper for standalone function below)
+    # Loop over rows
+    for raw_row_text in (p := tqdm(raw_row_texts_list, disable=disable_progress_bar)):
+        p.set_description('Reading and parsing (step 1 of 2)')
+        row_buffer: Dict[str, Any] = dict()
 
-        Input: "the [@@@] quick [<<x='foo'>>] brown[<<y=9>>] [@@@]fox [<<y=93>>]"
-        Output: (data frame)
-                       x   y
-                0  'foo'   9
-                1    NaN  93
+        # Look for each key in this row
+        for key, (before_token, after_token) in tokens_dictionary.items():
+            if before_token in raw_row_text:
+                target_substring = raw_row_text.split(before_token)[1]
+                if after_token in target_substring:
+                    row_buffer.setdefault(key, target_substring.split(after_token)[0])
+        if row_buffer:
+            row_buffers_list.append(row_buffer)
 
-        Hint, write your logs using python fstrings like f"Foo [<<{x=}>>] and [<<{y=}>>]"
-
-        :param file_path: file to read
-        :param record_delimiter: substring between rows
-        :param left_token: left side of a record
-        :param key_value_delimiter: marker between name and
-        :param right_token: right side of a record
-        :param basis_col_name: optional, specify a basis column name for a VectorSequence (otherwise ignored)
-        :param return_type: what format to return the data in
-        :param disable_progress_bar: pass anything True to silence the progress bar
-        :return: pandas.DataFrame or VectorMultiset or VectorSequence
-        """
-
-        # Read in the file
-        with open(file_path, 'r') as f:
-            input_string: str = f.read()
-
-        return self.auto_extract_from_text(input_string=input_string, return_type=return_type,
-                                           record_delimiter=record_delimiter, left_token=left_token,
-                                           key_value_delimiter=key_value_delimiter, right_token=right_token,
-                                           basis_col_name=basis_col_name, disable_progress_bar=disable_progress_bar)
+    # Convert the list of dictionaries to a dataframe (note: this is a slow step that I plan to optimize later)
+    return list_of_dict_to_dataframe(chunk_buffers=row_buffers_list, disable_progress_bar=disable_progress_bar,
+                                     parallelize_processing=parallelize_processing)
 
 
-def chunk_processor_lambda(input_chunk: str, left_token: str = None, key_value_delimiter: str = None,
-                           right_token: str = None) -> Dict[str, Any]:
+def parse_file_with_manual_tokens(path: str, *args, **kwargs):
+    """ Wrapper for above function (parse_string_with_manual_tokens) that applies it to a file """
+    with open(path, 'r') as f:
+        return parse_string_with_manual_tokens(f.read(), *args, **kwargs)
+
+
+def parse_string_with_key_value_delimiters(input_string: str, left_token: str = None, key_value_delimiter: str = None,
+                                      right_token: str = None, record_delimiter: str = None,
+                                      parallelize_read: Union[bool, int] = False,
+                                      parallelize_processing: Union[bool, int] = False, limit: int = None,
+                                      disable_progress_bar: bool = None) -> pd.DataFrame:
+    """
+    Extracts a data frame from a string
+
+    Input: "the [@@@] quick [<<x='foo'>>] brown[<<y=9>>] [@@@]fox [<<y=93>>]"
+    Output: (data frame)
+                   x   y
+            0  'foo'   9
+            1    NaN  93
+
+    Hint, write your logs using python fstrings like f"Foo [<<{x=}>>] and [<<{y=}>>]"
+
+    :param input_string: string to be parsed
+    :param record_delimiter: substring between rows
+    :param left_token: left side of a record
+    :param key_value_delimiter: marker between the variable name and its value
+    :param right_token: right side of a record
+    :param parallelize_read: whether to parallelize reading. Can be an integer (# workers) or bool True / False
+    :param parallelize_processing: whether to parallelize flattening. Can be an integer (# workers) or bool True / False
+    :param disable_progress_bar: pass anything True to silence the progress bar
+    :param limit: maximum number of rows to process
+    :return: pandas.DataFrame or VectorMultiset or VectorSequence
+    """
+
+    # Use LogIO defaults for unspecified tokens
+    if not left_token:
+        left_token = LogIO().left_token
+    if not right_token:
+        right_token = LogIO().right_token
+    if not key_value_delimiter:
+        key_value_delimiter = LogIO().key_value_delimiter
+    if not record_delimiter:
+        record_delimiter = LogIO().record_delimiter
+
+    # Initialize, split the string, and trim the list if longer than 'limit'
+    row_buffers_list: List[Dict[str, Any]] = []
+    raw_row_texts_list: List[str] = input_string.split(record_delimiter)
+    if limit and (limit < len(raw_row_texts_list)):
+        raw_row_texts_list = raw_row_texts_list[:limit]
+
+    # Process the chunks
+    num_workers: int = get_num_workers(parallelize_arg=parallelize_read)
+    if parallelize_read and (num_workers > 1):
+        batches: List[List[Any]] = divvy_workload(num_workers=num_workers, tasks=raw_row_texts_list)
+        i: List[Tuple[List[str], str, str, str]] = [(b, left_token, key_value_delimiter, right_token) for b in batches]
+        with Pool(num_workers) as pool:
+            chunk_buffers_nested: List[List[Dict[str, Any]]] = pool.map(func=multi_key_value_extraction_lambda,
+                                                                        iterable=i)
+        row_buffers_list: List[Dict[str, Any]] = [item for sublist in chunk_buffers_nested for item in sublist]
+
+    else:
+        # Serial processing
+        for chunk in (p1 := tqdm(raw_row_texts_list, disable=disable_progress_bar)):
+            p1.set_description('Scanning file (step 1 of 2)')
+            row_buffers_list.append(key_value_extraction_lambda(chunk, left_token=left_token, right_token=right_token,
+                                                                key_value_delimiter=key_value_delimiter))
+
+    return list_of_dict_to_dataframe(row_buffers_list, disable_progress_bar=disable_progress_bar,
+                                     parallelize_processing=parallelize_processing)
+
+
+def parse_file_with_key_value_delimiters(path: str, *args, **kwargs):
+    """ Wrapper for above function (parse_string_with_key_value_delimiters) that applies it to a file """
+    with open(path, 'r') as f:
+        return parse_string_with_key_value_delimiters(f.read(), *args, **kwargs)
+
+
+def parse_string_with_embedded_json_unprocessed_dicts(input_string: str, embedded_json_line_prefix: str = None,
+                                                 limit: int = None, end_of_line: str = '\n') -> List[Dict[Any, Any]]:
+    """
+    Extracts embedded json from log files
+
+    :param input_string: string (e.g. logs file) to be parsed
+    :param embedded_json_line_prefix: marker string at the start of every embedded json line
+    :param end_of_line: substring between rows
+    :param limit: maximum number of rows to process
+    """
+
+    # Use LogIO defaults for unspecified tokens
+    if not embedded_json_line_prefix:
+        embedded_json_line_prefix = LogIO().embedded_json_line_prefix
+
+    # Initialize, split the string, and trim the list if longer than 'limit'
+    if embedded_json_line_prefix not in input_string:
+        return []
+
+    # Pull out and clean the embedded data
+    embedded_with_trailing_data = input_string.split(embedded_json_line_prefix)[1:]
+    if limit and (limit < len(embedded_with_trailing_data)):
+        embedded_with_trailing_data = embedded_with_trailing_data[:limit]
+    embedded_clean = [x.split(end_of_line)[0] if end_of_line in x else x for x in embedded_with_trailing_data]
+
+    return [json.loads(s) for s in embedded_clean]
+
+
+def parse_string_with_embedded_json(input_string: str, embedded_json_line_prefix: str = None,
+                               parallelize_processing: Union[bool, int] = False, disable_progress_bar: bool = None,
+                               limit: int = None, end_of_line: str = '\n') -> pd.DataFrame:
+    """
+    Extracts embedded json from log files
+
+    :param input_string: string (e.g. logs file) to be parsed
+    :param embedded_json_line_prefix: marker string at the start of every embedded json line
+    :param parallelize_processing: whether to parallelize flattening. Can be an integer (# workers) or bool True / False
+    :param disable_progress_bar: pass anything True to silence the progress bar
+    :param end_of_line: substring between rows
+    :param limit: maximum number of rows to process
+    """
+    extracted_json_dicts: List[Dict[str, Any]] = parse_string_with_embedded_json_unprocessed_dicts(
+        input_string=input_string, embedded_json_line_prefix=embedded_json_line_prefix,
+        limit=limit, end_of_line=end_of_line)
+    return list_of_dict_to_dataframe(extracted_json_dicts, disable_progress_bar=disable_progress_bar,
+                                     parallelize_processing=parallelize_processing)
+
+
+def parse_file_with_embedded_json(path: str, *args, **kwargs):
+    """ Wrapper for above (parse_string_with_embedded_json) function that applies it to a file """
+    with open(path, 'r') as f:
+        return parse_string_with_embedded_json(f.read(), *args, **kwargs)
+
+
+def key_value_extraction_lambda(input_chunk: str, left_token: str = None, key_value_delimiter: str = None,
+                                right_token: str = None) -> Dict[str, Any]:
     """ Helper lambda so we can do this in parallel or series """
     output_chunk_dict: Dict[str, Any] = dict()
     raw_breaks: List[str] = input_chunk.split(left_token)[1:]
@@ -115,90 +220,15 @@ def chunk_processor_lambda(input_chunk: str, left_token: str = None, key_value_d
     return output_chunk_dict
 
 
-def multi_chunk_processor_lambda(args: Tuple[List[str], str, str, str]) -> List[Dict[str, Any]]:
+def multi_key_value_extraction_lambda(args: Tuple[List[str], str, str, str]) -> List[Dict[str, Any]]:
     """ Helper function that works through a queue of chunks (for parallelization) """
     input_chunks, left_token, key_value_delimiter, right_token = args
-    return [chunk_processor_lambda(x, left_token=left_token, key_value_delimiter=key_value_delimiter,
-                                   right_token=right_token) for x in input_chunks]
+    return [key_value_extraction_lambda(x, left_token=left_token, key_value_delimiter=key_value_delimiter,
+                                        right_token=right_token) for x in input_chunks]
 
 
-def auto_extract_from_text(input_string: str, return_type: str = 'dataframe', left_token: str = None,
-                           key_value_delimiter: str = None, right_token: str = None, basis_col_name: str = None,
-                           record_delimiter: str = None, parallelize_read: Union[bool, int] = False,
-                           parallelize_processing: Union[bool, int] = False, limit: int = None,
-                           disable_progress_bar: bool = None) -> Union[pd.DataFrame, VectorSequence, VectorMultiset]:
-    """
-    Extracts a data frame from a string
-
-    Input: "the [@@@] quick [<<x='foo'>>] brown[<<y=9>>] [@@@]fox [<<y=93>>]"
-    Output: (data frame)
-                   x   y
-            0  'foo'   9
-            1    NaN  93
-
-    Hint, write your logs using python fstrings like f"Foo [<<{x=}>>] and [<<{y=}>>]"
-
-    :param input_string: string to be parsed
-    :param record_delimiter: substring between rows
-    :param left_token: left side of a record
-    :param key_value_delimiter: marker between the variable name and its value
-    :param right_token: right side of a record
-    :param basis_col_name: optional, specify a basis column name for a VectorSequence (otherwise ignored)
-    :param return_type: what format to return the data in
-    :param parallelize_read: whether to parallelize reading. Can be an integer (# workers) or bool True / False
-    :param parallelize_processing: whether to parallelize flattening. Can be an integer (# workers) or bool True / False
-    :param disable_progress_bar: pass anything True to silence the progress bar
-    :param limit: maximum number of rows to process
-    :return: pandas.DataFrame or VectorMultiset or VectorSequence
-    """
-    # # Use the default tokens if not specified
-    # for token in ['left_token', 'right_token', 'key_value_delimiter', 'record_delimiter']:
-    #     if not locals().get(token):
-    #         locals()[token] = getattr(LogIO(), token)
-    # TODO: Troubleshoot the above later. Meanwhile:
-    if not left_token:
-        left_token = LogIO().left_token
-    if not right_token:
-        right_token = LogIO().right_token
-    if not key_value_delimiter:
-        key_value_delimiter = LogIO().key_value_delimiter
-    if not record_delimiter:
-        record_delimiter = LogIO().record_delimiter
-
-    record_chunks: List[str] = input_string.split(record_delimiter)[1:]
-    if limit and (limit < len(record_chunks)):
-        record_chunks = record_chunks[:limit]
-    chunk_buffers: List[Dict[str, Any]] = []
-
-    # Process the chunks
-    num_workers: int = get_num_workers(parallelize_arg=parallelize_read)
-    if parallelize_read and (num_workers > 1):
-        batches: List[List[Any]] = divvy_workload(num_workers=num_workers, tasks=record_chunks)
-        i: List[Tuple[List[str], str, str, str]] = [(b, left_token, key_value_delimiter, right_token) for b in batches]
-        with Pool(num_workers) as pool:
-            chunk_buffers_nested: List[List[Dict[str, Any]]] = pool.map(func=multi_chunk_processor_lambda, iterable=i)
-        chunk_buffers: List[Dict[str, Any]] = [item for sublist in chunk_buffers_nested for item in sublist]
-
-    else:
-        # Serial processing
-        for chunk in (p1 := tqdm(record_chunks, disable=disable_progress_bar)):
-            p1.set_description('Scanning file (step 1 of 2)')
-            chunk_buffers.append(chunk_processor_lambda(chunk, left_token=left_token, right_token=right_token,
-                                                        key_value_delimiter=key_value_delimiter))
-
-    df: pd.DataFrame = process_chunk_buffers(chunk_buffers, disable_progress_bar=disable_progress_bar,
-                                             parallelize_processing=parallelize_processing)
-
-    if 'dataframe' in return_type.lower():
-        return df
-    elif 'multiset' in return_type.lower():
-        return VectorMultiset(data=df)
-    elif 'sequence' in return_type.lower():
-        return VectorSequence(data=df, basis_col_name=basis_col_name)
-
-
-def process_chunk_buffers(chunk_buffers, parallelize_processing: Union[bool, int] = False,
-                          disable_progress_bar: bool = None) -> pd.DataFrame:
+def list_of_dict_to_dataframe(chunk_buffers, parallelize_processing: Union[bool, int] = False,
+                              disable_progress_bar: bool = None) -> pd.DataFrame:
     """
      Extracts a data frame from a string
 
@@ -266,6 +296,87 @@ def batch_dicts_to_dataframe(dictionaries: List[Dict[str, Any]], batch_size: int
     return pd.concat(batches, ignore_index=True)
 
 
+#####################################
+# EVERYTHING BELOW THIS LINE IS
+# LEGACY AND SHOULD BE DEPRECATED
+# (PLEASE INSTEAD USE ABOVE FUNCTIONS)
+#####################################
+
+
+# LEGACY FUNCTION - New use of this function is not recommended, however it works just fine
+def auto_extract_from_text(input_string: str, return_type: str = 'dataframe', left_token: str = None,
+                           key_value_delimiter: str = None, right_token: str = None, basis_col_name: str = None,
+                           record_delimiter: str = None, parallelize_read: Union[bool, int] = False,
+                           parallelize_processing: Union[bool, int] = False, limit: int = None,
+                           disable_progress_bar: bool = None) -> Union[pd.DataFrame, VectorSequence, VectorMultiset]:
+    """
+    Extracts a data frame from a string
+
+    Input: "the [@@@] quick [<<x='foo'>>] brown[<<y=9>>] [@@@]fox [<<y=93>>]"
+    Output: (data frame)
+                   x   y
+            0  'foo'   9
+            1    NaN  93
+
+    Hint, write your logs using python fstrings like f"Foo [<<{x=}>>] and [<<{y=}>>]"
+
+    :param input_string: string to be parsed
+    :param record_delimiter: substring between rows
+    :param left_token: left side of a record
+    :param key_value_delimiter: marker between the variable name and its value
+    :param right_token: right side of a record
+    :param basis_col_name: optional, specify a basis column name for a VectorSequence (otherwise ignored)
+    :param return_type: what format to return the data in
+    :param parallelize_read: whether to parallelize reading. Can be an integer (# workers) or bool True / False
+    :param parallelize_processing: whether to parallelize flattening. Can be an integer (# workers) or bool True / False
+    :param disable_progress_bar: pass anything True to silence the progress bar
+    :param limit: maximum number of rows to process
+    :return: pandas.DataFrame or VectorMultiset or VectorSequence
+    """
+
+    if not left_token:
+        left_token = LogIO().left_token
+    if not right_token:
+        right_token = LogIO().right_token
+    if not key_value_delimiter:
+        key_value_delimiter = LogIO().key_value_delimiter
+    if not record_delimiter:
+        record_delimiter = LogIO().record_delimiter
+
+    record_chunks: List[str] = input_string.split(record_delimiter)[1:]
+    if limit and (limit < len(record_chunks)):
+        record_chunks = record_chunks[:limit]
+    chunk_buffers: List[Dict[str, Any]] = []
+
+    # Process the chunks
+    num_workers: int = get_num_workers(parallelize_arg=parallelize_read)
+    if parallelize_read and (num_workers > 1):
+        batches: List[List[Any]] = divvy_workload(num_workers=num_workers, tasks=record_chunks)
+        i: List[Tuple[List[str], str, str, str]] = [(b, left_token, key_value_delimiter, right_token) for b in batches]
+        with Pool(num_workers) as pool:
+            chunk_buffers_nested: List[List[Dict[str, Any]]] = pool.map(func=multi_key_value_extraction_lambda,
+                                                                        iterable=i)
+        chunk_buffers: List[Dict[str, Any]] = [item for sublist in chunk_buffers_nested for item in sublist]
+
+    else:
+        # Serial processing
+        for chunk in (p1 := tqdm(record_chunks, disable=disable_progress_bar)):
+            p1.set_description('Scanning file (step 1 of 2)')
+            chunk_buffers.append(key_value_extraction_lambda(chunk, left_token=left_token, right_token=right_token,
+                                                             key_value_delimiter=key_value_delimiter))
+
+    df: pd.DataFrame = list_of_dict_to_dataframe(chunk_buffers, disable_progress_bar=disable_progress_bar,
+                                                 parallelize_processing=parallelize_processing)
+
+    if 'dataframe' in return_type.lower():
+        return df
+    elif 'multiset' in return_type.lower():
+        return VectorMultiset(data=df)
+    elif 'sequence' in return_type.lower():
+        return VectorSequence(data=df, basis_col_name=basis_col_name)
+
+
+# LEGACY FUNCTION - New use of this function is not recommended, however it works just fine
 def auto_extract_from_file(file_path: Union[str, pathlib.Path], record_delimiter: str = None, right_token: str = None,
                            left_token: str = None, key_value_delimiter: str = None, return_type: str = 'dataframe',
                            basis_col_name: str = None, disable_progress_bar: bool = None,
@@ -295,11 +406,6 @@ def auto_extract_from_file(file_path: Union[str, pathlib.Path], record_delimiter
     :return: pandas.DataFrame or VectorMultiset or VectorSequence
     """
 
-    # # Use the default tokens if not specified
-    # for token in ['left_token', 'right_token', 'key_value_delimiter', 'record_delimiter']:
-    #     if not locals().get(token):
-    #         locals()[token] = getattr(LogIO(), token)
-    # TODO: Troubleshoot the above later. Meanwhile:
     if not left_token:
         left_token = LogIO().left_token
     if not right_token:
@@ -320,6 +426,7 @@ def auto_extract_from_file(file_path: Union[str, pathlib.Path], record_delimiter
                                   basis_col_name=basis_col_name, disable_progress_bar=disable_progress_bar, **kwargs)
 
 
+# LEGACY FUNCTION - New use of this function is not recommended, however it works just fine
 def extract_text_to_dataframe(input_string: str, tokens_dictionary: Dict[str, Tuple[str, str]], limit: int = None,
                               record_delimiter: str = '[@@@]', disable_progress_bar: bool = None,
                               parallelize_processing: Union[bool, int] = False) -> pd.DataFrame:
@@ -350,10 +457,11 @@ def extract_text_to_dataframe(input_string: str, tokens_dictionary: Dict[str, Tu
         if chunk_buffer:
             chunk_buffers_list.append(chunk_buffer)
 
-    return process_chunk_buffers(chunk_buffers=chunk_buffers_list, disable_progress_bar=disable_progress_bar,
-                                 parallelize_processing=parallelize_processing)
+    return list_of_dict_to_dataframe(chunk_buffers=chunk_buffers_list, disable_progress_bar=disable_progress_bar,
+                                     parallelize_processing=parallelize_processing)
 
 
+# LEGACY FUNCTION - New use of this function is not recommended, however it works just fine
 def extract_text_to_vector(input_string: str, tokens_dictionary: Dict[str, Tuple[str, str]],
                            record_delimiter: str = '[@@@]', disable_progress_bar: bool = None,
                            basis_col_name: str = None, **kwargs) -> Union[VectorMultiset, VectorSequence]:
@@ -376,6 +484,7 @@ def extract_text_to_vector(input_string: str, tokens_dictionary: Dict[str, Tuple
         return VectorMultiset(data=df_output)
 
 
+# LEGACY FUNCTION - New use of this function is not recommended, however it works just fine
 def extract_file_to_vector(file_path: Union[str, pathlib.Path], record_delimiter: str,
                            tokens_dictionary: Dict[str, Tuple[str, str]], disable_progress_bar: bool = None,
                            basis_col_name: str = None, **kwargs) -> Union[VectorSequence, VectorMultiset]:
