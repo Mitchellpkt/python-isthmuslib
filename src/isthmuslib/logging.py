@@ -251,7 +251,7 @@ def list_of_dict_to_dataframe(chunk_buffers, parallelize_processing: Union[bool,
     if parallelize_processing and (num_reshape_workers > 1):
         batches: List[List[Any]] = divvy_workload(num_workers=num_reshape_workers, tasks=chunk_buffers)
         if not disable_progress_bar:
-            print(f"Reshaping data (step 2 of 2) in parallel")
+            print(f"Reshaping data (step 2 of 2) in parallel with {num_reshape_workers} workers")
         with Pool(num_reshape_workers) as pool:
             dataframes: List[pd.DataFrame] = pool.map(func=dicts_to_dataframe, iterable=batches)
         df: pd.DataFrame = pd.concat(dataframes, ignore_index=True)
