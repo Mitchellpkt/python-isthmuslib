@@ -343,10 +343,10 @@ def risky_cast(x: Any) -> Any:
             except:
                 pass
 
-    # Bool?
-    str_to_bool_mapper: Dict[str, Any] = {'true': True, 'false': False}
-    if x.lower() in str_to_bool_mapper:
-        return str_to_bool_mapper[x.lower()]
+    # Bool? None?
+    mapper: Dict[str, Any] = {'true': True, 'false': False, 'none': None}
+    if x.lower() in mapper:
+        return mapper[x.lower()]
 
     # Give up
     return x
