@@ -196,7 +196,7 @@ def parse_string_with_embedded_json(input_string: str, embedded_json_line_prefix
                                      parallelize_processing=parallelize_processing)
 
 
-def parse_file_with_embedded_json(path: str, *args, **kwargs):
+def parse_file_with_embedded_json(path: str, *args, **kwargs) -> pd.DataFrame:
     """ Wrapper for above (parse_string_with_embedded_json) function that applies it to a file """
     with open(path, 'r') as f:
         return parse_string_with_embedded_json(f.read(), *args, **kwargs)
