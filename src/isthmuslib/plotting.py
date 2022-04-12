@@ -283,9 +283,10 @@ def visualize_x_y(x_data: Any, y_data: Any, xlabel: str = '', ylabel: str = '', 
     if 'y' in cumulative:
         ylabel_buffer += ' (cumulative)'
     apply_plot_labels(xlabel=xlabel_buffer, ylabel=ylabel_buffer, title=title, style=config)
-    if show_colorbar:
+    if show_colorbar or colorbar_label:
         cbar: plt.colorbar.Colorbar = plt.colorbar()
-        cbar.set_label(colorbar_label, rotation=90, fontsize=config.label_fontsize)
+        if colorbar_label:
+            cbar.set_label(colorbar_label, rotation=90, fontsize=config.label_fontsize)
     if legend_strings and ('scatter' in types):
         plt.legend(scatter_handles, legend_strings, fontsize=config.legend_fontsize)
     adjust_axes(log_axes=log_axes, style=config, xlim=xlim, ylim=ylim)
