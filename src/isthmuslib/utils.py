@@ -1,7 +1,7 @@
 import pickle as pickle
-from typing import Any
+from typing import Any, Iterable
 from pydantic import BaseModel
-from typing import Dict, Union, List, Tuple
+from typing import Dict, Union, List, Tuple, Callable, Sized
 from datetime import datetime
 import pytz
 from dateutil import parser
@@ -9,7 +9,7 @@ import pandas as pd
 import pathlib
 import numpy as np
 from tqdm.auto import tqdm
-from multiprocessing import cpu_count
+from multiprocessing import cpu_count, Pool
 
 
 class PickleUtils(BaseModel):
@@ -284,6 +284,64 @@ def divvy_workload(num_workers: int, tasks: List[Any]) -> List[List[Any]]:
         task_list_all.append(tasks[i:i + load_amount])
         i += load_amount
     return task_list_all
+
+
+def multiprocess(func: Callable, iterable: List[Any], pool_function: str = None, batching: bool = False,
+                 num_workers: int = None, extra_cut_factor: int = 3, **kwargs) -> List[Any]:
+    """
+
+    :param func:
+    :param iterable:
+    :param pool_function:
+    :param batching:
+    :param num_workers:
+    :param extra_cut_factor:
+    :param kwargs:
+    :return:
+    """
+    # Get num workers if not supplied
+    if not num_workers:
+        num_workers = get_num_workers(num_workers)
+
+    # Attempt to infer the pool function to be used, if not specified
+    # This is NOT infallible! Suppose you want to 'map' over a list of tuples; it would infer that 'starmap' is desired.
+    if not pool_function:
+        if isinstance(iterable[0], Iterable) and (not isinstance(iterable[0], str)):
+            pool_function: str = 'starmap'
+        else:
+            pool_function: str = 'map'
+
+    # Break the task list into batches if desired
+    if batching:
+        global batched_func  # ... TODO: how to make this pickleable without making it global??
+
+        def batched_func(tasks: List[Any]) -> List[Any]:  # noqa:
+            return [func(args) for args in tasks]
+
+        if pool_function == 'starmap':
+            raise NotImplementedError(f"batching and starmap are mutually exclusive in the current implementation")
+
+        map_style_inputs: List[List[Any]] = divvy_workload(num_workers=num_workers * extra_cut_factor, tasks=iterable)
+        use_function: Callable = batched_func
+    else:
+        # No batching = batches of one
+        map_style_inputs: List[Any] = iterable
+        use_function = func
+
+    # Run the pool
+    with Pool(num_workers) as pool:
+        if pool_function.lower() == 'starmap':
+            result = pool.starmap(func=use_function, iterable=map_style_inputs, **kwargs)
+        elif pool_function.lower() == 'map':
+            result = pool.map(func=use_function, iterable=map_style_inputs, **kwargs)
+        else:
+            raise ValueError(f"Pool function should be 'map' or 'starmap' but received unknown type: {pool_function}")
+
+    # Flatten if necessary
+    if batching:
+        result = [item for sublist in result for item in sublist]
+
+    return result  # noqa: results prouced in lines above
 
 
 def object_string_merge(string: str, values_from: Any, left_merge_token: str = '[[',
