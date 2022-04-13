@@ -331,3 +331,8 @@ Changelog
 -------------------
 
 * tweak: rename extraction functions
+
+0.0.69 (2022-04-13)
+-------------------
+
+* refactor: faster data reshaping (parallelize pandas method)

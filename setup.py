@@ -23,9 +23,9 @@ def read(*names, **kwargs):
 
 setup(
     name='isthmuslib',
-    version='0.0.68',
+    version='0.0.69',
     license='LGPL-3.0-only',
-    description='Convenience utils for plotting, styling, and manipulating high-dimensional vectors',
+    description='Tooling for rapid data exploration, timeseries analysis, log extraction & visualization, etc',
     long_description='%s\n%s' % (
         re.compile('^.. start-badges.*^.. end-badges', re.M | re.S).sub('', read('README.rst')),
         re.sub(':[a-z]+:`~?(.*?)`', r'``\1``', read('CHANGELOG.rst'))
