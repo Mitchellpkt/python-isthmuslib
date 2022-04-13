@@ -371,10 +371,7 @@ def object_string_merge(string: str, values_from: Any, left_merge_token: str = '
 
 
 def risky_cast(x: Any) -> Any:
-    """
-    Reckless helper function that tries to cast the input to a dictionary or number (float) or boolean.
-
-    """
+    """ Reckless helper function that tries to cast the input to a dictionary or number (float) or boolean or None. """
 
     # If not a string, send it back
     if not isinstance(x, str):
@@ -387,8 +384,7 @@ def risky_cast(x: Any) -> Any:
         except:
             pass
 
-    # Float?
-    if x.replace('.', '', 1).isdigit():
+    if x.replace('.', '', 1).isdigit() or (x[0] == '-' and x[1:].replace('.', '', 1).isdigit()):
         if '.' in x:
             try:
                 return float(x)
