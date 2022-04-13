@@ -41,6 +41,8 @@ class VectorMultiset(PickleUtils, Style, Rosetta):
         :param cumulative: whether to apply a cumulative sum (default = False)
         :return: Extracted data
         """
+        if feature not in self.data.keys():
+            raise ValueError(f"Feature {feature} not in known keys: {self.data.keys().tolist()}")
         values: pd.Series = self.data.loc[:, feature]
         if args:
             for unpack_next in args:
@@ -406,8 +408,10 @@ class VectorSequence(VectorMultiset):
         return fill_ratio(self.data.loc[:, self.basis_col_name])
 
     def slice(self, start_at: Any = None, stop_at: Any = None, inplace: bool = False, reset_index: bool = True,
-              return_type: str = 'VectorSequence') -> Union[None, pd.DataFrame, Tuple[Iterable, Iterable], Any]:
+              return_type: str = None) -> Union[None, pd.DataFrame, Tuple[Iterable, Iterable], Any]:
         """ Slices the VectorSequence according to the basis
+
+        # TODO have slice return self type for convenience
 
         :param start_at: Start point (can be None)
         :param stop_at: Stop point (can be None)
@@ -427,11 +431,16 @@ class VectorSequence(VectorMultiset):
             in_range.reset_index(drop=True, inplace=True)
         if inplace:
             self.data = in_range
+
+        if not return_type:
+            return self.__class__(basis_col_name=self.basis_col_name, name_root=self.name_root, data=in_range)
         else:
             if 'sequence' in (return_type_lower := return_type.lower()):
                 return VectorSequence(basis_col_name=self.basis_col_name, name_root=self.name_root, data=in_range)
             elif 'dataframe' in return_type_lower:
                 return in_range
+            elif 'timeseries' in return_type_lower:
+                return Timeseries(basis_col_name=self.basis_col_name, name_root=self.name_root, data=in_range)
             else:
                 raise ValueError(f"Unknown return type: {return_type}")
 
@@ -729,6 +738,11 @@ class VectorSequence(VectorMultiset):
             else:
                 kwargs: Dict[str, Any] = {'exclude_cols': self.basis_col_name}
         return correlation_matrix(self.data, **kwargs)
+
+
+class Timeseries(VectorSequence):
+    """ Thin wrapper for VectorSequence in the context of time  """
+    basis_col_name: str = 'timestamp'
 
 
 ################
