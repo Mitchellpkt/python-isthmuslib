@@ -296,6 +296,7 @@ def list_of_dict_to_dataframe(data_point_dicts, parallelize_processing: Union[bo
 
 def dicts_to_dataframe(dictionaries: List[Dict[str, Any]]) -> pd.DataFrame:
     """
+    NB: THIS IS AN INEFFICIENT FUNCTION THAT SCALES AWFULLY, PLEASE USE list_of_dict_to_dataframe instead
     Helper function that converts a list of dictionaries into a dataframe (each dictionary = 1 row)
 
     :param dictionaries: list of dictionaries, with one value per key per row
@@ -309,6 +310,7 @@ def dicts_to_dataframe(dictionaries: List[Dict[str, Any]]) -> pd.DataFrame:
 
 def batch_dicts_to_dataframe(dictionaries: List[Dict[str, Any]], batch_size: int = 1000) -> pd.DataFrame:
     """
+    NB: THIS IS AN INEFFICIENT FUNCTION THAT SCALES AWFULLY, PLEASE USE list_of_dict_to_dataframe instead
     Helper function that converts a list of dictionaries into a dataframe (each dictionary = 1 row)
 
     :param dictionaries: list of dictionaries, with one value per key per row
