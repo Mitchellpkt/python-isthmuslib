@@ -239,7 +239,8 @@ def data_frame_init_wrapper(data: Any) -> pd.DataFrame:
 
 
 def list_of_dict_to_dataframe(data_point_dicts, parallelize_processing: Union[bool, int] = True,
-                              disable_progress_bar: bool = None, pandas_automatic: bool = True) -> pd.DataFrame:
+                              disable_progress_bar: bool = None, pandas_automatic: bool = True,
+                              suppress_deprecation_warning: bool = False) -> pd.DataFrame:
     """
      Extracts a data frame from a string
 
@@ -255,6 +256,7 @@ def list_of_dict_to_dataframe(data_point_dicts, parallelize_processing: Union[bo
     :param parallelize_processing: whether to parallelize flattening. Can be an integer (# workers) or bool True / False
     :param disable_progress_bar: pass anything True to silence the progress bar
     :param pandas_automatic: Throw everything into pan
+    :param suppress_deprecation_warning: Nudge users to adopt more efficient method, pass "True" to silence
     :return: pandas.DataFrame or VectorMultiset or VectorSequence
     """
     num_reshape_workers: int = get_num_workers(parallelize_arg=parallelize_processing)
@@ -264,7 +266,7 @@ def list_of_dict_to_dataframe(data_point_dicts, parallelize_processing: Union[bo
             return pd.DataFrame(data_point_dicts)
         if parallelize_processing:
             if not disable_progress_bar:
-                print(f'Casting to dataframe step 1 of 2: processing in parallel with {num_reshape_workers} workers')
+                print(f'Reshaping data (step 1 of 2): processing in parallel with {num_reshape_workers} workers')
             batches_of_dictionaries: List[List[Any]] = divvy_workload(num_workers=num_reshape_workers,
                                                                       tasks=data_point_dicts)
             list_of_dataframes: List[pd.DataFrame] = multiprocess(
@@ -275,20 +277,26 @@ def list_of_dict_to_dataframe(data_point_dicts, parallelize_processing: Union[bo
                 num_workers=num_reshape_workers,
             )
             if not disable_progress_bar:
-                print('Casting to dataframe step 2 of 2: attaching subframes')
+                print('Reshaping data (step 1 of 2): attaching subframes')
             return pd.concat(list_of_dataframes, ignore_index=True)
+
+    if not suppress_deprecation_warning:
+        print(f"You are using a very slow method for reshaping the data")
+        print(f"Recommendation: use list_of_dict_to_dataframe(..., pandas_automatic=True)")
+        print(f"To suppress thing warning, pass: use list_of_dict_to_dataframe(..., suppress_deprecation_warning=True)")
 
     if parallelize_processing and (num_reshape_workers > 1):
         batches: List[List[Any]] = divvy_workload(num_workers=num_reshape_workers, tasks=data_point_dicts)
         if not disable_progress_bar:
-            print(f"Reshaping data (step 2 of 2) in parallel with {num_reshape_workers} workers")
+            print(f'Reshaping data (step 1 of 2): processing in parallel with {num_reshape_workers} workers')
         with Pool(num_reshape_workers) as pool:
             dataframes: List[pd.DataFrame] = pool.map(func=dicts_to_dataframe, iterable=batches)
         df: pd.DataFrame = pd.concat(dataframes, ignore_index=True)
     else:
         df: pd.DataFrame = pd.DataFrame()
+        # THIS LOOP IS SO SLOW - you should use pandas_automatic=True
         for chunk_buffer in (p2 := tqdm(data_point_dicts, disable=disable_progress_bar)):
-            p2.set_description('Reshaping data (step 2 of 2)')
+            p2.set_description('Reshaping data (step 2 of 2):')
             if chunk_buffer:
                 df: pd.DataFrame = pd.concat([df, pd.DataFrame(chunk_buffer, index=[-1])], ignore_index=True)
     return df
