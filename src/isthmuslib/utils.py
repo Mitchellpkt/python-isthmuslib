@@ -287,17 +287,18 @@ def divvy_workload(num_workers: int, tasks: List[Any]) -> List[List[Any]]:
 
 
 def multiprocess(func: Callable, iterable: List[Any], pool_function: str = None, batching: bool = False,
-                 num_workers: int = None, extra_cut_factor: int = 3, **kwargs) -> List[Any]:
+                 num_workers: int = None, cuts_per_worker: int = 3, **kwargs) -> List[Any]:
     """
+    Convenience wrapper for Pool.map and Pool.starmap that offers manual batching and automatic flattening
 
-    :param func:
-    :param iterable:
-    :param pool_function:
-    :param batching:
-    :param num_workers:
-    :param extra_cut_factor:
-    :param kwargs:
-    :return:
+    :param func: function to be evaluated in parallel
+    :param iterable: can be map or starmap style iterable of inputs to func
+    :param pool_function: whether to use 'map' or 'starmap'. Will try to infer if not provided.
+    :param batching: whether to handle batching manually
+    :param num_workers: number of processes to run in parallel (should not exceed CPU core count)
+    :param cuts_per_worker: if batching manually, can break into extra chunks to avoid idle time even if runtimes vary
+    :param kwargs: additional keyword arguments for 'map' or 'starmap' (for example the max chunk size)
+    :return: the results of func evaluated over the iterable
     """
     # Get num workers if not supplied
     if not num_workers:
@@ -321,10 +322,10 @@ def multiprocess(func: Callable, iterable: List[Any], pool_function: str = None,
         if pool_function == 'starmap':
             raise NotImplementedError(f"batching and starmap are mutually exclusive in the current implementation")
 
-        map_style_inputs: List[List[Any]] = divvy_workload(num_workers=num_workers * extra_cut_factor, tasks=iterable)
+        map_style_inputs: List[List[Any]] = divvy_workload(num_workers=num_workers * cuts_per_worker, tasks=iterable)
         use_function: Callable = batched_func
     else:
-        # No batching = batches of one
+        # No batching = batches of one (let the pool methods handle chunksize)
         map_style_inputs: List[Any] = iterable
         use_function = func
 

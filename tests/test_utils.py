@@ -44,13 +44,13 @@ def test_multiprocess():
     inputs: List[int] = list(range(25))
     star_inputs: List[Tuple[int, int]] = [(x, x + 2) for x in list(range(10))]
 
-    result = multiprocess(foobar, inputs, num_workers=5, extra_cut_factor=1, batching=False)
+    result = multiprocess(foobar, inputs, num_workers=5, cuts_per_worker=1, batching=False)
     assert result[:3] == [0, 10, 20]
-    result = multiprocess(foobar, inputs, num_workers=5, extra_cut_factor=1, batching=True)
+    result = multiprocess(foobar, inputs, num_workers=5, cuts_per_worker=1, batching=True)
     assert result[:3] == [0, 10, 20]
-    result = multiprocess(starbar, star_inputs, num_workers=5, extra_cut_factor=1, batching=False)
+    result = multiprocess(starbar, star_inputs, num_workers=5, cuts_per_worker=1, batching=False)
     assert result[:3] == ['x=0 and y=2 so x*y=0', 'x=1 and y=3 so x*y=3', 'x=2 and y=4 so x*y=8']
     try:
-        print(multiprocess(starbar, star_inputs, num_workers=5, extra_cut_factor=1, batching=True))
+        print(multiprocess(starbar, star_inputs, num_workers=5, cuts_per_worker=1, batching=True))
     except NotImplementedError as e:
         print(f"... not implemented yet")
