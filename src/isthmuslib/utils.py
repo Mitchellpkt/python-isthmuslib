@@ -350,3 +350,12 @@ def risky_cast(x: Any) -> Any:
 
     # Give up
     return x
+
+
+def flatten_list(nested_list: List[List[Any]]) -> List[Any]:
+    """
+    Helper function that flattens a list, nothing fancy (only works 1 level deep)
+    :param nested_list: a list of lists of <something>
+    :return: a list of <something>
+    """
+    return [item for sublist in nested_list for item in sublist]
