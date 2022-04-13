@@ -1,7 +1,7 @@
 import pickle as pickle
 from typing import Any, Iterable
 from pydantic import BaseModel
-from typing import Dict, Union, List, Tuple, Callable, Sized
+from typing import Dict, Union, List, Tuple, Callable
 from datetime import datetime
 import pytz
 from dateutil import parser
