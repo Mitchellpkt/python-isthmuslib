@@ -1,7 +1,7 @@
 from typing import Union, Dict, Any, List, Tuple
 import pandas as pd
 from tqdm.auto import tqdm
-from .utils import divvy_workload, get_num_workers
+from .utils import divvy_workload, get_num_workers, multiprocess
 from pydantic import BaseModel
 from multiprocessing import Pool
 from copy import deepcopy
@@ -66,7 +66,7 @@ def parse_string_with_manual_tokens(input_string: str, tokens_dictionary: Dict[s
             row_buffers_list.append(row_buffer)
 
     # Convert the list of dictionaries to a dataframe (note: this is a slow step that I plan to optimize later)
-    return list_of_dict_to_dataframe(chunk_buffers=row_buffers_list, disable_progress_bar=disable_progress_bar,
+    return list_of_dict_to_dataframe(data_point_dicts=row_buffers_list, disable_progress_bar=disable_progress_bar,
                                      parallelize_processing=parallelize_processing)
 
 
@@ -228,8 +228,18 @@ def multi_key_value_extraction_lambda(args: Tuple[List[str], str, str, str]) -> 
                                         right_token=right_token) for x in input_chunks]
 
 
-def list_of_dict_to_dataframe(chunk_buffers, parallelize_processing: Union[bool, int] = False,
-                              disable_progress_bar: bool = None) -> pd.DataFrame:
+def data_frame_init_wrapper(data: Any) -> pd.DataFrame:
+    """
+    Temp thin helper function to wrap pandas init (this only exists to be handy for the next function)
+
+    :param data: data for the dataframe, e.g. a list of dictionaries
+    :return: the pandas dataframe
+    """
+    return pd.DataFrame(data, index=range(len(data)))
+
+
+def list_of_dict_to_dataframe(data_point_dicts, parallelize_processing: Union[bool, int] = True,
+                              disable_progress_bar: bool = None, pandas_automatic: bool = True) -> pd.DataFrame:
     """
      Extracts a data frame from a string
 
@@ -241,15 +251,35 @@ def list_of_dict_to_dataframe(chunk_buffers, parallelize_processing: Union[bool,
 
     Hint, write your logs using python fstrings like f"Foo [<<{x=}>>] and [<<{y=}>>]"
 
-    :param chunk_buffers: list of dictionaries to be added to a dataframe
+    :param data_point_dicts: list of dictionaries to be added to a dataframe
     :param parallelize_processing: whether to parallelize flattening. Can be an integer (# workers) or bool True / False
     :param disable_progress_bar: pass anything True to silence the progress bar
+    :param pandas_automatic: Throw everything into pan
     :return: pandas.DataFrame or VectorMultiset or VectorSequence
     """
-
     num_reshape_workers: int = get_num_workers(parallelize_arg=parallelize_processing)
+
+    if pandas_automatic:
+        if not parallelize_processing:
+            return pd.DataFrame(data_point_dicts)
+        if parallelize_processing:
+            if not disable_progress_bar:
+                print(f'Casting to dataframe step 1 of 2: processing in parallel with {num_reshape_workers} workers')
+            batches_of_dictionaries: List[List[Any]] = divvy_workload(num_workers=num_reshape_workers,
+                                                                      tasks=data_point_dicts)
+            list_of_dataframes: List[pd.DataFrame] = multiprocess(
+                data_frame_init_wrapper,
+                batches_of_dictionaries,
+                pool_function='map',
+                batching=False,  # here, we batch manually above rather than inside multiprocess
+                num_workers=num_reshape_workers,
+            )
+            if not disable_progress_bar:
+                print('Casting to dataframe step 2 of 2: attaching subframes')
+            return pd.concat(list_of_dataframes, ignore_index=True)
+
     if parallelize_processing and (num_reshape_workers > 1):
-        batches: List[List[Any]] = divvy_workload(num_workers=num_reshape_workers, tasks=chunk_buffers)
+        batches: List[List[Any]] = divvy_workload(num_workers=num_reshape_workers, tasks=data_point_dicts)
         if not disable_progress_bar:
             print(f"Reshaping data (step 2 of 2) in parallel with {num_reshape_workers} workers")
         with Pool(num_reshape_workers) as pool:
@@ -257,7 +287,7 @@ def list_of_dict_to_dataframe(chunk_buffers, parallelize_processing: Union[bool,
         df: pd.DataFrame = pd.concat(dataframes, ignore_index=True)
     else:
         df: pd.DataFrame = pd.DataFrame()
-        for chunk_buffer in (p2 := tqdm(chunk_buffers, disable=disable_progress_bar)):
+        for chunk_buffer in (p2 := tqdm(data_point_dicts, disable=disable_progress_bar)):
             p2.set_description('Reshaping data (step 2 of 2)')
             if chunk_buffer:
                 df: pd.DataFrame = pd.concat([df, pd.DataFrame(chunk_buffer, index=[-1])], ignore_index=True)
@@ -458,7 +488,7 @@ def extract_text_to_dataframe(input_string: str, tokens_dictionary: Dict[str, Tu
         if chunk_buffer:
             chunk_buffers_list.append(chunk_buffer)
 
-    return list_of_dict_to_dataframe(chunk_buffers=chunk_buffers_list, disable_progress_bar=disable_progress_bar,
+    return list_of_dict_to_dataframe(data_point_dicts=chunk_buffers_list, disable_progress_bar=disable_progress_bar,
                                      parallelize_processing=parallelize_processing)
 
 
