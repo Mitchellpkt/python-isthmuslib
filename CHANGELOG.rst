@@ -336,3 +336,8 @@ Changelog
 -------------------
 
 * refactor: faster data reshaping (parallelize pandas method)
+
+0.0.70 (2022-04-13)
+-------------------
+
+* tweak: Timeseries alias for VectorSequence
