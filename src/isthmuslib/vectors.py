@@ -292,6 +292,34 @@ class VectorMultiset(PickleUtils, Style, Rosetta):
         target_feature_data = self.data.loc[:, target_feature_name].to_numpy()
         return SelectKBest(chi2, k=k_best).fit_transform(input_feature_data, target_feature_data, **kwargs)
 
+    def cast_to_numeric(self, columns: Union[List[str], str] = None, errors: str = "ignore",
+                        inplace: bool = True) -> Union[None, Any]:
+        """
+        Helper function that converts the data to numeric types
+
+        :param columns: a string or list of strings of column names. If not provided, will try on all columns
+        :param errors: passed to `pandas.to_numeric()`, options are: {‘ignore’, ‘raise’, ‘coerce’}
+        :param inplace: whether to transform the data inplace (default) or return a fresh object
+        """
+        if not columns:
+            columns = list(self.data.keys())
+        if isinstance(columns, str):
+            columns = [columns]
+
+        df: pd.DataFrame = deepcopy(self.data)
+        for col in columns:
+            df[col] = pd.to_numeric(df.loc[:, col], errors=errors)
+
+        if inplace:
+            self.data = df
+        else:
+            return self.__class__(data=df, **{k: v for k, v in self.dict().items() if k != 'data'})
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        if not kwargs.get('disable_auto_conversion_to_numeric', False) and (self.data is not None):
+            self.cast_to_numeric()
+
 
 class SlidingWindowResults(VectorMultiset):
     """ Results from Sequence.sliding_window(), which is a VectorMultiset with extra context baked in """
