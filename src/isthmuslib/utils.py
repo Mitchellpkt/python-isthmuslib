@@ -1,4 +1,5 @@
 import pickle as pickle
+import time
 from pydantic import BaseModel
 from datetime import datetime
 import pytz
@@ -10,6 +11,7 @@ from tqdm.auto import tqdm
 from multiprocessing import cpu_count, Pool, current_process
 import itertools as itertools
 from typing import Iterable, List, Tuple, Dict, Any, Union, Callable
+import math
 
 
 class PickleUtils(BaseModel):
@@ -307,6 +309,34 @@ def divvy_workload(num_workers: int, tasks: List[Any]) -> List[List[Any]]:
         task_list_all.append(tasks[i:i + load_amount])
         i += load_amount
     return task_list_all
+
+
+def benchmark_multiprocess(*args, worker_counts: List[int] = None, verbose: bool = True,
+                           disable_benchmark_progress_bar: bool = None, **kwargs) -> Dict[int, float]:
+    """
+    Helper function that wraps multiprocessing and measures how number of workers impacts execution time
+
+    :param args: args for multiprocessing (e.g. func, iterable)
+    :param worker_counts: list of counts to try (if not specified, uses powers of two up to core count)
+    :param verbose: whether the benchmarking should be verbose
+    :param disable_benchmark_progress_bar: pass true to disable benchmarking bar
+    :param kwargs: kwargs for multiprocessing (such as pool_function)
+    :return: dictionary with worker counts for keys and performance time in seconds for the values
+    """
+    if not worker_counts:
+        worker_counts = [2 ** x for x in range(int(math.log2(cpu_count())) + 1)][::-1]
+
+    benchmarks: Dict[int, float] = dict()
+    for num_workers in tqdm(worker_counts, disable=disable_benchmark_progress_bar):
+        if verbose:
+            print(f'Beginning benchmark with {num_workers} workers...')
+        tic: float = time.perf_counter()
+        multiprocess(*args, num_workers=num_workers, **kwargs)
+        benchmarks[num_workers] = (duration := time.perf_counter() - tic)
+        if verbose:
+            print(f'... completed in {duration:.4f} seconds')
+
+    return benchmarks
 
 
 def multiprocess(func: Callable, iterable: List[Any], pool_function: str = None, batching: bool = False,
