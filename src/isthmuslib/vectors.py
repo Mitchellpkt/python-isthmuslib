@@ -8,7 +8,8 @@ from .utils import PickleUtils, Rosetta, make_dict, get_num_workers
 from .data_quality import basis_quality_checks, basis_quality_plots, fill_ratio
 from copy import deepcopy
 import statsmodels.api as sm
-from .plotting import visualize_x_y, visualize_1d_distribution, visualize_surface, visualize_embedded_surface
+from .plotting import visualize_x_y, visualize_1d_distribution, visualize_surface, \
+    visualize_embedded_surface, visualize_hist2d
 import pathlib
 from pydantic import BaseModel
 from sklearn.feature_selection import SelectKBest, chi2
@@ -154,7 +155,7 @@ class VectorMultiset(PickleUtils, Style, Rosetta):
         """ Creates a 2D scatter plot of x and y data (wraps visualize_x_y) """
         if isinstance(self, VectorSequence) and (len(args) == 1):
             args: tuple = (self.basis_col_name, args[0])  # sequences we can infer the basis for the x-axis
-        return self.visualize_x_y(types='line', *args, **kwargs)
+        return self.visualize_x_y(types='scatter', *args, **kwargs)
 
     def plot(self, *args, **kwargs) -> plt.Figure:
         """ Creates a 2D line plot of x and y data (wraps visualize_x_y) """
@@ -174,6 +175,25 @@ class VectorMultiset(PickleUtils, Style, Rosetta):
         kwargs.setdefault('xlabel', self.translate(col_name))
         kwargs.setdefault('title', self.translate(self.name_root))
         return visualize_1d_distribution(data, style=Style(**self.dict()), **kwargs)
+
+    def hist2d(self, *args, **kwargs) -> plt.Figure:
+        """ Creates a 2D histogram plot of x and y data (wraps visualize_hist2d) """
+        if isinstance(self, VectorSequence) and (len(args) == 1):
+            args: tuple = (self.basis_col_name, args[0])  # sequences we can infer the basis for the x-axis
+
+        # If the first argument is a string, replace it with column data
+        if isinstance(args[0], str):
+            kwargs.setdefault('xlabel', self.translate(args[0]))
+            args = self.data.loc[:, args[0]].tolist(), *args[1:]
+
+        # If the second argument is a string, replace it with column data
+        if isinstance(args[1], str):
+            kwargs.setdefault('ylabel', self.translate(args[1]))
+            extra_args = args[2:] if len(args) > 0 else tuple()
+            args = args[0], self.data.loc[:, args[1]].tolist(), *extra_args
+
+        kwargs.setdefault('title', self.name_root)
+        return visualize_hist2d(*args, **kwargs)
 
     def surface(self, x_name: str, y_name: str, z_name: str, **kwargs) -> plt.Figure:
         """ Plot a surface from the data. Useful kwargs: [cumulative, density, bins]

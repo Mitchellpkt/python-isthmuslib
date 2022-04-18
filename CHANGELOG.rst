@@ -341,3 +341,8 @@ Changelog
 -------------------
 
 * tweak: Timeseries alias for VectorSequence
+
+0.0.71 (2022-04-17)
+-------------------
+
+* tweak: attach hist2d to VectorMultiset
