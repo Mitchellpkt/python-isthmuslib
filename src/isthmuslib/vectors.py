@@ -14,6 +14,7 @@ import pathlib
 from pydantic import BaseModel
 from sklearn.feature_selection import SelectKBest, chi2
 from multiprocessing import Pool
+from tqdm.auto import tqdm
 
 
 class SVD(BaseModel):
@@ -424,7 +425,7 @@ class VectorSequence(VectorMultiset):
         return self.data.loc[:, self.basis_col_name].tolist()
 
     def basis_quality_checks(self) -> Tuple[bool, str]:
-        """ Checks basis data quality and returns both a self.data.loc[:, self.basis_col_name]True/False flag and a string with an explanation
+        """ Checks basis data quality and returns both a True/False flag and a string with an explanation
 
         :return: True if OK, and a string with explanation either way
         """
@@ -568,7 +569,8 @@ class VectorSequence(VectorMultiset):
     #                                       vv sequence vv       vv args vv          vv kwargs vv
     def sliding_window(self, function: Callable[[Any, Union[Tuple[Any], List[Any]], Dict[str, Any]], Dict[str, Any]],
                        window_widths: List[float] = None, window_starts: List[Any] = None, step_size: float = None,
-                       parallelize_sliding_window: Union[bool, int] = True, *args, **kwargs) -> SlidingWindowResults:
+                       parallelize_sliding_window: Union[bool, int] = True,
+                       disable_sliding_window_progress_bar=None, *args, **kwargs) -> SlidingWindowResults:
         """ Apply function in a sliding window over the sequence
 
         :param function: callable to be applied
@@ -577,7 +579,8 @@ class VectorSequence(VectorMultiset):
         :param step_size: how far apart to space windows
         :param args: positional arguments for the function
         :param kwargs: keyword arguments for the function
-        :param parallelize_sliding_window: Whether to use multiprocessing for the sliding window
+        :param parallelize_sliding_window: whether to use multiprocessing for the sliding window
+        :param disable_sliding_window_progress_bar: pass True to disable progress bar (only applies to serial mode)
         :return: SlidingWindowResults (see the dataframe attribute for results)
         """
 
@@ -604,9 +607,8 @@ class VectorSequence(VectorMultiset):
             list_of_start_and_width_tuples += [(start_time, window_width) for start_time in window_starts]
 
         # If parallelize_sliding_window != False, run in parallel using starmap() from multiprocessing library `Pool`
-        if parallelize_sliding_window:
-            num_workers: int = get_num_workers(parallelize_sliding_window)
-
+        num_workers: int = get_num_workers(parallelize_sliding_window)
+        if parallelize_sliding_window and (num_workers > 1):
             # Create a Pool and process the evaluations in parallel
             with Pool(num_workers) as pool:
                 evaluations: List[Dict[Any, Any]] = pool.starmap(
@@ -618,7 +620,7 @@ class VectorSequence(VectorMultiset):
         else:
             evaluations: List[Dict[Any, Any]] = [self.evaluate_over_window(
                 function=function, start_at=start, window_width=width, args=args, kwargs=kwargs
-            ) for start, width in list_of_start_and_width_tuples]
+            ) for start, width in tqdm(list_of_start_and_width_tuples, disable=disable_sliding_window_progress_bar)]
 
         return SlidingWindowResults(window_width_col_name='window_width', window_start_col_name='window_start',
                                     data=pd.DataFrame(evaluations), name_root=self.name_root)

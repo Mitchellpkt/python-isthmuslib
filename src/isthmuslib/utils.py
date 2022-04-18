@@ -1,7 +1,5 @@
 import pickle as pickle
-from typing import Any, Iterable
 from pydantic import BaseModel
-from typing import Dict, Union, List, Tuple, Callable
 from datetime import datetime
 import pytz
 from dateutil import parser
@@ -9,7 +7,9 @@ import pandas as pd
 import pathlib
 import numpy as np
 from tqdm.auto import tqdm
-from multiprocessing import cpu_count, Pool
+from multiprocessing import cpu_count, Pool, current_process
+import itertools as itertools
+from typing import Iterable, List, Tuple, Dict, Any, Union, Callable
 
 
 class PickleUtils(BaseModel):
@@ -164,6 +164,25 @@ def machine_time(time_or_times: Union[str, Any], units: str = 'seconds',
                 tqdm(time_or_times, disable=disable_progress_bar, **kwargs)]
 
 
+def grid(individual_parameter_values: Dict[str, Iterable]) -> List[Dict[str, Any]]:
+    """
+    Implements the grid search approach to hyperparameter optimization & tuning. This function creates a list of
+    parameter sets that map out a discrete exhaustive search over arbitrary dimensions of arbitrary type.
+
+    Example:
+    Input:  {'temperature': [150, 160], 'circulation': [True, False]}
+    Output: [{'temperature': 150, 'circulation': True}, {'temperature': 150, 'circulation': False},
+             {'temperature': 160, 'circulation': True}, {'temperature': 160, 'circulation': False}]
+
+    :param individual_parameter_values: dictionary, key = parameter name, value = iterables of sample points
+    :return: multiple input parameter sets spanning the space
+    """
+    keys_list: Tuple[str] = tuple(individual_parameter_values.keys())
+    values_list: Tuple[Iterable] = tuple(individual_parameter_values.values())
+    combinations = itertools.product(*values_list)
+    return [{keys_list[i]: value for i, value in enumerate(combination)} for combination in combinations]
+
+
 def as_list(anything: Union[Any, List[Any]]) -> List[Any]:
     """
     If it's not a list, stick it in a list. If it's already a list, return it.
@@ -246,6 +265,10 @@ def get_num_workers(parallelize_arg: Union[bool, int]) -> int:
     :param parallelize_arg: Whether to use multiprocessing for the sliding window. If True, uses # CPU cores.
     :return: number of parallel workers to instantiate
     """
+    # (Daemonic processes are not allowed to have children)
+    if current_process().name != 'MainProcess':
+        return 1
+
     if parallelize_arg and (cpu_count() > 1):  # (if only have one core, no benefit from multiprocessing)
         if isinstance(parallelize_arg, bool):
             return cpu_count()
@@ -311,6 +334,10 @@ def multiprocess(func: Callable, iterable: List[Any], pool_function: str = None,
             pool_function: str = 'starmap'
         else:
             pool_function: str = 'map'
+
+    # If only 1 worker, do the work in serial since we don't need the pool and its overhead
+    if num_workers == 1:
+        return [func(i) for i in iterable]
 
     # Break the task list into batches if desired
     if batching:

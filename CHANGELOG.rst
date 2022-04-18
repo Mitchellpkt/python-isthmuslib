@@ -346,3 +346,8 @@ Changelog
 -------------------
 
 * tweak: attach hist2d to VectorMultiset
+
+0.0.72 (2022-04-18)
+-------------------
+
+* chore: cast vector data to numeric, prevent nested multiprocessing
