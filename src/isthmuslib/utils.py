@@ -185,27 +185,67 @@ def grid(individual_parameter_values: Dict[str, Iterable]) -> List[Dict[str, Any
     return [{keys_list[i]: value for i, value in enumerate(combination)} for combination in combinations]
 
 
-def neighborhood_univariate(starting_value: float, prct_width: float = 50, num_samples: int = 5,
+def neighborhood_grid(starting_point: Dict[str, Any], **kwargs) -> List[Dict[str, Any]]:
+    """
+    Helper function that produces a grid around a coordinate described by a dictionary
+
+    :param starting_point: dictionary describing the coordinate
+    :param kwargs: additional keywords for neighborhood functions (below) and numpy linspace / logspace
+    :return: a list where each element is a dictionary with a point in the neighborhood of the starting point
+    """
+    return grid(neighborhood_multivariate(starting_point, **kwargs))
+
+
+def neighborhood_multivariate(starting_point: Dict[str, Any], errors: str = 'passthrough',
+                              **kwargs) -> Dict[str, List[float]]:
+    """
+    Helper function that wraps the univariate helper function for dictionaries with multiple fields
+
+    :param starting_point: initial point
+    :param errors: whether non-numeric rows should be passed through (default), dropped, or raised
+    :param kwargs: additional keyword arguments passed to neighborhood_univariate (and into numpy linspace / logspace)
+    :return: a dictionary (with keys matching the input) whose values contain the neighborhoods
+    """
+    return_dictionary: Dict[str, List[float]] = dict()
+    for key, value in starting_point.items():
+        try:
+            if isinstance(value, bool) or (not isinstance(value, (int, float))):
+                raise TypeError(f'The variable {key} has a value that is not a float or integer: {value}')
+            return_dictionary[key] = neighborhood_univariate(value, **kwargs)
+        except TypeError as e:
+            if 'passthrough' in errors.lower():
+                return_dictionary[key] = [value]
+            elif 'drop' in errors.lower():
+                pass
+            elif 'raise' in errors.lower():
+                raise ValueError(f"The value of {key} ({value}) does not appear to be numeric. Lower error: {e}")
+            else:
+                raise ValueError(f"Unknown error handling method {errors}. Try 'passthrough', 'drop', or 'raise'.")
+
+    return return_dictionary
+
+
+def neighborhood_univariate(starting_point: float, prct_width: float = 50, num_samples: int = 5,
                             spacing: str = 'linear', placement: str = 'center', **kwargs) -> List[float]:
     """
     Helper function that samples the area around a point
 
-    :param starting_value: the value for which we want the neighborhood
+    :param starting_point: the value for which we want the neighborhood
     :param prct_width: the percentage _total_ width of the bin (so 5% with starting point 10 --> [7.5, 12.5])
     :param num_samples: how many samples to include
     :param spacing: whether the spacing should be linear or log
     :param placement: whether the starting point should be at the left edge, center, or right edge of the neighborhood
-    :param kwargs: additional keyword arguments passed through to np.linspace()/np.logspace()
+    :param kwargs: additional keyword arguments passed through to numpy linspace / logspace
     :return: the points to sample for the neighborhood
     """
-    width: float = starting_value * prct_width / 100
+    width: float = starting_point * prct_width / 100
 
     if placement.lower() == 'left_edge':
-        left, right = starting_value, starting_value + width
+        left, right = starting_point, starting_point + width
     elif placement.lower() in 'centered':  # 'center' or 'centered' is fine
-        left, right = starting_value - width / 2, starting_value + width / 2
+        left, right = starting_point - width / 2, starting_point + width / 2
     elif placement.lower() == 'right_edge':
-        left, right = starting_value - width, starting_value
+        left, right = starting_point - width, starting_point
     else:
         raise ValueError(f"Unknown placement: {placement}. Try 'left_edge', 'center', or 'right_edge'.")
 

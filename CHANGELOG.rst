@@ -351,3 +351,8 @@ Changelog
 -------------------
 
 * chore: cast vector data to numeric, prevent nested multiprocessing
+
+0.0.74 (2022-04-18)
+-------------------
+
+* chore: combinatorics
