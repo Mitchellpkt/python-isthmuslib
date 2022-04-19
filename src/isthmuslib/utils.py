@@ -185,6 +185,40 @@ def grid(individual_parameter_values: Dict[str, Iterable]) -> List[Dict[str, Any
     return [{keys_list[i]: value for i, value in enumerate(combination)} for combination in combinations]
 
 
+def neighborhood_univariate(starting_value: float, prct_width: float = 50, num_samples: int = 5,
+                            spacing: str = 'linear', placement: str = 'center', **kwargs) -> List[float]:
+    """
+    Helper function that samples the area around a point
+
+    :param starting_value: the value for which we want the neighborhood
+    :param prct_width: the percentage _total_ width of the bin (so 5% with starting point 10 --> [7.5, 12.5])
+    :param num_samples: how many samples to include
+    :param spacing: whether the spacing should be linear or log
+    :param placement: whether the starting point should be at the left edge, center, or right edge of the neighborhood
+    :param kwargs: additional keyword arguments passed through to np.linspace()/np.logspace()
+    :return: the points to sample for the neighborhood
+    """
+    width: float = starting_value * prct_width / 100
+
+    if placement.lower() == 'left_edge':
+        left, right = starting_value, starting_value + width
+    elif placement.lower() in 'centered':  # 'center' or 'centered' is fine
+        left, right = starting_value - width / 2, starting_value + width / 2
+    elif placement.lower() == 'right_edge':
+        left, right = starting_value - width, starting_value
+    else:
+        raise ValueError(f"Unknown placement: {placement}. Try 'left_edge', 'center', or 'right_edge'.")
+
+    if spacing.lower() == 'linear':
+        return list(np.linspace(left, right, num_samples, **kwargs))
+    elif 'log' in spacing.lower():  # 'log' or 'logarithmic' is fine
+        return list(np.logspace(np.log10(left), np.log10(right), num_samples, **kwargs))
+    elif spacing.lower() == 'inverse_hyperbolic_transform':
+        raise NotImplementedError(f"Not implemented ... yet ... spoiler alert")
+    else:
+        raise ValueError(f"Unknown spacing: {spacing}. Try 'linear' or 'log'.")
+
+
 def as_list(anything: Union[Any, List[Any]]) -> List[Any]:
     """
     If it's not a list, stick it in a list. If it's already a list, return it.
@@ -316,7 +350,7 @@ def benchmark_multiprocess(*args, worker_counts: List[int] = None, verbose: bool
     """
     Helper function that wraps multiprocessing and measures how number of workers impacts execution time
 
-    :param args: args for multiprocessing (e.g. func, iterable)
+    :param args: args for multiprocessing (e.gs func, iterable)
     :param worker_counts: list of counts to try (if not specified, uses powers of two up to core count)
     :param verbose: whether the benchmarking should be verbose
     :param disable_benchmark_progress_bar: pass true to disable benchmarking bar
