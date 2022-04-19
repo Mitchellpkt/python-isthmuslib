@@ -197,15 +197,20 @@ def neighborhood_grid(starting_point: Dict[str, Any], **kwargs) -> List[Dict[str
 
 
 def neighborhood_multivariate(starting_point: Dict[str, Any], errors: str = 'passthrough',
-                              **kwargs) -> Dict[str, List[float]]:
+                              fields: List[str] = None, **kwargs) -> Dict[str, List[float]]:
     """
     Helper function that wraps the univariate helper function for dictionaries with multiple fields
 
     :param starting_point: initial point
     :param errors: whether non-numeric rows should be passed through (default), dropped, or raised
     :param kwargs: additional keyword arguments passed to neighborhood_univariate (and into numpy linspace / logspace)
+    :param fields: which fields (keys) to expand into neighborhoods
     :return: a dictionary (with keys matching the input) whose values contain the neighborhoods
     """
+
+    if not fields:
+        fields = list(starting_point.keys())
+
     return_dictionary: Dict[str, List[float]] = dict()
     for key, value in starting_point.items():
         try:
@@ -401,14 +406,17 @@ def benchmark_multiprocess(*args, worker_counts: List[int] = None, verbose: bool
         worker_counts = [2 ** x for x in range(int(math.log2(cpu_count())) + 1)][::-1]
 
     benchmarks: Dict[int, float] = dict()
-    for num_workers in tqdm(worker_counts, disable=disable_benchmark_progress_bar):
-        if verbose:
-            print(f'Beginning benchmark with {num_workers} workers...')
-        tic: float = time.perf_counter()
-        multiprocess(*args, num_workers=num_workers, **kwargs)
-        benchmarks[num_workers] = (duration := time.perf_counter() - tic)
-        if verbose:
-            print(f'... completed in {duration:.4f} seconds')
+    try:
+        for num_workers in tqdm(worker_counts, disable=disable_benchmark_progress_bar):
+            if verbose:
+                print(f'Beginning benchmark with {num_workers} workers...')
+            tic: float = time.perf_counter()
+            multiprocess(*args, num_workers=num_workers, **kwargs)
+            benchmarks[num_workers] = (duration := time.perf_counter() - tic)
+            if verbose:
+                print(f'... completed in {duration:.4f} seconds')
+    except KeyboardInterrupt:
+        pass  # allow early break out of the loop if desired
 
     return benchmarks
 
