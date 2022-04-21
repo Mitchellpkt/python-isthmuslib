@@ -1,7 +1,7 @@
 from typing import Union, Dict, Any, List, Tuple
 import pandas as pd
 from tqdm.auto import tqdm
-from .utils import divvy_workload, get_num_workers, multiprocess
+from .utils import divvy_workload, get_num_workers, process_queue
 from pydantic import BaseModel
 from multiprocessing import Pool
 from copy import deepcopy

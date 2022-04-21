@@ -12,6 +12,7 @@ from multiprocessing import cpu_count, Pool, current_process
 import itertools as itertools
 from typing import Iterable, List, Tuple, Dict, Any, Union, Callable
 import math
+import random
 
 
 class PickleUtils(BaseModel):
@@ -212,7 +213,7 @@ def neighborhood_multivariate(starting_point: Dict[str, Any], errors: str = 'pas
         fields = list(starting_point.keys())
 
     return_dictionary: Dict[str, List[float]] = dict()
-    for key, value in starting_point.items():
+    for key, value in [x for x in starting_point.items() if x[0] in fields]:
         try:
             if isinstance(value, bool) or (not isinstance(value, (int, float))):
                 raise TypeError(f'The variable {key} has a value that is not a float or integer: {value}')
@@ -230,20 +231,24 @@ def neighborhood_multivariate(starting_point: Dict[str, Any], errors: str = 'pas
     return return_dictionary
 
 
-def neighborhood_univariate(starting_point: float, prct_width: float = 50, num_samples: int = 5,
-                            spacing: str = 'linear', placement: str = 'center', **kwargs) -> List[float]:
+def neighborhood_univariate(starting_point: float, width_prct: float = 50, num_samples: int = 5,
+                            spacing: str = 'linear', placement: str = 'center',
+                            width_temperature_prct: float = None, **kwargs) -> List[float]:
     """
-    Helper function that samples the area around a point
+    Helper function that samples the area around a point (just a wrapper for numpy linspace and logspace)
 
     :param starting_point: the value for which we want the neighborhood
-    :param prct_width: the percentage _total_ width of the bin (so 5% with starting point 10 --> [7.5, 12.5])
+    :param width_prct: the percentage _total_ width of the bin (so 5% with starting point 10 --> [7.5, 12.5])
     :param num_samples: how many samples to include
     :param spacing: whether the spacing should be linear or log
     :param placement: whether the starting point should be at the left edge, center, or right edge of the neighborhood
+    :param width_temperature_prct: applies a +/- perturbation to the window width itself (not the absolute value)
     :param kwargs: additional keyword arguments passed through to numpy linspace / logspace
     :return: the points to sample for the neighborhood
     """
-    width: float = starting_point * prct_width / 100
+    width: float = starting_point * width_prct / 100
+    if width_temperature_prct:
+        width: float = width * (1 + random.uniform(-1 * abs(width_temperature_prct), abs(width_temperature_prct)) / 100)
 
     if placement.lower() == 'left_edge':
         left, right = starting_point, starting_point + width
@@ -262,6 +267,90 @@ def neighborhood_univariate(starting_point: float, prct_width: float = 50, num_s
         raise NotImplementedError(f"Not implemented ... yet ... spoiler alert")
     else:
         raise ValueError(f"Unknown spacing: {spacing}. Try 'linear' or 'log'.")
+
+
+class MaxTimeException(KeyboardInterrupt):
+    pass
+
+
+def recursive_batch_evaluation(
+        func: Callable,
+        initial_input: Union[Dict[str, Any], Any],
+        selection_method: Callable = None,
+        batch_generator: Callable = None,
+        batch_generator_kwargs: Dict[str, Any] = None,
+        max_deep: int = None,
+        max_time_sec: int = None,
+        return_input_and_value_tuple: bool = False,
+        print_progress: bool = False,
+        print_current_value: bool = False,
+        print_current_inputs: bool = False,
+        **kwargs,
+
+) -> Union[Any, Tuple[Any, Any]]:
+    """
+    Helper function that applies f recursively in batches
+
+    :param func: some evaluation function that outputs a sortable object (e.g. a float or int)
+    :param initial_input: initial inputs (typically a dictionary for standard methods, but is flexible)
+    :param batch_generator: how to generate the next batch from a given seed
+    :param batch_generator_kwargs: additional keyword arguments for the batch generator
+    :param return_input_and_value_tuple: if True, returns a (inputs, value) tuple; otherwise only returns the inputs
+    :param max_time_sec: max time to run in seconds
+    :param max_deep: how many layers deep to go
+    :param selection_method: how to select one element from the outputs to use for seeding the next batch
+    :param print_progress: whether to log information like depth and timing
+    :param print_current_value: whether to print stepwise value (might be ok for int or str, but avoid if big / complex)
+    :param print_current_inputs: whether to print stepwise spot (might be ok for int or str, but avoid if big / complex)
+    :param kwargs: additional kwargs for process_queue, which are passed through to Pool's map() and starmap()
+    :return: the best inputs (or if return_input_and_value_tuple=True, returns the value too)
+    """
+
+    # Handle defaults
+    if batch_generator is None:
+        batch_generator = neighborhood_grid
+    if batch_generator_kwargs is None:
+        batch_generator_kwargs = dict()
+    if selection_method is None:
+        selection_method = max
+
+    # Initialize
+    current_best_input = initial_input
+    current_best_value = func(current_best_input)
+    func_inputs_iterable: List[Dict[str, Any]] = batch_generator(current_best_input, **batch_generator_kwargs)
+
+    # Begin recursively applying
+    start_time = time.perf_counter()
+    counter: int = 0
+    try:
+        while (max_deep is None) or (counter < max_deep):
+            tic: float = time.perf_counter()
+            output_vals: List[Any] = process_queue(func, func_inputs_iterable, **kwargs)
+            current_best_value = selection_method(output_vals)
+            current_best_input = [i for i, v in zip(func_inputs_iterable, output_vals) if v == current_best_value][0]
+            func_inputs_iterable = batch_generator(current_best_input, **batch_generator_kwargs)
+            counter += 1
+            if print_progress:
+                print(f"Completed cycle #{counter} in {time.perf_counter() - tic:.6f} seconds")
+            if print_current_value:
+                print(f"... Current best value: {current_best_value}")
+            if print_current_inputs:
+                print(f"... Current best input is: {current_best_input}")
+            if max_time_sec:
+                if time.perf_counter() > start_time + max_time_sec:
+                    raise MaxTimeException
+    except KeyboardInterrupt as e:
+        if isinstance(e, MaxTimeException):
+            print(f"Breaking after {counter} cycles for max time allowance ({max_time_sec / 60:.2f} minutes)")
+        print(f"Breaking for keyboard interrupt after {counter} cycles.")
+    except Exception as e:
+        print(f"After {counter} cycles, encountered exception {e}")
+
+    # Return the results
+    if return_input_and_value_tuple:
+        return current_best_input, current_best_value
+    else:
+        return current_best_input
 
 
 def as_list(anything: Union[Any, List[Any]]) -> List[Any]:
@@ -391,7 +480,7 @@ def divvy_workload(num_workers: int, tasks: List[Any]) -> List[List[Any]]:
 
 
 def benchmark_process_queue(*args, worker_counts: List[int] = None, verbose: bool = True,
-                           disable_benchmark_progress_bar: bool = None, **kwargs) -> Dict[int, float]:
+                            disable_benchmark_progress_bar: bool = None, **kwargs) -> Dict[int, float]:
     """
     Helper function that wraps multiprocessing and measures how number of workers impacts execution time
 
@@ -420,15 +509,49 @@ def benchmark_process_queue(*args, worker_counts: List[int] = None, verbose: boo
 
     return benchmarks
 
+
 def multiprocess(suppress_multiprocess_notice: bool = False, *args, **kwargs) -> List[Any]:
     """ Legacy name wrapper for process_queue with a warning that can be silenced """
     if not suppress_multiprocess_notice:
         print("'multiprocess' is now 'process_queue'. Update or pass suppress_multiprocess_notice=True to silence.")
     return process_queue(*args, **kwargs)
 
+
+def recursive_process(func: Callable, initial_inputs: Any, max_deep: int = None,
+                      print_progress: bool = False, print_current_value: bool = False, *args, **kwargs) -> Any:
+    """
+    Helper function for processing recursive functions
+
+    :param func: recursive function
+    :param initial_inputs: initial inputs to the function
+    :param max_deep: max iterations through the loop
+    :param print_progress: whether to log information like depth and timing
+    :param print_current_value: whether to print stepwise value (might be ok for int or str, but avoid if big / complex)
+    :param args: positional arguments for the function
+    :param kwargs: keyword arguments for the function
+    :return: latest state at time of keyboard interrupt or maxing out the depth
+    """
+    counter: int = 0
+    current: Any = initial_inputs
+    try:
+        while (max_deep is None) or (counter < max_deep):
+            tic: float = time.perf_counter()
+            current = func(current, *args, **kwargs)
+            counter += 1
+            if print_progress:
+                print(f"Completed cycle #{counter} in {time.perf_counter() - tic:.6f} seconds")
+            if print_current_value:
+                print(f"... Current value: {current}")
+    except KeyboardInterrupt:
+        print(f"Breaking for keyboard interrupt after {counter} cycles.")
+    except Exception as e:
+        print(f"After {counter} cycles, encountered exception {e}")
+    return current
+
+
 def process_queue(func: Callable, iterable: List[Any], pool_function: str = None,
                   batching: bool = False, num_workers: int = None, cuts_per_worker: int = 3,
-                  serial_progress_bar: bool = True, **kwargs) -> List[Any]:
+                  serial_progress_bar: bool = True, *_, **kwargs) -> List[Any]:
     """
     Convenience wrapper for Pool.map and Pool.starmap that offers manual batching and automatic flattening
 

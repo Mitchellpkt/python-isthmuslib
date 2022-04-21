@@ -28,7 +28,7 @@ IPython.OutputArea.prototype._should_scroll = function(lines) {
 
 
 # LEGACY CODE - NEEDS REFACTOR
-def demo_data(setID: int = 1):
+def demo_data(setID: int = 1):  # noqa: legacy notation
     # Warning, the format of the data depends on the set ID/type
     if setID == 1:
         x: List[int] = [1, 2, 5, 10, 20, 50, 100, 200, 500, 1000]

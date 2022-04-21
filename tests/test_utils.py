@@ -1,7 +1,7 @@
 import pytest
 
 from isthmuslib import VectorMultiset
-from src.isthmuslib.utils import risky_cast, multiprocess
+from src.isthmuslib.utils import risky_cast, process_queue, recursive_batch_evaluation
 from src.isthmuslib.logging import parse_string_with_embedded_json, parse_string_with_manual_tokens
 from typing import Tuple, Any, List, Dict
 
@@ -42,18 +42,18 @@ def starbar(x: int, y: int) -> str:
     return f"x={x} and y={y} so {x*y=}"
 
 
-def test_multiprocess():
+def test_process_queue():
     inputs: List[int] = list(range(25))
     star_inputs: List[Tuple[int, int]] = [(x, x + 2) for x in list(range(10))]
 
-    result = multiprocess(foobar, inputs, num_workers=5, cuts_per_worker=1, batching=False)
+    result = process_queue(foobar, inputs, num_workers=5, cuts_per_worker=1, batching=False)
     assert result[:3] == [0, 10, 20]
-    result = multiprocess(foobar, inputs, num_workers=5, cuts_per_worker=1, batching=True)
+    result = process_queue(foobar, inputs, num_workers=5, cuts_per_worker=1, batching=True)
     assert result[:3] == [0, 10, 20]
-    result = multiprocess(starbar, star_inputs, num_workers=5, cuts_per_worker=1, batching=False)
+    result = process_queue(starbar, star_inputs, num_workers=5, cuts_per_worker=1, batching=False)
     assert result[:3] == ['x=0 and y=2 so x*y=0', 'x=1 and y=3 so x*y=3', 'x=2 and y=4 so x*y=8']
     try:
-        print(multiprocess(starbar, star_inputs, num_workers=5, cuts_per_worker=1, batching=True))
+        print(process_queue(starbar, star_inputs, num_workers=5, cuts_per_worker=1, batching=True))
     except NotImplementedError as e:
         print(f"... not implemented yet")
 

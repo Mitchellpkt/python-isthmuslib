@@ -6,5 +6,6 @@ loguru
 pydantic
 statsmodels
 pytz
-tqdm
 scikit-learn
+ipywidgets  # otherwise current tqdm throws a notice
+tqdm
