@@ -273,21 +273,18 @@ class MaxTimeException(KeyboardInterrupt):
     pass
 
 
-def recursive_batch_evaluation(
-        func: Callable,
-        initial_input: Union[Dict[str, Any], Any],
-        selection_method: Callable = None,
-        batch_generator: Callable = None,
-        batch_generator_kwargs: Dict[str, Any] = None,
-        max_deep: int = None,
-        max_time_sec: int = None,
-        return_input_and_value_tuple: bool = False,
-        print_progress: bool = False,
-        print_current_value: bool = False,
-        print_current_inputs: bool = False,
-        **kwargs,
-
-) -> Union[Any, Tuple[Any, Any]]:
+def recursive_batch_evaluation(func: Callable,
+                               initial_input: Union[Dict[str, Any], Any],
+                               selection_method: Callable = None,
+                               batch_generator: Callable = None,
+                               batch_generator_kwargs: Dict[str, Any] = None,
+                               max_deep: int = None,
+                               max_time_sec: int = None,
+                               return_input_and_value_tuple: bool = False,
+                               print_progress: bool = False,
+                               print_current_value: bool = False,
+                               print_current_inputs: bool = False,
+                               *_, **kwargs) -> Union[Any, Tuple[Any, Any]]:
     """
     Helper function that applies f recursively in batches
 
@@ -325,6 +322,7 @@ def recursive_batch_evaluation(
     try:
         while (max_deep is None) or (counter < max_deep):
             tic: float = time.perf_counter()
+            kwargs.setdefault('pool_function', 'map')
             output_vals: List[Any] = process_queue(func, func_inputs_iterable, **kwargs)
             current_best_value = selection_method(output_vals)
             current_best_input = [i for i, v in zip(func_inputs_iterable, output_vals) if v == current_best_value][0]

@@ -86,3 +86,27 @@ def test_parsing():
                                              parallelize_processing=True,
                                              tokens_dictionary=tokens_dictionary))
     print(timeseries.data)
+
+
+def mock_hill(kwargs) -> float:
+    x = kwargs.get('x')
+    y = kwargs.get('y')
+    return 1 / x + 1 / (y ** 2)
+
+
+def test_recursive_batch_evaluation():
+    inital_point: Dict[str, Any] = {'x': 400, 'y': 300}
+    current_best_input, current_best_value = recursive_batch_evaluation(
+        func=mock_hill,
+        initial_input=inital_point,
+        selection_method=max,
+        batch_generator_kwargs={'width_prct': 10, 'num_samples': 3},
+        max_deep=1,
+        return_input_and_value_tuple=True,
+        print_progress=True,
+        print_current_value=True,
+        print_current_inputs=True,
+        num_workers=64,
+    )
+    assert current_best_input['x'] < inital_point['x']
+    assert current_best_input['y'] < inital_point['y']
