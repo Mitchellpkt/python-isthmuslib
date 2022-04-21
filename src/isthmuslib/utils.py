@@ -390,7 +390,7 @@ def divvy_workload(num_workers: int, tasks: List[Any]) -> List[List[Any]]:
     return task_list_all
 
 
-def benchmark_multiprocess(*args, worker_counts: List[int] = None, verbose: bool = True,
+def benchmark_process_queue(*args, worker_counts: List[int] = None, verbose: bool = True,
                            disable_benchmark_progress_bar: bool = None, **kwargs) -> Dict[int, float]:
     """
     Helper function that wraps multiprocessing and measures how number of workers impacts execution time
@@ -411,7 +411,7 @@ def benchmark_multiprocess(*args, worker_counts: List[int] = None, verbose: bool
             if verbose:
                 print(f'Beginning benchmark with {num_workers} workers...')
             tic: float = time.perf_counter()
-            multiprocess(*args, num_workers=num_workers, **kwargs)
+            process_queue(*args, num_workers=num_workers, **kwargs)
             benchmarks[num_workers] = (duration := time.perf_counter() - tic)
             if verbose:
                 print(f'... completed in {duration:.4f} seconds')
@@ -420,9 +420,15 @@ def benchmark_multiprocess(*args, worker_counts: List[int] = None, verbose: bool
 
     return benchmarks
 
+def multiprocess(suppress_multiprocess_notice: bool = False, *args, **kwargs) -> List[Any]:
+    """ Legacy name wrapper for process_queue with a warning that can be silenced """
+    if not suppress_multiprocess_notice:
+        print("'multiprocess' is now 'process_queue'. Update or pass suppress_multiprocess_notice=True to silence.")
+    return process_queue(*args, **kwargs)
 
-def multiprocess(func: Callable, iterable: List[Any], pool_function: str = None, batching: bool = False,
-                 num_workers: int = None, cuts_per_worker: int = 3, **kwargs) -> List[Any]:
+def process_queue(func: Callable, iterable: List[Any], pool_function: str = None,
+                  batching: bool = False, num_workers: int = None, cuts_per_worker: int = 3,
+                  serial_progress_bar: bool = True, **kwargs) -> List[Any]:
     """
     Convenience wrapper for Pool.map and Pool.starmap that offers manual batching and automatic flattening
 
@@ -432,6 +438,7 @@ def multiprocess(func: Callable, iterable: List[Any], pool_function: str = None,
     :param batching: whether to handle batching manually
     :param num_workers: number of processes to run in parallel (should not exceed CPU core count)
     :param cuts_per_worker: if batching manually, can break into extra chunks to avoid idle time even if runtimes vary
+    :param serial_progress_bar: whether to show the progress bar if processing in serial
     :param kwargs: additional keyword arguments for 'map' or 'starmap' (for example the max chunk size)
     :return: the results of func evaluated over the iterable
     """
@@ -449,7 +456,7 @@ def multiprocess(func: Callable, iterable: List[Any], pool_function: str = None,
 
     # If only 1 worker, do the work in serial since we don't need the pool and its overhead
     if num_workers == 1:
-        return [func(i) for i in iterable]
+        return [func(i) for i in tqdm(iterable, disable=None if serial_progress_bar else True)]
 
     # Break the task list into batches if desired
     if batching:

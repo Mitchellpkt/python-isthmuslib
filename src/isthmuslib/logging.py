@@ -269,7 +269,7 @@ def list_of_dict_to_dataframe(data_point_dicts, parallelize_processing: Union[bo
                 print(f'Reshaping data (step 1 of 2): processing in parallel with {num_reshape_workers} workers')
             batches_of_dictionaries: List[List[Any]] = divvy_workload(num_workers=num_reshape_workers,
                                                                       tasks=data_point_dicts)
-            list_of_dataframes: List[pd.DataFrame] = multiprocess(
+            list_of_dataframes: List[pd.DataFrame] = process_queue(
                 data_frame_init_wrapper,
                 batches_of_dictionaries,
                 pool_function='map',
