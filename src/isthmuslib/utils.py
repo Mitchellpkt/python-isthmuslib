@@ -514,7 +514,7 @@ def benchmark_process_queue(*args, worker_counts: List[int] = None, verbose: boo
     return benchmarks
 
 
-def multiprocess(suppress_multiprocess_notice: bool = False, *args, **kwargs) -> List[Any]:
+def multiprocess(*args, suppress_multiprocess_notice: bool = False, **kwargs) -> List[Any]:
     """ Legacy name wrapper for process_queue with a warning that can be silenced """
     if not suppress_multiprocess_notice:
         print("'multiprocess' is now 'process_queue'. Update or pass suppress_multiprocess_notice=True to silence.")
