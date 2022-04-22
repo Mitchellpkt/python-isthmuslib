@@ -568,13 +568,13 @@ class VectorSequence(VectorMultiset):
 
     #                                       vv sequence vv       vv args vv          vv kwargs vv
     def sliding_window(self, function: Callable[[Any, Union[Tuple[Any], List[Any]], Dict[str, Any]], Dict[str, Any]],
-                       window_widths: List[float] = None, window_starts: List[Any] = None, step_size: float = None,
+                       window_widths: Union[float, List[float]] = None, window_starts: List[Any] = None, step_size: float = None,
                        parallelize_sliding_window: Union[bool, int] = True,
                        disable_sliding_window_progress_bar=None, *args, **kwargs) -> SlidingWindowResults:
         """ Apply function in a sliding window over the sequence
 
         :param function: callable to be applied
-        :param window_widths: list of window widths to use
+        :param window_widths: list of window widths to use (or a single value if only one width desired)
         :param window_starts: list of starting points for the windows
         :param step_size: how far apart to space windows
         :param args: positional arguments for the function
@@ -592,6 +592,8 @@ class VectorSequence(VectorMultiset):
 
         basis: Tuple[float] = (self.data.loc[:, self.basis_col_name].tolist())
 
+        if isinstance(window_widths, (float, int)):
+            window_widths = [window_widths]
         if not window_widths:
             duration: float = max(self.data.loc[:, self.basis_col_name]) - min(self.data.loc[:, self.basis_col_name])
             window_widths: List[float] = [duration / x for x in range(20, 401, 20)]  # TODO: move vals to vars
