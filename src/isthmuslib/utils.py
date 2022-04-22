@@ -426,7 +426,7 @@ def make_dict(d: Union[Dict, object, None]) -> Dict[Any, Any]:
         return d
 
 
-def get_num_workers(parallelize_arg: Union[bool, int]) -> int:
+def get_num_workers(parallelize_arg: Union[bool, int, None]) -> int:
     """
     This is a helper function to ascertain the number of workers based on the parallelize_sliding_window input
 
@@ -437,13 +437,19 @@ def get_num_workers(parallelize_arg: Union[bool, int]) -> int:
     if current_process().name != 'MainProcess':
         return 1
 
-    if parallelize_arg and (cpu_count() > 1):  # (if only have one core, no benefit from multiprocessing)
-        if isinstance(parallelize_arg, bool):
+    # return CPU count if not specified
+    if parallelize_arg is None:
+        return cpu_count()
+
+    # return CPU count if True
+    if isinstance(parallelize_arg, bool):
+        if parallelize_arg:
             return cpu_count()
         else:
-            return min(cpu_count(), parallelize_arg)
-    else:
-        return 1
+            return 1
+
+    # Otherwise return numeric inputs (but no more than the number of cores available)
+    return min(cpu_count(), parallelize_arg)
 
 
 def determine_load_per_worker(num_tasks: int, num_workers: int) -> List[int]:

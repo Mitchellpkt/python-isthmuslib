@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from .config import Style
-from .utils import PickleUtils, Rosetta, make_dict, get_num_workers
+from .utils import PickleUtils, Rosetta, make_dict, get_num_workers, process_queue
 from .data_quality import basis_quality_checks, basis_quality_plots, fill_ratio
 from copy import deepcopy
 import statsmodels.api as sm
@@ -609,12 +609,13 @@ class VectorSequence(VectorMultiset):
         # If parallelize_sliding_window != False, run in parallel using starmap() from multiprocessing library `Pool`
         num_workers: int = get_num_workers(parallelize_sliding_window)
         if parallelize_sliding_window and (num_workers > 1):
-            # Create a Pool and process the evaluations in parallel
-            with Pool(num_workers) as pool:
-                evaluations: List[Dict[Any, Any]] = pool.starmap(
-                    func=self.evaluate_over_window,
-                    iterable=[(function, start, width, args, kwargs) for start, width in list_of_start_and_width_tuples]
-                )
+            evaluations: List[Dict[Any, Any]] = process_queue(
+                func=self.evaluate_over_window,
+                iterable=[(function, start, width, args, kwargs) for start, width in list_of_start_and_width_tuples],
+                pool_function='starmap',
+                batching=False,
+                num_workers=num_workers
+            )
 
         # If parallelize_sliding_window == False (or None) use `for` loop in list comprehension -> serial processing
         else:
