@@ -321,6 +321,25 @@ class VectorMultiset(PickleUtils, Style, Rosetta):
         if not kwargs.get('disable_auto_conversion_to_numeric', False) and (self.data is not None):
             self.cast_to_numeric()
 
+    def drop_col_types(self, drop_types: Union[type, Tuple[type]], inplace: bool = True) -> Union[Any, None]:
+        """
+        Helper function to drop columns of a particular type(s)
+
+        :param drop_types: the types to be dropped
+        :param inplace: whether the columns should be dropped inplace or if a new instance should be returned
+        :return: None if inplace=True, otherwise a copy of the object with dropped columns
+        """
+        if not isinstance(drop_types, (list, tuple)):
+            drop_types = [drop_types]
+        target_cols: List[str] = [k for k in self.data.keys() if isinstance(self.data.loc[:, k][0], drop_types)]
+        if inplace:
+            self.data.drop(columns=target_cols, inplace=True)
+            return None
+        else:
+            to_return: Any = deepcopy(self)
+            to_return.drop_col_types(drop_types=drop_types, inplace=True)
+            return to_return
+
 
 class SlidingWindowResults(VectorMultiset):
     """ Results from Sequence.sliding_window(), which is a VectorMultiset with extra context baked in """
@@ -568,7 +587,8 @@ class VectorSequence(VectorMultiset):
 
     #                                       vv sequence vv       vv args vv          vv kwargs vv
     def sliding_window(self, function: Callable[[Any, Union[Tuple[Any], List[Any]], Dict[str, Any]], Dict[str, Any]],
-                       window_widths: Union[float, List[float]] = None, window_starts: List[Any] = None, step_size: float = None,
+                       window_widths: Union[float, List[float]] = None, window_starts: List[Any] = None,
+                       step_size: float = None,
                        parallelize_sliding_window: Union[bool, int] = True,
                        disable_sliding_window_progress_bar=None, *args, **kwargs) -> SlidingWindowResults:
         """ Apply function in a sliding window over the sequence
