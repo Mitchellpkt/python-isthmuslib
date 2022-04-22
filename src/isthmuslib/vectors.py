@@ -321,7 +321,7 @@ class VectorMultiset(PickleUtils, Style, Rosetta):
         if not kwargs.get('disable_auto_conversion_to_numeric', False) and (self.data is not None):
             self.cast_to_numeric()
 
-    def drop_col_types(self, drop_types: Union[type, Tuple[type]], inplace: bool = True) -> Union[Any, None]:
+    def drop_col_types(self, drop_types: Union[type, List[type]], inplace: bool = True) -> Union[Any, None]:
         """
         Helper function to drop columns of a particular type(s)
 
