@@ -603,7 +603,7 @@ def process_queue(func: Callable, iterable: List[Any], pool_function: str = None
         use_function = func
 
     # Run the pool
-    with Pool(num_workers) as pool:
+    with Pool(min(num_workers, len(map_style_inputs))) as pool:
         if pool_function.lower() == 'starmap':
             result = pool.starmap(func=use_function, iterable=map_style_inputs, **kwargs)
         elif pool_function.lower() == 'map':
