@@ -593,7 +593,7 @@ class VectorSequence(VectorMultiset):
         """ Apply function in a sliding window over the sequence
 
         :param function: callable to be applied
-        :param window_widths: list of window widths to use
+        :param window_widths: list of window widths to use (or a single value if only one width desired)
         :param window_starts: list of starting points for the windows
         :param step_size: how far apart to space windows
         :param allow_shorter_windows: whether to allow windows that are not the full length (disabled by default)
@@ -612,6 +612,9 @@ class VectorSequence(VectorMultiset):
 
         basis: Tuple[float] = (self.data.loc[:, self.basis_col_name].tolist())
 
+        if isinstance(window_widths, (float, int)):
+            window_widths = [window_widths]
+
         if not window_widths:
             duration: float = max(self.data.loc[:, self.basis_col_name]) - min(self.data.loc[:, self.basis_col_name])
             window_widths: List[float] = [duration / x for x in range(20, 401, 20)]  # TODO: move vals to vars
@@ -629,15 +632,19 @@ class VectorSequence(VectorMultiset):
                     window_starts: List[float] = list(np.arange(min(basis), max(basis) - window_width, window_width))
             list_of_start_and_width_tuples += [(start_time, window_width) for start_time in window_starts]
 
+        if not list_of_start_and_width_tuples:
+            raise ValueError("No windows for sliding analysis - check your sizes and start times")
+
         # If parallelize_sliding_window != False, run in parallel using starmap() from multiprocessing library `Pool`
         num_workers: int = get_num_workers(parallelize_sliding_window)
         if parallelize_sliding_window and (num_workers > 1):
-            # Create a Pool and process the evaluations in parallel
-            with Pool(num_workers) as pool:
-                evaluations: List[Dict[Any, Any]] = pool.starmap(
-                    func=self.evaluate_over_window,
-                    iterable=[(function, start, width, args, kwargs) for start, width in list_of_start_and_width_tuples]
-                )
+            evaluations: List[Dict[Any, Any]] = process_queue(
+                func=self.evaluate_over_window,
+                iterable=[(function, start, width, args, kwargs) for start, width in list_of_start_and_width_tuples],
+                pool_function='starmap',
+                batching=False,
+                num_workers=num_workers
+            )
 
         # If parallelize_sliding_window == False (or None) use `for` loop in list comprehension -> serial processing
         else:
