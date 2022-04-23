@@ -589,7 +589,8 @@ class VectorSequence(VectorMultiset):
     def sliding_window(self, function: Callable[[Any, Union[Tuple[Any], List[Any]], Dict[str, Any]], Dict[str, Any]],
                        window_widths: List[float] = None, window_starts: List[Any] = None, step_size: float = None,
                        parallelize_sliding_window: Union[bool, int] = True, allow_shorter_windows: bool = False,
-                       disable_sliding_window_progress_bar=None, *args, **kwargs) -> SlidingWindowResults:
+                       disable_sliding_window_progress_bar=None,
+                       limit: int = None, *args, **kwargs) -> SlidingWindowResults:
         """ Apply function in a sliding window over the sequence
 
         :param function: callable to be applied
@@ -601,6 +602,7 @@ class VectorSequence(VectorMultiset):
         :param kwargs: keyword arguments for the function
         :param parallelize_sliding_window: whether to use multiprocessing for the sliding window
         :param disable_sliding_window_progress_bar: pass True to disable progress bar (only applies to serial mode)
+        :param limit: set a limit for how many windows to evaluate, takes the first N
         :return: SlidingWindowResults (see the dataframe attribute for results)
         """
 
@@ -635,6 +637,9 @@ class VectorSequence(VectorMultiset):
         if not list_of_start_and_width_tuples:
             raise ValueError("No windows for sliding analysis - check your sizes and start times")
 
+        if limit and limit < len(list_of_start_and_width_tuples):
+            list_of_start_and_width_tuples = list_of_start_and_width_tuples[:limit]
+
         # If parallelize_sliding_window != False, run in parallel using starmap() from multiprocessing library `Pool`
         num_workers: int = get_num_workers(parallelize_sliding_window)
         if parallelize_sliding_window and (num_workers > 1):
@@ -653,8 +658,8 @@ class VectorSequence(VectorMultiset):
             ) for start, width in tqdm(list_of_start_and_width_tuples, disable=disable_sliding_window_progress_bar)]
 
         return SlidingWindowResults(window_width_col_name='window_width', window_start_col_name='window_start',
-                                    data=pd.DataFrame(evaluations), name_root=self.name_root)    
-    
+                                    data=pd.DataFrame(evaluations), name_root=self.name_root)
+
     def repackage(self, instance: Any, sequence_attribute: str = 'series', basis_name: str = 'basis') -> Any:
         """
         Helper function for repackaging similar (BaseModel-like) objects into the top class
