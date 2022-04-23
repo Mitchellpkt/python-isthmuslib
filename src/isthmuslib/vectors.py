@@ -587,16 +587,16 @@ class VectorSequence(VectorMultiset):
 
     #                                       vv sequence vv       vv args vv          vv kwargs vv
     def sliding_window(self, function: Callable[[Any, Union[Tuple[Any], List[Any]], Dict[str, Any]], Dict[str, Any]],
-                       window_widths: Union[float, List[float]] = None, window_starts: List[Any] = None,
-                       step_size: float = None,
-                       parallelize_sliding_window: Union[bool, int] = True,
+                       window_widths: List[float] = None, window_starts: List[Any] = None, step_size: float = None,
+                       parallelize_sliding_window: Union[bool, int] = True, allow_shorter_windows: bool = False,
                        disable_sliding_window_progress_bar=None, *args, **kwargs) -> SlidingWindowResults:
         """ Apply function in a sliding window over the sequence
 
         :param function: callable to be applied
-        :param window_widths: list of window widths to use (or a single value if only one width desired)
+        :param window_widths: list of window widths to use
         :param window_starts: list of starting points for the windows
         :param step_size: how far apart to space windows
+        :param allow_shorter_windows: whether to allow windows that are not the full length (disabled by default)
         :param args: positional arguments for the function
         :param kwargs: keyword arguments for the function
         :param parallelize_sliding_window: whether to use multiprocessing for the sliding window
@@ -612,8 +612,6 @@ class VectorSequence(VectorMultiset):
 
         basis: Tuple[float] = (self.data.loc[:, self.basis_col_name].tolist())
 
-        if isinstance(window_widths, (float, int)):
-            window_widths = [window_widths]
         if not window_widths:
             duration: float = max(self.data.loc[:, self.basis_col_name]) - min(self.data.loc[:, self.basis_col_name])
             window_widths: List[float] = [duration / x for x in range(20, 401, 20)]  # TODO: move vals to vars
@@ -623,24 +621,23 @@ class VectorSequence(VectorMultiset):
         for i, window_width in enumerate(window_widths):
             if not window_starts:
                 if step_size:
-                    window_starts: List[float] = list(np.arange(min(basis), max(basis) - window_width, step_size))
+                    if allow_shorter_windows:
+                        window_starts: List[float] = list(np.arange(min(basis), max(basis), step_size))
+                    else:
+                        window_starts: List[float] = list(np.arange(min(basis), max(basis) - window_width, step_size))
                 else:
                     window_starts: List[float] = list(np.arange(min(basis), max(basis) - window_width, window_width))
             list_of_start_and_width_tuples += [(start_time, window_width) for start_time in window_starts]
 
-        if not list_of_start_and_width_tuples:
-            raise ValueError("No windows for sliding analysis - check your sizes and start times")
-
         # If parallelize_sliding_window != False, run in parallel using starmap() from multiprocessing library `Pool`
         num_workers: int = get_num_workers(parallelize_sliding_window)
         if parallelize_sliding_window and (num_workers > 1):
-            evaluations: List[Dict[Any, Any]] = process_queue(
-                func=self.evaluate_over_window,
-                iterable=[(function, start, width, args, kwargs) for start, width in list_of_start_and_width_tuples],
-                pool_function='starmap',
-                batching=False,
-                num_workers=num_workers
-            )
+            # Create a Pool and process the evaluations in parallel
+            with Pool(num_workers) as pool:
+                evaluations: List[Dict[Any, Any]] = pool.starmap(
+                    func=self.evaluate_over_window,
+                    iterable=[(function, start, width, args, kwargs) for start, width in list_of_start_and_width_tuples]
+                )
 
         # If parallelize_sliding_window == False (or None) use `for` loop in list comprehension -> serial processing
         else:
@@ -649,8 +646,8 @@ class VectorSequence(VectorMultiset):
             ) for start, width in tqdm(list_of_start_and_width_tuples, disable=disable_sliding_window_progress_bar)]
 
         return SlidingWindowResults(window_width_col_name='window_width', window_start_col_name='window_start',
-                                    data=pd.DataFrame(evaluations), name_root=self.name_root)
-
+                                    data=pd.DataFrame(evaluations), name_root=self.name_root)    
+    
     def repackage(self, instance: Any, sequence_attribute: str = 'series', basis_name: str = 'basis') -> Any:
         """
         Helper function for repackaging similar (BaseModel-like) objects into the top class
