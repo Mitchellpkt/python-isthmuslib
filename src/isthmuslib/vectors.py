@@ -628,6 +628,9 @@ class VectorSequence(VectorMultiset):
                     window_starts: List[float] = list(np.arange(min(basis), max(basis) - window_width, window_width))
             list_of_start_and_width_tuples += [(start_time, window_width) for start_time in window_starts]
 
+        if not list_of_start_and_width_tuples:
+            raise ValueError("No windows for sliding analysis - check your sizes and start times")
+
         # If parallelize_sliding_window != False, run in parallel using starmap() from multiprocessing library `Pool`
         num_workers: int = get_num_workers(parallelize_sliding_window)
         if parallelize_sliding_window and (num_workers > 1):
