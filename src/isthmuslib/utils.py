@@ -131,10 +131,13 @@ def human_time(timestamp_sec: Union[float, str, int], formatter: str = '%Y-%m-%d
 
     # If input is a string, try to parse it as a float or int
     if isinstance(timestamp_sec, str):
-        if timestamp_sec.replace('.', '', 1).isdigit():
-            timestamp_sec: float = float(timestamp_sec)
+        if timestamp_sec == 'now':
+            timestamp_sec = time.time()
         else:
-            raise ValueError(f"Could not interpret string as a numeric timestamp: {timestamp_sec})")
+            if timestamp_sec.replace('.', '', 1).isdigit():
+                timestamp_sec: float = float(timestamp_sec)
+            else:
+                raise ValueError(f"Could not interpret string as a numeric timestamp: {timestamp_sec})")
     datetime_string: str = datetime.fromtimestamp(timestamp_sec, pytz.timezone(timezone)).strftime(formatter)
     if include_timezone:
         datetime_string += f" ({timezone})"
