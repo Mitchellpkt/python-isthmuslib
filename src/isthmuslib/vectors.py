@@ -9,11 +9,10 @@ from .data_quality import basis_quality_checks, basis_quality_plots, fill_ratio
 from copy import deepcopy
 import statsmodels.api as sm
 from .plotting import visualize_x_y, visualize_1d_distribution, visualize_surface, \
-    visualize_embedded_surface, visualize_hist2d
+    visualize_embedded_surface, visualize_hist2d, visualize_x_y_input_interpreter
 import pathlib
 from pydantic import BaseModel
 from sklearn.feature_selection import SelectKBest, chi2
-from multiprocessing import Pool
 from tqdm.auto import tqdm
 
 
@@ -151,6 +150,17 @@ class VectorMultiset(PickleUtils, Style, Rosetta):
         kwargs.setdefault('title', self.translate(self.name_root))
         style: Style = kwargs.pop('style', Style(**self.dict()))
         return visualize_x_y(x_data, y_data, style=style, **kwargs)
+
+    def viz2d(self, *args, **kwargs) -> plt.Figure:
+        """
+        For convenience, allow direct access to visualize_x_y_input_interpreter
+
+        :param args: visualize_x_y_input_interpreter positional inputs
+        :param kwargs: visualize_x_y_input_interpreter keyword argument inputs
+        :return: figure handle
+        """
+        kwargs.setdefault('style', Style(**self.dict()))
+        return visualize_x_y_input_interpreter(*args, **kwargs)
 
     def scatter(self, *args, **kwargs) -> plt.Figure:
         """ Creates a 2D scatter plot of x and y data (wraps visualize_x_y) """
