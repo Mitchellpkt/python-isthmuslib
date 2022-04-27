@@ -35,6 +35,12 @@ class VectorMultiset(PickleUtils, Style, Rosetta):
         """ The length of the vector set is the length of the data frame """
         return len(self.data)
 
+    def __add__(self, other):
+        """ Adding items derived from MultiSets concatenates their dataframes (keeping metadat from left side) """
+        to_return = deepcopy(self)
+        to_return.data = pd.concat([self.data, other.data])
+        return to_return
+
     def values(self, feature: str, cumulative: bool = False, *args) -> List[Any]:
         """ Retrieves a particular data feature by attribute name. Additional args unpack deeper
 
