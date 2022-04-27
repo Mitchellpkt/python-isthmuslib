@@ -287,6 +287,7 @@ def recursive_batch_evaluation(func: Callable,
                                print_progress: bool = False,
                                print_current_value: bool = False,
                                print_current_inputs: bool = False,
+                               evaluate_initial_inputs: bool = True,
                                *_, **kwargs) -> Union[Any, Tuple[Any, Any]]:
     """
     Helper function that applies f recursively in batches
@@ -302,6 +303,7 @@ def recursive_batch_evaluation(func: Callable,
     :param print_progress: whether to log information like depth and timing
     :param print_current_value: whether to print stepwise value (might be ok for int or str, but avoid if big / complex)
     :param print_current_inputs: whether to print stepwise spot (might be ok for int or str, but avoid if big / complex)
+    :param evaluate_initial_inputs: whether to evaluate the inputs before beginning the main cycle
     :param kwargs: additional kwargs for process_queue, which are passed through to Pool's map() and starmap()
     :return: the best inputs (or if return_input_and_value_tuple=True, returns the value too)
     """
@@ -316,7 +318,10 @@ def recursive_batch_evaluation(func: Callable,
 
     # Initialize
     current_best_input = initial_input
-    current_best_value = func(current_best_input)
+    if evaluate_initial_inputs:
+        current_best_value = func(current_best_input)
+    else:
+        current_best_value = None
     func_inputs_iterable: List[Dict[str, Any]] = batch_generator(current_best_input, **batch_generator_kwargs)
 
     # Begin recursively applying
