@@ -200,8 +200,8 @@ def neighborhood_grid(starting_point: Dict[str, Any], **kwargs) -> List[Dict[str
     return grid(neighborhood_multivariate(starting_point, **kwargs))
 
 
-def neighborhood_multivariate(starting_point: Dict[str, Any], errors: str = 'passthrough',
-                              fields: List[str] = None, **kwargs) -> Dict[str, List[float]]:
+def neighborhood_multivariate(starting_point: Dict[str, Any], errors: str = 'passthrough', fields: List[str] = None,
+                              keep_other_vals: bool = True, **kwargs) -> Dict[str, List[float]]:
     """
     Helper function that wraps the univariate helper function for dictionaries with multiple fields
 
@@ -209,13 +209,18 @@ def neighborhood_multivariate(starting_point: Dict[str, Any], errors: str = 'pas
     :param errors: whether non-numeric rows should be passed through (default), dropped, or raised
     :param kwargs: additional keyword arguments passed to neighborhood_univariate (and into numpy linspace / logspace)
     :param fields: which fields (keys) to expand into neighborhoods
+    :param keep_other_vals: whether to keep the other values (whose keys are not in fields)
     :return: a dictionary (with keys matching the input) whose values contain the neighborhoods
     """
 
     if not fields:
         fields = list(starting_point.keys())
 
-    return_dictionary: Dict[str, List[float]] = dict()
+    if keep_other_vals:
+        return_dictionary: Dict[str, List[float]] = starting_point
+    else:
+        return_dictionary: Dict[str, List[float]] = dict()
+
     for key, value in [x for x in starting_point.items() if x[0] in fields]:
         try:
             if isinstance(value, bool) or (not isinstance(value, (int, float))):
