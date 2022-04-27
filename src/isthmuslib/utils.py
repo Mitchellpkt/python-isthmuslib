@@ -217,7 +217,7 @@ def neighborhood_multivariate(starting_point: Dict[str, Any], errors: str = 'pas
         fields = list(starting_point.keys())
 
     if keep_other_vals:
-        return_dictionary: Dict[str, List[float]] = starting_point
+        return_dictionary: Dict[str, List[float]] = {k: [v] for k, v in starting_point.items()}
     else:
         return_dictionary: Dict[str, List[float]] = dict()
 
