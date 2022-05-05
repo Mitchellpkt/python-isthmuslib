@@ -155,11 +155,13 @@ def machine_time(time_or_times: Union[str, Any], units: str = 'seconds',
     @return: unix timestamp
     """
 
-    # Get the units multiplier
+    # Get the units multiplier (todo - make this cleaner with a mapper)
     if units in ['s', 'sec', 'second', 'seconds']:
         multiplier: int = 1
     elif units in ['ms', 'milli', 'millisecond', 'milliseconds']:
         multiplier: int = 1_000
+    elif units in ['um', 'micro', 'microsecond', 'microseconds']:
+        multiplier: int = 1_000_000
     elif units in ['ns', 'nano', 'nanosecond', 'nanoseconds']:
         multiplier: int = 1_000_000_000
     else:
