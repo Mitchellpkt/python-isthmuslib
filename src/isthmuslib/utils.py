@@ -148,6 +148,7 @@ def machine_time(time_or_times: Union[str, Any], units: str = 'seconds',
                  disable_progress_bar: bool = True, **kwargs) -> Union[float, List[float]]:
     """
     Convert a string to a timestamp
+
     @param time_or_times: datetime string to parse (or a list of them)
     @param units: seconds or milliseconds
     @param disable_progress_bar: setting to False will activate a tqdm progress bar for conversions over lists
@@ -157,8 +158,10 @@ def machine_time(time_or_times: Union[str, Any], units: str = 'seconds',
     # Get the units multiplier
     if units in ['s', 'sec', 'second', 'seconds']:
         multiplier: int = 1
-    elif units in ['ms', 'millisecond', 'milliseconds']:
-        multiplier: int = 1000
+    elif units in ['ms', 'milli', 'millisecond', 'milliseconds']:
+        multiplier: int = 1_000
+    elif units in ['ns', 'nano', 'nanosecond', 'nanoseconds']:
+        multiplier: int = 1_000_000_000
     else:
         raise ValueError(f"Unknown units: {units}")
 
