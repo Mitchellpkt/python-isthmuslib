@@ -160,7 +160,7 @@ def machine_time(time_or_times: Union[str, Any], units: str = 'seconds',
         multiplier: int = 1
     elif units in ['ms', 'milli', 'millisecond', 'milliseconds']:
         multiplier: int = 1_000
-    elif units in ['um', 'micro', 'microsecond', 'microseconds']:
+    elif units in ['us', 'micro', 'microsecond', 'microseconds']:
         multiplier: int = 1_000_000
     elif units in ['ns', 'nano', 'nanosecond', 'nanoseconds']:
         multiplier: int = 1_000_000_000
