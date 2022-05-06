@@ -277,7 +277,7 @@ def list_of_dict_to_dataframe(data_point_dicts, parallelize_processing: Union[bo
                 num_workers=num_reshape_workers,
             )
             if not disable_progress_bar:
-                print('Reshaping data (step 1 of 2): attaching subframes')
+                print('Reshaping data (step 2 of 2): attaching subframes')
             return pd.concat(list_of_dataframes, ignore_index=True)
 
     if not suppress_deprecation_warning:
