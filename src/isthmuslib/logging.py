@@ -283,7 +283,7 @@ def list_of_dict_to_dataframe(data_point_dicts, parallelize_processing: Union[bo
     if not suppress_deprecation_warning:
         print(f"You are using a very slow method for reshaping the data")
         print(f"Recommendation: use list_of_dict_to_dataframe(..., pandas_automatic=True)")
-        print(f"To suppress thing warning, pass: use list_of_dict_to_dataframe(..., suppress_deprecation_warning=True)")
+        print(f"To suppress this warning, pass: use list_of_dict_to_dataframe(..., suppress_deprecation_warning=True)")
 
     if parallelize_processing and (num_reshape_workers > 1):
         batches: List[List[Any]] = divvy_workload(num_workers=num_reshape_workers, tasks=data_point_dicts)
