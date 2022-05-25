@@ -80,7 +80,8 @@ def fill_ratio(array: Any) -> float:
     return len(array) / theoretical_count
 
 
-def basis_quality_plots(array: List[float], style: Style = None, which_plots: List[str] = None) -> List[plt.Figure]:
+def basis_quality_plots(array: List[float], style: Style = None, which_plots: List[str] = None,
+                        **kwargs) -> List[plt.Figure]:
     """ Generates some standard plots for checking completeness and uniformity of an array
 
     :param array: the array (in any form)
@@ -89,6 +90,7 @@ def basis_quality_plots(array: List[float], style: Style = None, which_plots: Li
         - 'missing_data_scatter'
         - 'interval_histogram'
         - 'interval_scatter'
+    :param kwargs: additional kwargs passed through to visualize_x_y
     :return:
     """
     # Style and init
@@ -108,13 +110,15 @@ def basis_quality_plots(array: List[float], style: Style = None, which_plots: Li
         f: plt.Figure = visualize_x_y(range(len(vals_y)), vals_y, xlabel='index', ylabel='is_missing (1=True)',
                                       types='scatter',
                                       style=style.override({'color': 'k', 'markersize': 2 * style.markersize}),
-                                      title=title)
+                                      title=title,
+                                      **kwargs)
         plt.axhline(y=0, linewidth=2, linestyle=':', c=style.good_color)
         plt.axhline(y=1, linewidth=2, linestyle=':', c=style.bad_color)
         plt.ylim([-0.5, 1.5])
         xlims: Tuple[float, float] = plt.xlim()
-        plt.text(xlims[0] + 0.02 * (xlims[1] - xlims[0]), 0.05, "0 -> good", color=style.good_color,
-                 size=style.label_fontsize)
+        if 'y' not in kwargs.get('log_axes', ''):
+            plt.text(xlims[0] + 0.02 * (xlims[1] - xlims[0]), 0.05, "0 -> good", color=style.good_color,
+                     size=style.label_fontsize)
         plt.text(xlims[0] + 0.02 * (xlims[1] - xlims[0]), 1.05, "1 = NaN or None -> bad", color=style.bad_color,
                  size=style.label_fontsize)
         h.append(f)
@@ -130,7 +134,7 @@ def basis_quality_plots(array: List[float], style: Style = None, which_plots: Li
             title: str = f'{mappings[False][0]} Cannot make intervals hist with missing data! Plot is blank.'
             color: Any = mappings[False][1]
         h.append(visualize_1d_distribution(vals, xlabel='difference between elements', ylabel='counts', title=title,
-                                           style=style.override({'color': color})))
+                                           style=style.override({'color': color}), **kwargs))
 
     # Scatter plot of data spacing
     if (not which_plots) or ('intervals_scatter' in which_plots):
@@ -145,6 +149,6 @@ def basis_quality_plots(array: List[float], style: Style = None, which_plots: Li
             title: str = f'{mappings[False][0]} Cannot make diffs plot with missing data! Plot is blank.'
             color: Any = mappings[False][1]
         h.append(visualize_x_y(vals_x, vals_y, types='line', xlabel='basis', ylabel='difference between elements',
-                               title=title, style=style.override({'color': color})))
+                               title=title, style=style.override({'color': color}), **kwargs))
 
     return h

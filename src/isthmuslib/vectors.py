@@ -474,12 +474,12 @@ class VectorSequence(VectorMultiset):
         result, _ = self.basis_quality_checks()
         return result
 
-    def basis_quality_plots(self) -> List[plt.Figure]:
+    def basis_quality_plots(self, **kwargs) -> List[plt.Figure]:
         """ Creates a series of plots showing the basis data quality (missing data, nans, timeseries gaps, etc)
 
         :return: figure handles for several plots
         """
-        return basis_quality_plots(self.basis())
+        return basis_quality_plots(self.basis(), **kwargs)
 
     def fill_ratio(self) -> float:
         """ Checks for how many data points are observed for the expected number of data points in a uniform basis.
