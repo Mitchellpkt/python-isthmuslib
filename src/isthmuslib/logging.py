@@ -148,13 +148,14 @@ def parse_file_with_key_value_delimiters(path: str, *args, **kwargs):
 
 
 def parse_string_with_embedded_json_unprocessed_dicts(input_string: str, embedded_json_line_prefix: str = None,
-                                                      limit: int = None,
+                                                      limit: int = None, ignore_decode_errors: bool = False,
                                                       end_of_line: str = '\n') -> List[Dict[Any, Any]]:
     """
     Extracts embedded json from log files
 
     :param input_string: string (e.g. logs file) to be parsed
     :param embedded_json_line_prefix: marker string at the start of every embedded json line
+    :param ignore_decode_errors: if True, silently ignores rows that don't parse (e.g. if pulling from incomplete row)
     :param end_of_line: substring between rows
     :param limit: maximum number of rows to process
     """
@@ -173,7 +174,13 @@ def parse_string_with_embedded_json_unprocessed_dicts(input_string: str, embedde
         embedded_with_trailing_data = embedded_with_trailing_data[:limit]
     embedded_clean = [x.split(end_of_line)[0] if end_of_line in x else x for x in embedded_with_trailing_data]
 
-    return [json.loads(s) for s in embedded_clean]
+    return_list: List[Dict[Any, Any]] = []
+    for s in embedded_clean:
+        try:
+            return_list.append(json.loads(s))
+        except json.JSONDecodeError as e:
+            if not ignore_decode_errors:
+                raise e
 
 
 def parse_string_with_embedded_json(input_string: str, embedded_json_line_prefix: str = None,
