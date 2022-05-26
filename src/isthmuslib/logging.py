@@ -181,6 +181,7 @@ def parse_string_with_embedded_json_unprocessed_dicts(input_string: str, embedde
         except json.JSONDecodeError as e:
             if not ignore_decode_errors:
                 raise e
+    return return_list
 
 
 def parse_string_with_embedded_json(input_string: str, embedded_json_line_prefix: str = None,
