@@ -53,7 +53,7 @@ def parse_string_with_manual_tokens(input_string: str, tokens_dictionary: Dict[s
 
     # Loop over rows
     for raw_row_text in (p := tqdm(raw_row_texts_list, disable=disable_progress_bar)):
-        p.set_description('Reading and parsing (step 1 of 2)')
+        p.set_description('Reading and parsing')
         row_buffer: Dict[str, Any] = dict()
 
         # Look for each key in this row
@@ -133,7 +133,7 @@ def parse_string_with_key_value_delimiters(input_string: str, left_token: str = 
     else:
         # Serial processing
         for chunk in (p1 := tqdm(raw_row_texts_list, disable=disable_progress_bar)):
-            p1.set_description('Scanning file (step 1 of 2)')
+            p1.set_description('Scanning file')
             row_buffers_list.append(key_value_extraction_lambda(chunk, left_token=left_token, right_token=right_token,
                                                                 key_value_delimiter=key_value_delimiter))
 
@@ -296,7 +296,7 @@ def list_of_dict_to_dataframe(data_point_dicts, parallelize_processing: Union[bo
     if parallelize_processing and (num_reshape_workers > 1):
         batches: List[List[Any]] = divvy_workload(num_workers=num_reshape_workers, tasks=data_point_dicts)
         if not disable_progress_bar:
-            print(f'Reshaping data (step 1 of 2): processing in parallel with {num_reshape_workers} workers')
+            print(f'Reshaping data: processing in parallel with {num_reshape_workers} workers')
         with Pool(num_reshape_workers) as pool:
             dataframes: List[pd.DataFrame] = pool.map(func=dicts_to_dataframe, iterable=batches)
         df: pd.DataFrame = pd.concat(dataframes, ignore_index=True)
@@ -304,7 +304,7 @@ def list_of_dict_to_dataframe(data_point_dicts, parallelize_processing: Union[bo
         df: pd.DataFrame = pd.DataFrame()
         # THIS LOOP IS SO SLOW - you should use pandas_automatic=True
         for chunk_buffer in (p2 := tqdm(data_point_dicts, disable=disable_progress_bar)):
-            p2.set_description('Reshaping data (step 2 of 2):')
+            p2.set_description('Reshaping data:')
             if chunk_buffer:
                 df: pd.DataFrame = pd.concat([df, pd.DataFrame(chunk_buffer, index=[-1])], ignore_index=True)
     return df
