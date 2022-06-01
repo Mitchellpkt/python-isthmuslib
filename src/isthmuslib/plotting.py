@@ -210,10 +210,10 @@ def visualize_x_y(x_data: Any, y_data: Any, xlabel: str = '', ylabel: str = '', 
     :param kwargs: additional keyword arguments for matplotlib.pyplot.scatter()
     :param rolling_median_width: window width for rolling average taken by df.y.rolling(rolling_mean_width).mean()
     :param rolling_mean_width: window width for rolling average taken by df.y.rolling(rolling_median_width).median()
-    :return: figure handle for the plot
     :param colorbar_label: optional label for the colorbar
     :param log_norm_colors: set to True to normalize the colorbar scale
     :param show_colorbar: set to True to show colorbar
+    :return: figure handle for the plot
     """
     # Set style. Overrides: kwargs > style input > Style() defaults
     config: Style = Style(**{**Style().dict(), **make_dict(style), **make_dict(kwargs)})
