@@ -14,7 +14,7 @@ import pathlib
 from pydantic import BaseModel
 from sklearn.feature_selection import SelectKBest, chi2
 from tqdm.auto import tqdm
-
+import matrixprofile
 
 class SVD(BaseModel):
     u: Any
@@ -355,6 +355,18 @@ class VectorMultiset(PickleUtils, Style, Rosetta):
             to_return: Any = deepcopy(self)
             to_return.drop_col_types(drop_types=drop_types, inplace=True)
             return to_return
+
+    def matrix_profile_univariate(self, col_names: Union[str, Iterable[str]],
+                                  **kwargs) -> List[Tuple[Any, List[plt.Figure]]]:
+        """
+        Very thin wrapper around matrixprofile (note, returns figure handles first!)
+
+        :param col_names: a column name (or list of column names) to be profiled
+        :param kwargs: keyword arguments passed through to matrixprofile.analyze
+        :return: List of outputs from matrixprofile.analyze
+        """
+        queue: List[str] = [col_names] if isinstance(col_names, str) else col_names
+        return [matrixprofile.analyze(self.data.loc[:, q].tolist(), **kwargs) for q in queue]
 
 
 class SlidingWindowResults(VectorMultiset):
