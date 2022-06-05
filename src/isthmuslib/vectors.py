@@ -442,6 +442,7 @@ class VectorSequence(VectorMultiset):
     # (Inherits `data` dataframe and `name_root` string from VectorMultiset)
     basis_col_name: str = 'basis'
     error_if_basis_quality_issues: bool = False
+    info_surface: InfoSurface = None
 
     def __init__(self, skip_vector_sequence_init: bool = False, **kwargs: Any):
         super().__init__(**kwargs)
@@ -789,18 +790,22 @@ class VectorSequence(VectorMultiset):
         return svd
 
     def calculate_info_surface(self, window_widths: List[float] = None, cols: Union[str, List[str]] = None, *args,
-                               **kwargs) -> InfoSurface:
+                               save_result: bool = True, **kwargs) -> InfoSurface:
         """ Calculates the info surface by sliding the SVD function along the basis
 
         :param window_widths: window widths for the sliding window analysis
         :param cols: which data features to use in the svd
         :param args: args for sliding window analysis and eval function
+        :param save_result: whether to save attach the infosurface to the object once calculated
         :param kwargs: kwargs for sliding window analysis and eval function
         :return: InfoSurface object
         """
         result: SlidingWindowResults = self.sliding_window(info_surface_slider, window_widths=window_widths, cols=cols,
                                                            *args, **kwargs)
-        return InfoSurface(**result.dict())
+        info_surface: InfoSurface = InfoSurface(**result.dict())
+        if save_result:
+            self.info_surface = info_surface
+        return info_surface
 
     def plot_info_surface(self, window_widths: List[float] = None, cols: Union[str, List[str]] = None,
                           singular_values: List[int] = None, style: Style = None, *args, **kwargs) -> List[plt.Figure]:
