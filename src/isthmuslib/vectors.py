@@ -808,12 +808,14 @@ class VectorSequence(VectorMultiset):
         return info_surface
 
     def plot_info_surface(self, window_widths: List[float] = None, cols: Union[str, List[str]] = None,
-                          singular_values: List[int] = None, style: Style = None, *args, **kwargs) -> List[plt.Figure]:
+                          singular_values: List[int] = None, style: Style = None, use_cache: bool = False,
+                          *args, **kwargs) -> List[plt.Figure]:
         """ Calculates and plots the info surface: value of singular vectors as a function of window start and width
 
         :param window_widths: window widths for the sliding window analysis
         :param cols: which data features to use in the svd
         :param singular_values: singular values for which to plot the surface (default: [1, 2, 3])
+        :param use_cache: uses cached info surface if available, otherwise calculates a fresh one
         :param args: args for sliding window analysis and eval function
         :param kwargs: kwargs for sliding window analysis and eval function
         :param style: isthmuslib Style object for the colormap
@@ -825,9 +827,13 @@ class VectorSequence(VectorMultiset):
         svd_kwargs: Dict[str, Any] = {k: v for k, v in kwargs.items() if k not in config.dict()}
         style_kwargs: Dict[str, Any] = {k: v for k, v in kwargs.items() if k in config.dict()}
 
-        result: InfoSurface = self.calculate_info_surface(window_widths=window_widths, cols=cols, *args, **svd_kwargs)
-        return result.plot_info_surface(singular_values=singular_values,
-                                        **{**make_dict(style), **make_dict(style_kwargs)})
+        if use_cache and self.info_surface:
+            info_surface: InfoSurface = self.info_surface
+        else:
+            info_surface: InfoSurface = self.calculate_info_surface(window_widths=window_widths, cols=cols,
+                                                                    *args, **svd_kwargs)
+        return info_surface.plot_info_surface(singular_values=singular_values,
+                                              **{**make_dict(style), **make_dict(style_kwargs)})
 
     def correlation_matrix(self, exclude_basis: bool = True, **kwargs) -> pd.DataFrame:
         """
