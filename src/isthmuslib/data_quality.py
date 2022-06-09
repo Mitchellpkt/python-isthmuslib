@@ -12,7 +12,7 @@ def data_diffs(array: Any) -> List[Union[float, int]]:
     :param array: the array (in any form)
     :return: spacings between the elements
     """
-    return [x[1] - x[0] for x in zip(array, array[1:])]
+    return [float(x[1]) - float(x[0]) for x in zip(array, array[1:])]
 
 
 def is_uniform(array: Any) -> bool:
@@ -106,7 +106,7 @@ def basis_quality_plots(array: List[float], style: Style = None, which_plots: Li
         else:
             title: str = f"{mappings[False][0]} missing data"
         title += f"\n(want all 0's, on the {style.good_color} bottom line)"
-        vals_y = [int((x is None) or np.isnan(x)) for x in array]
+        vals_y = [int((x is None) or np.isnan(float(x))) for x in array]
         f: plt.Figure = visualize_x_y(range(len(vals_y)), vals_y, xlabel='index', ylabel='is_missing (1=True)',
                                       types='scatter',
                                       style=style.override({'color': 'k', 'markersize': 2 * style.markersize}),
