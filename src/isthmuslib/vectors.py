@@ -511,6 +511,12 @@ class VectorSequence(VectorMultiset):
 
     def __init__(self, skip_vector_sequence_init: bool = False, **kwargs: Any):
         super().__init__(**kwargs)
+
+        # Cast to numeric if possible
+        if not kwargs.get('disable_auto_conversion_to_numeric', False) and (self.data is not None):
+            self.cast_to_numeric()
+
+        # Handle the other processing specific to ordered data
         if (self.data is not None) and len(self.data) and (not skip_vector_sequence_init):
             if (not self.basis_col_name) or (self.basis_col_name not in self.data.keys()):
                 raise ValueError(f"{self.basis_col_name=} not in known keys: {self.data.keys().tolist()=}\n" +
