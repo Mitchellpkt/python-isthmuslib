@@ -67,7 +67,7 @@ setup(
     python_requires='>=3.8',
     install_requires=[
         'numpy', 'pandas', 'matplotlib', 'seaborn', 'loguru', 'pydantic', 'statsmodels', 'pytz', 'pyarrow', 'tqdm',
-        'scikit-learn', 'ipywidgets', 'matrixprofile'
+        'scikit-learn', 'ipywidgets', 'matrixprofile', 'stumpy',
     ],
     extras_require={
         # eg:
