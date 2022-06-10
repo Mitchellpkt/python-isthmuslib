@@ -361,3 +361,8 @@ Changelog
 -------------------
 
 * tweak: better input handling and escapes
+
+0.0.77 (2022-04-22)
+-------------------
+
+* tweak: wrap profiling methods
