@@ -564,7 +564,7 @@ class VectorSequence(VectorMultiset):
         return fill_ratio(self.data.loc[:, self.basis_col_name])
 
     def slice(self, start_at: Any = None, stop_at: Any = None, inplace: bool = False, reset_index: bool = True,
-              return_type: str = None) -> Union[None, pd.DataFrame, Tuple[Iterable, Iterable], Any]:
+              return_type: str = None, **kwargs) -> Union[None, pd.DataFrame, Tuple[Iterable, Iterable], Any]:
         """ Slices the VectorSequence according to the basis
 
         # TODO have slice return self type for convenience
@@ -574,6 +574,7 @@ class VectorSequence(VectorMultiset):
         :param inplace: slice inplace or return the result (default --> return)
         :param return_type: how to return the data ('VectorMultiset', 'VectorSequence', 'dataframe', etc)
         :param reset_index: indicate whether or not to reset the data frame index (default --> True)
+        :param kwargs: keyword arguments passed through on init of non-dataframe objects
         :return: VectorSequence if not inplace
         """
         df: pd.DataFrame = deepcopy(self.data)
@@ -589,14 +590,17 @@ class VectorSequence(VectorMultiset):
             self.data = in_range
         else:
             if not return_type:
-                return self.__class__(basis_col_name=self.basis_col_name, name_root=self.name_root, data=in_range)
+                return self.__class__(basis_col_name=self.basis_col_name, name_root=self.name_root,
+                                      data=in_range, **kwargs)
             else:
                 if 'sequence' in (return_type_lower := return_type.lower()):
-                    return VectorSequence(basis_col_name=self.basis_col_name, name_root=self.name_root, data=in_range)
+                    return VectorSequence(basis_col_name=self.basis_col_name, name_root=self.name_root,
+                                          data=in_range, **kwargs)
                 elif 'dataframe' in return_type_lower:
                     return in_range
                 elif 'timeseries' in return_type_lower:
-                    return Timeseries(basis_col_name=self.basis_col_name, name_root=self.name_root, data=in_range)
+                    return Timeseries(basis_col_name=self.basis_col_name, name_root=self.name_root,
+                                      data=in_range, **kwargs)
                 else:
                     raise ValueError(f"Unknown return type: {return_type}")
 
