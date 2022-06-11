@@ -587,18 +587,18 @@ class VectorSequence(VectorMultiset):
             in_range.reset_index(drop=True, inplace=True)
         if inplace:
             self.data = in_range
-
-        if not return_type:
-            return self.__class__(basis_col_name=self.basis_col_name, name_root=self.name_root, data=in_range)
         else:
-            if 'sequence' in (return_type_lower := return_type.lower()):
-                return VectorSequence(basis_col_name=self.basis_col_name, name_root=self.name_root, data=in_range)
-            elif 'dataframe' in return_type_lower:
-                return in_range
-            elif 'timeseries' in return_type_lower:
-                return Timeseries(basis_col_name=self.basis_col_name, name_root=self.name_root, data=in_range)
+            if not return_type:
+                return self.__class__(basis_col_name=self.basis_col_name, name_root=self.name_root, data=in_range)
             else:
-                raise ValueError(f"Unknown return type: {return_type}")
+                if 'sequence' in (return_type_lower := return_type.lower()):
+                    return VectorSequence(basis_col_name=self.basis_col_name, name_root=self.name_root, data=in_range)
+                elif 'dataframe' in return_type_lower:
+                    return in_range
+                elif 'timeseries' in return_type_lower:
+                    return Timeseries(basis_col_name=self.basis_col_name, name_root=self.name_root, data=in_range)
+                else:
+                    raise ValueError(f"Unknown return type: {return_type}")
 
     def index_to_basis(self) -> None:
         """  Adds (or overwrites) 'basis' column with a default index [0, 1, 2, ...] """
