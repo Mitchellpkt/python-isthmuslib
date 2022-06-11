@@ -362,7 +362,12 @@ Changelog
 
 * tweak: better input handling and escapes
 
-0.0.77 (2022-04-22)
+0.0.77 (2022-06-09)
 -------------------
 
 * tweak: wrap profiling methods
+
+0.0.78 (2022-06-11)
+-------------------
+
+* tweak: slice method kwargs and no inplace return
