@@ -369,57 +369,68 @@ class VectorMultiset(PickleUtils, Style, Rosetta):
         :return: List of outputs from matrixprofile.analyze()
         """
         queue: List[str] = [col_names] if isinstance(col_names, str) else col_names
-        return [matrixprofile.analyze(self.data.loc[:, q].tolist(), **kwargs) for q in queue]
+        try:
+            return [matrixprofile.analyze(self.data.loc[:, q].tolist(), **kwargs) for q in queue]
+        except TypeError as e:
+            s: str = f"""
+            Encountered a TypeError in matrixprofile.analyze(). Hint: this might happen if you are
+            trying to use a custom parameter like 'use_right_edge' with the standard matrixprofile
+            package. If that is the case, try running:\n\n
+            pip install git+https://github.com/mitchellpkt/matrixprofile\n\nOriginal error: {e}"""
+            print(s)
+        raise TypeError(s)
 
-    def calculate_stumpy_profile_univariate(self, col_name: str, window_size: int, **kwargs) -> np.ndarray:
-        """
-        Very thin wrapper around stumpy's matrix profile method. NB: for use in MultiSet, user is responsible for order
 
-        :param col_name: column name to profile
-        :param window_size: sliding window size
-        :param kwargs: keyword arguments for stumpy.stump()
-        :return: numpy array with the profile
-        """
-        return stumpy.stump(self.data.loc[:, col_name].tolist(), window_size, **kwargs)
+def calculate_stumpy_profile_univariate(self, col_name: str, window_size: int, **kwargs) -> np.ndarray:
+    """
+    Very thin wrapper around stumpy's matrix profile method. NB: for use in MultiSet, user is responsible for order
 
-    def stumpy_profile_univariate(self, col_name: str, window_size: int, annotate_motif: bool = True,
-                                  **kwargs) -> plt.Figure:
-        """
-        Plot of data & matrix profile (with optional annotation). NB: for use in MultiSet, user is responsible for order
+    :param col_name: column name to profile
+    :param window_size: sliding window size
+    :param kwargs: keyword arguments for stumpy.stump()
+    :return: numpy array with the profile
+    """
+    return stumpy.stump(self.data.loc[:, col_name].tolist(), window_size, **kwargs)
 
-        :param col_name: name of the column to plot
-        :param window_size: sliding window size
-        :param annotate_motif: whether to highlight the main motif and its nearest neighbor
-        :param kwargs: keyword arguments for plots and stumpy.stump()
-        :return: figure handle of the plot
-        """
-        # Make the plot and profile
-        figsize: Any = kwargs.pop('figsize', self.figsize)  # typically a 2-element tuple or list
-        title: str = kwargs.pop('title', self.translate(self.name_root))
-        profile: np.ndarray = self.calculate_stumpy_profile_univariate(col_name, window_size, **kwargs)
-        minimum: float = float(np.nanmin(self.data.loc[:, col_name].tolist()))
-        maximum: float = float(np.nanmax(self.data.loc[:, col_name].tolist()))
-        fig, axs = plt.subplots(2, sharex='all', gridspec_kw={'hspace': 0},
-                                figsize=figsize, facecolor=self.facecolor)
-        plt.suptitle(title, fontsize=self.title_fontsize)
-        axs[0].plot(self.data.loc[:, col_name].tolist(), color=kwargs.get('color', self.color))
-        axs[0].set_ylabel(self.translate(col_name), fontsize=self.label_fontsize)
-        axs[1].set_xlabel(self.translate('Index'), fontsize=self.label_fontsize)
-        axs[1].set_ylabel('Matrix Profile', fontsize=self.label_fontsize)
-        axs[1].plot(profile[:, 0], color=kwargs.get('color', self.color))
 
-        # Annotate the main motif (and its nearest neighbor) if desired
-        if annotate_motif:
-            motif_idx = np.argsort(profile[:, 0])[0]
-            nearest_neighbor_idx = profile[motif_idx, 1]
-            rect = Rectangle((motif_idx, minimum), window_size, maximum, facecolor='palegoldenrod')
-            axs[0].add_patch(rect)
-            rect = Rectangle((nearest_neighbor_idx, minimum), window_size, maximum, facecolor='palegoldenrod')
-            axs[0].add_patch(rect)
-            axs[1].axvline(x=motif_idx, linestyle="dashed", color='k')
-            axs[1].axvline(x=nearest_neighbor_idx, linestyle="dashed", color='k')
+def stumpy_profile_univariate(self, col_name: str, window_size: int, annotate_motif: bool = True,
+                              **kwargs) -> plt.Figure:
+    """
+    Plot of data & matrix profile (with optional annotation). NB: for use in MultiSet, user is responsible for order
 
-        return fig
+    :param col_name: name of the column to plot
+    :param window_size: sliding window size
+    :param annotate_motif: whether to highlight the main motif and its nearest neighbor
+    :param kwargs: keyword arguments for plots and stumpy.stump()
+    :return: figure handle of the plot
+    """
+    # Make the plot and profile
+    figsize: Any = kwargs.pop('figsize', self.figsize)  # typically a 2-element tuple or list
+    title: str = kwargs.pop('title', self.translate(self.name_root))
+    profile: np.ndarray = self.calculate_stumpy_profile_univariate(col_name, window_size, **kwargs)
+    minimum: float = float(np.nanmin(self.data.loc[:, col_name].tolist()))
+    maximum: float = float(np.nanmax(self.data.loc[:, col_name].tolist()))
+    fig, axs = plt.subplots(2, sharex='all', gridspec_kw={'hspace': 0},
+                            figsize=figsize, facecolor=self.facecolor)
+    plt.suptitle(title, fontsize=self.title_fontsize)
+    axs[0].plot(self.data.loc[:, col_name].tolist(), color=kwargs.get('color', self.color))
+    axs[0].set_ylabel(self.translate(col_name), fontsize=self.label_fontsize)
+    axs[1].set_xlabel(self.translate('Index'), fontsize=self.label_fontsize)
+    axs[1].set_ylabel('Matrix Profile', fontsize=self.label_fontsize)
+    axs[1].plot(profile[:, 0], color=kwargs.get('color', self.color))
+
+    # Annotate the main motif (and its nearest neighbor) if desired
+    if annotate_motif:
+        motif_idx = np.argsort(profile[:, 0])[0]
+        nearest_neighbor_idx = profile[motif_idx, 1]
+        rect = Rectangle((motif_idx, minimum), window_size, maximum, facecolor='palegoldenrod')
+        axs[0].add_patch(rect)
+        rect = Rectangle((nearest_neighbor_idx, minimum), window_size, maximum, facecolor='palegoldenrod')
+        axs[0].add_patch(rect)
+        axs[1].axvline(x=motif_idx, linestyle="dashed", color='k')
+        axs[1].axvline(x=nearest_neighbor_idx, linestyle="dashed", color='k')
+
+    return fig
 
 
 class SlidingWindowResults(VectorMultiset):
