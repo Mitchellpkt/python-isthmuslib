@@ -375,8 +375,9 @@ class VectorMultiset(PickleUtils, Style, Rosetta):
             s: str = f"""
             Encountered a TypeError in matrixprofile.analyze(). Hint: this might happen if you are
             trying to use a custom parameter like 'use_right_edge' with the standard matrixprofile
-            package. If that is the case, try running:\n\n
-            pip install git+https://github.com/mitchellpkt/matrixprofile\n\nOriginal error: {e}"""
+            package. If that is the case, try running:\n
+              pip uninstall matrixprofile && pip install git+https://github.com/mitchellpkt/matrixprofile
+            \nOriginal error: {e}"""
             print(s)
         raise TypeError(s)
 
@@ -936,6 +937,27 @@ class VectorSequence(VectorMultiset):
             else:
                 kwargs: Dict[str, Any] = {'exclude_cols': self.basis_col_name}
         return correlation_matrix(self.data, **kwargs)
+
+    def downsample_and_plot_matrix_profile_univariate(self, downsample_interval: float,
+                                                      col_names: Union[str, Iterable[str]], diff: bool = False,
+                                                      downsample_method: str = 'by_basis',
+                                                      **kwargs) -> List[Tuple[Any, List[plt.Figure]]]:
+        """
+        Downsamples and optionally diffs data before applying the matrix profile (to which kwargs are passed through)
+
+        :param downsample_interval: interval by which to downsample (either by N rows, or by some basis interval)
+        :param downsample_method: 'by_basis' or 'by_row'
+        :param col_names: a column name (or list of column names) to be profiled
+        :param diff: whether to take the diff of the rows (coming soon - fractional differentiation??)
+        :param kwargs: keyword arguments passed through to matrixprofile.analyze()
+        :return: List of outputs from matrixprofile.analyze()
+        """
+        downsampled = self.downsample(downsample_interval, method=downsample_method, inplace=False)  # self type
+        if diff:
+            downsampled.data = downsampled.data.diff()
+            downsampled.data.dropna(inplace=True)
+            downsampled.data.reset_index(inplace=True)
+        return downsampled.matrix_profile_univariate(col_names, use_right_edge=True, **kwargs)
 
 
 class Timeseries(VectorSequence):
