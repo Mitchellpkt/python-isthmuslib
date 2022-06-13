@@ -969,6 +969,28 @@ class VectorSequence(VectorMultiset):
         return self.human_time(min(self.data.loc[:, self.basis_col_name].astype(float).dropna().tolist()), **kwargs), \
                self.human_time(max(self.data.loc[:, self.basis_col_name].astype(float).dropna().tolist()), **kwargs)
 
+    def human_timeframe(self, prefix: str = None, between: str = None, suffix: str = None, **kwargs) -> str:
+        """
+        Formatting helper function for ensuring consistency across timeframe descriptions, for example
+
+            ``From 2025-03-21 to 2028-07-04``
+
+        :param prefix: text to precede a time/date range
+        :param between: text to go between the times/dates
+        :param suffix: text to follow the time/date range
+        :param kwargs: additional keyword arguments for human_time, e.g. formatter = '%Y-%m-%d %H:%M:%S'
+        :return: a single string describing the timeframe
+        """
+        kwargs.setdefault('formatter', self.formatter)
+        if prefix is None:
+            prefix: str = self.timeframe_prefix
+        if between is None:
+            between: str = self.timeframe_between
+        if suffix is None:
+            suffix: str = self.timeframe_suffix
+        start_time_string, stop_time_string = self.human_time_start_and_stop(**kwargs)
+        return f"{prefix}{start_time_string}{between}{stop_time_string}{suffix}"
+
 
 class Timeseries(VectorSequence):
     """ Thin wrapper for VectorSequence in the context of time  """

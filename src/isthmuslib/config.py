@@ -41,7 +41,9 @@ class Style(BaseModel):
     cmap: Any = 'inferno'
     sequential_cmap: Any = 'Greens'
     log_formatter: str = "\n@@ {time:x} AT: {time} | LEVEL: {level} | IN: {name}.{function}\n\n{message} |\n"
-
+    timeframe_prefix: str = 'from '
+    timeframe_between: str = ' to '
+    timeframe_suffix: str = ''
 
     def translate(self, key: str, **kwargs) -> str:
         """ Helper function that allows Style objects to translate text according to the provided Rosetta mappings
