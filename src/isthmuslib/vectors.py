@@ -956,7 +956,7 @@ class VectorSequence(VectorMultiset):
         if diff:
             downsampled.data = downsampled.data.diff()
             downsampled.data.dropna(inplace=True)
-            downsampled.data.reset_index(inplace=True)
+        downsampled.data.reset_index(inplace=True)
         return downsampled.matrix_profile_univariate(col_names, **kwargs)
 
     def human_time_start_and_stop(self, **kwargs) -> Tuple[str, str]:
