@@ -966,8 +966,8 @@ class VectorSequence(VectorMultiset):
         :param kwargs: keyword arguments for human_time()
         :return: tuple of strings like ('2025-03-21', '2028-07-04')
         """
-        return self.human_time(min(self.data.loc[:, self.basis_col_name].astype(float).dropna().tolist), **kwargs), \
-               self.human_time(max(self.data.loc[:, self.basis_col_name].astype(float).dropna().tolist), **kwargs)
+        return self.human_time(min(self.data.loc[:, self.basis_col_name].astype(float).dropna().tolist()), **kwargs), \
+               self.human_time(max(self.data.loc[:, self.basis_col_name].astype(float).dropna().tolist()), **kwargs)
 
 
 class Timeseries(VectorSequence):
