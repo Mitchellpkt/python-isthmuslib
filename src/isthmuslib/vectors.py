@@ -957,7 +957,7 @@ class VectorSequence(VectorMultiset):
             downsampled.data = downsampled.data.diff()
             downsampled.data.dropna(inplace=True)
             downsampled.data.reset_index(inplace=True)
-        return downsampled.matrix_profile_univariate(col_names, use_right_edge=True, **kwargs)
+        return downsampled.matrix_profile_univariate(col_names, **kwargs)
 
 
 class Timeseries(VectorSequence):
