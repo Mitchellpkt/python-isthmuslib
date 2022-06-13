@@ -959,6 +959,16 @@ class VectorSequence(VectorMultiset):
             downsampled.data.reset_index(inplace=True)
         return downsampled.matrix_profile_univariate(col_names, **kwargs)
 
+    def human_time_start_and_stop(self, **kwargs) -> Tuple[str, str]:
+        """
+        Helper function that returns the min and max value of the basis column converted to human-readable string
+
+        :param kwargs: keyword arguments for human_time()
+        :return: tuple of strings like ('2025-03-21', '2028-07-04')
+        """
+        return self.human_time(min(self.data.loc[:, self.basis_col_name].astype(float).dropna().tolist), **kwargs), \
+               self.human_time(max(self.data.loc[:, self.basis_col_name].astype(float).dropna().tolist), **kwargs)
+
 
 class Timeseries(VectorSequence):
     """ Thin wrapper for VectorSequence in the context of time  """
