@@ -377,8 +377,13 @@ class VectorMultiset(PickleUtils, Style, Rosetta):
                 ts: List[float] = self.data.loc[:, q].astype(float).tolist()
 
                 if not kwargs.get('preprocessing_kwargs') and any(np.isnan(x) for x in ts):
+                    if hasattr(self, 'auto_locf_params'):
+                        auto_locf_params: Dict[str, Any] = self.auto_locf_params
+                    else:
+                        auto_locf_params: Dict[str, Any] = {'window': 3, 'impute_method': 'median',
+                                                            'impute_direction': 'forward', 'add_noise': False}
                     if auto_locf:
-                        kwargs.setdefault('preprocessing_kwargs', self.auto_locf_params)
+                        kwargs.setdefault('preprocessing_kwargs', auto_locf_params)
                     else:
                         if not suppress_nan_warning:
                             print("""
@@ -388,9 +393,7 @@ class VectorMultiset(PickleUtils, Style, Rosetta):
     > One way to address NaNs is specifying a 'preprocessing_kwargs' dictionary, like:
         {'window': 3, 'impute_method': 'median', 'impute_direction': 'forward', 'add_noise': False}
     > Alternatively, you can specify `auto_locf=True` to use the config presets:\n""" +
-                                  "".join([f"       ~ {k}={v}\n" for k,v in self.auto_locf_params.items()]))
-
-
+                                  "".join([f"       ~ {k}={v}\n" for k, v in auto_locf_params.items()]))
                 matrixprofile.analyze(ts, **kwargs)
         except TypeError as e:
             s: str = f"""
@@ -404,7 +407,6 @@ class VectorMultiset(PickleUtils, Style, Rosetta):
 
         return results
 
-
     def calculate_stumpy_profile_univariate(self, col_name: str, window_size: int, **kwargs) -> np.ndarray:
         """
         Very thin wrapper around stumpy's matrix profile method. NB: for use in MultiSet, user is responsible for order
@@ -415,7 +417,6 @@ class VectorMultiset(PickleUtils, Style, Rosetta):
         :return: numpy array with the profile
         """
         return stumpy.stump(self.data.loc[:, col_name].tolist(), window_size, **kwargs)
-
 
     def stumpy_profile_univariate(self, col_name: str, window_size: int, annotate_motif: bool = True,
                                   **kwargs) -> plt.Figure:
