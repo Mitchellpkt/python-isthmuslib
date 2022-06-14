@@ -394,7 +394,7 @@ class VectorMultiset(PickleUtils, Style, Rosetta):
         {'window': 3, 'impute_method': 'median', 'impute_direction': 'forward', 'add_noise': False}
     > Alternatively, you can specify `auto_locf=True` to use the config presets:\n""" +
                                   "".join([f"       ~ {k}={v}\n" for k, v in auto_locf_params.items()]))
-                matrixprofile.analyze(ts, **kwargs)
+                results.append(matrixprofile.analyze(ts, **kwargs))
         except TypeError as e:
             s: str = f"""
             Encountered a TypeError in matrixprofile.analyze(). Hint: this might happen if you are
