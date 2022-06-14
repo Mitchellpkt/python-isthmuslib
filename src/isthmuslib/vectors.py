@@ -360,17 +360,38 @@ class VectorMultiset(PickleUtils, Style, Rosetta):
             return to_return
 
     def matrix_profile_univariate(self, col_names: Union[str, Iterable[str]],
+                                  auto_locf: bool = False, suppress_nan_warning: bool = False,
                                   **kwargs) -> List[Tuple[Any, List[plt.Figure]]]:
         """
-        Very thin wrapper around matrixprofile
+        Very thin wrapper around matrixprofile with some warnings and opt-in preprocessing automation
 
         :param col_names: a column name (or list of column names) to be profiled
+        :param auto_locf:
         :param kwargs: keyword arguments passed through to matrixprofile.analyze()
         :return: List of outputs from matrixprofile.analyze()
         """
         queue: List[str] = [col_names] if isinstance(col_names, str) else col_names
+        results: List[Tuple[Any, List[plt.Figure]]] = []
         try:
-            return [matrixprofile.analyze(self.data.loc[:, q].tolist(), **kwargs) for q in queue]
+            for q in queue:
+                ts: List[float] = self.data.loc[:, q].astype(float).tolist()
+
+                if not kwargs.get('preprocessing_kwargs') and any(np.isnan(x) for x in ts):
+                    if auto_locf:
+                        kwargs.setdefault('preprocessing_kwargs', self.auto_locf_params)
+                    else:
+                        if not suppress_nan_warning:
+                            print("""
+    Warning: matrix profiling data with NaNs and no preprocessing specified
+             (potential anomalies or errors ahead)\n
+    > To suppress this warning in the future, specify `suppress_nan_warning=True`.
+    > One way to address NaNs is specifying a 'preprocessing_kwargs' dictionary, like:
+        {'window': 3, 'impute_method': 'median', 'impute_direction': 'forward', 'add_noise': False}
+    > Alternatively, you can specify `auto_locf=True` to use the config presets:\n""" +
+                                  "".join([f"       ~ {k}={v}\n" for k,v in self.auto_locf_params.items()]))
+
+
+                matrixprofile.analyze(ts, **kwargs)
         except TypeError as e:
             s: str = f"""
             Encountered a TypeError in matrixprofile.analyze(). Hint: this might happen if you are
@@ -379,59 +400,61 @@ class VectorMultiset(PickleUtils, Style, Rosetta):
               pip uninstall matrixprofile && pip install git+https://github.com/mitchellpkt/matrixprofile
             \nOriginal error: {e}"""
             print(s)
-        raise TypeError(s)
+            raise TypeError(s)
+
+        return results
 
 
-def calculate_stumpy_profile_univariate(self, col_name: str, window_size: int, **kwargs) -> np.ndarray:
-    """
-    Very thin wrapper around stumpy's matrix profile method. NB: for use in MultiSet, user is responsible for order
+    def calculate_stumpy_profile_univariate(self, col_name: str, window_size: int, **kwargs) -> np.ndarray:
+        """
+        Very thin wrapper around stumpy's matrix profile method. NB: for use in MultiSet, user is responsible for order
 
-    :param col_name: column name to profile
-    :param window_size: sliding window size
-    :param kwargs: keyword arguments for stumpy.stump()
-    :return: numpy array with the profile
-    """
-    return stumpy.stump(self.data.loc[:, col_name].tolist(), window_size, **kwargs)
+        :param col_name: column name to profile
+        :param window_size: sliding window size
+        :param kwargs: keyword arguments for stumpy.stump()
+        :return: numpy array with the profile
+        """
+        return stumpy.stump(self.data.loc[:, col_name].tolist(), window_size, **kwargs)
 
 
-def stumpy_profile_univariate(self, col_name: str, window_size: int, annotate_motif: bool = True,
-                              **kwargs) -> plt.Figure:
-    """
-    Plot of data & matrix profile (with optional annotation). NB: for use in MultiSet, user is responsible for order
+    def stumpy_profile_univariate(self, col_name: str, window_size: int, annotate_motif: bool = True,
+                                  **kwargs) -> plt.Figure:
+        """
+        Plot of data & matrix profile (with optional annotation). NB: for use in MultiSet, user is responsible for order
 
-    :param col_name: name of the column to plot
-    :param window_size: sliding window size
-    :param annotate_motif: whether to highlight the main motif and its nearest neighbor
-    :param kwargs: keyword arguments for plots and stumpy.stump()
-    :return: figure handle of the plot
-    """
-    # Make the plot and profile
-    figsize: Any = kwargs.pop('figsize', self.figsize)  # typically a 2-element tuple or list
-    title: str = kwargs.pop('title', self.translate(self.name_root))
-    profile: np.ndarray = self.calculate_stumpy_profile_univariate(col_name, window_size, **kwargs)
-    minimum: float = float(np.nanmin(self.data.loc[:, col_name].tolist()))
-    maximum: float = float(np.nanmax(self.data.loc[:, col_name].tolist()))
-    fig, axs = plt.subplots(2, sharex='all', gridspec_kw={'hspace': 0},
-                            figsize=figsize, facecolor=self.facecolor)
-    plt.suptitle(title, fontsize=self.title_fontsize)
-    axs[0].plot(self.data.loc[:, col_name].tolist(), color=kwargs.get('color', self.color))
-    axs[0].set_ylabel(self.translate(col_name), fontsize=self.label_fontsize)
-    axs[1].set_xlabel(self.translate('Index'), fontsize=self.label_fontsize)
-    axs[1].set_ylabel('Matrix Profile', fontsize=self.label_fontsize)
-    axs[1].plot(profile[:, 0], color=kwargs.get('color', self.color))
+        :param col_name: name of the column to plot
+        :param window_size: sliding window size
+        :param annotate_motif: whether to highlight the main motif and its nearest neighbor
+        :param kwargs: keyword arguments for plots and stumpy.stump()
+        :return: figure handle of the plot
+        """
+        # Make the plot and profile
+        figsize: Any = kwargs.pop('figsize', self.figsize)  # typically a 2-element tuple or list
+        title: str = kwargs.pop('title', self.translate(self.name_root))
+        profile: np.ndarray = self.calculate_stumpy_profile_univariate(col_name, window_size, **kwargs)
+        minimum: float = float(np.nanmin(self.data.loc[:, col_name].tolist()))
+        maximum: float = float(np.nanmax(self.data.loc[:, col_name].tolist()))
+        fig, axs = plt.subplots(2, sharex='all', gridspec_kw={'hspace': 0},
+                                figsize=figsize, facecolor=self.facecolor)
+        plt.suptitle(title, fontsize=self.title_fontsize)
+        axs[0].plot(self.data.loc[:, col_name].tolist(), color=kwargs.get('color', self.color))
+        axs[0].set_ylabel(self.translate(col_name), fontsize=self.label_fontsize)
+        axs[1].set_xlabel(self.translate('Index'), fontsize=self.label_fontsize)
+        axs[1].set_ylabel('Matrix Profile', fontsize=self.label_fontsize)
+        axs[1].plot(profile[:, 0], color=kwargs.get('color', self.color))
 
-    # Annotate the main motif (and its nearest neighbor) if desired
-    if annotate_motif:
-        motif_idx = np.argsort(profile[:, 0])[0]
-        nearest_neighbor_idx = profile[motif_idx, 1]
-        rect = Rectangle((motif_idx, minimum), window_size, maximum, facecolor='palegoldenrod')
-        axs[0].add_patch(rect)
-        rect = Rectangle((nearest_neighbor_idx, minimum), window_size, maximum, facecolor='palegoldenrod')
-        axs[0].add_patch(rect)
-        axs[1].axvline(x=motif_idx, linestyle="dashed", color='k')
-        axs[1].axvline(x=nearest_neighbor_idx, linestyle="dashed", color='k')
+        # Annotate the main motif (and its nearest neighbor) if desired
+        if annotate_motif:
+            motif_idx = np.argsort(profile[:, 0])[0]
+            nearest_neighbor_idx = profile[motif_idx, 1]
+            rect = Rectangle((motif_idx, minimum), window_size, maximum, facecolor='palegoldenrod')
+            axs[0].add_patch(rect)
+            rect = Rectangle((nearest_neighbor_idx, minimum), window_size, maximum, facecolor='palegoldenrod')
+            axs[0].add_patch(rect)
+            axs[1].axvline(x=motif_idx, linestyle="dashed", color='k')
+            axs[1].axvline(x=nearest_neighbor_idx, linestyle="dashed", color='k')
 
-    return fig
+        return fig
 
 
 class SlidingWindowResults(VectorMultiset):
@@ -957,6 +980,22 @@ class VectorSequence(VectorMultiset):
             downsampled.data = downsampled.data.diff()
             downsampled.data.dropna(inplace=True)
         downsampled.data.reset_index(inplace=True)
+
+        if not kwargs.get('preprocessing_kwargs') and any(np.isnan(x) for x in downsampled.data):
+            if auto_locf:
+                kwargs.setdefault('preprocessing_kwargs',
+                                  {'window': 3, 'impute_method': 'median', 'impute_direction': 'forward',
+                                   'add_noise': False})
+            else:
+                if not suppress_nan_warning:
+                    print(f"""
+                    Warning: matrix profiling data with NaNs and no preprocessing specified (plots will have anomalies).
+                    > One way to fix this is specifying a 'preprocessing_kwargs' dictionary, like:
+                        {'window': 3, 'impute_method': 'median', 'impute_direction': 'forward', 'add_noise': False}
+                    > To use the above default, you can also just specify auto_locf=True.
+                    > To suppress this warning in the future, specify suppress_nan_warning=True.
+                    """)
+
         return downsampled.matrix_profile_univariate(col_names, **kwargs)
 
     def human_time_start_and_stop(self, **kwargs) -> Tuple[str, str]:
