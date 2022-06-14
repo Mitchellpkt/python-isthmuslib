@@ -4,7 +4,7 @@ from .utils import Rosetta
 from copy import deepcopy
 
 
-class Config(BaseModel):
+class Style(BaseModel):
     """ Miscellaneous properties; set defaults once, then use or inherit elsewhere for consistent style
         (note: some names are formatted to be congruent with matplotlib.pyplot vars & args, rather than isthmuslib) """
 
@@ -85,7 +85,3 @@ class Config(BaseModel):
             raise ValueError(f"Unsure how to interpret 3+ inputs to override")
 
         return self.__class__(**{**self.dict(), **override_dict})
-
-# Alias for legacy code
-class Style(Config):
-    pass
