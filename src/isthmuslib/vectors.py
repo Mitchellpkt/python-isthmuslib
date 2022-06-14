@@ -980,22 +980,6 @@ class VectorSequence(VectorMultiset):
             downsampled.data = downsampled.data.diff()
             downsampled.data.dropna(inplace=True)
         downsampled.data.reset_index(inplace=True)
-
-        if not kwargs.get('preprocessing_kwargs') and any(np.isnan(x) for x in downsampled.data):
-            if auto_locf:
-                kwargs.setdefault('preprocessing_kwargs',
-                                  {'window': 3, 'impute_method': 'median', 'impute_direction': 'forward',
-                                   'add_noise': False})
-            else:
-                if not suppress_nan_warning:
-                    print(f"""
-                    Warning: matrix profiling data with NaNs and no preprocessing specified (plots will have anomalies).
-                    > One way to fix this is specifying a 'preprocessing_kwargs' dictionary, like:
-                        {'window': 3, 'impute_method': 'median', 'impute_direction': 'forward', 'add_noise': False}
-                    > To use the above default, you can also just specify auto_locf=True.
-                    > To suppress this warning in the future, specify suppress_nan_warning=True.
-                    """)
-
         return downsampled.matrix_profile_univariate(col_names, **kwargs)
 
     def human_time_start_and_stop(self, **kwargs) -> Tuple[str, str]:
