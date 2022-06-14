@@ -4,7 +4,7 @@ from .utils import Rosetta
 from copy import deepcopy
 
 
-class Style(BaseModel):
+class Config(BaseModel):
     """ Miscellaneous properties; set defaults once, then use or inherit elsewhere for consistent style
         (note: some names are formatted to be congruent with matplotlib.pyplot vars & args, rather than isthmuslib) """
 
@@ -44,6 +44,8 @@ class Style(BaseModel):
     timeframe_prefix: str = 'from '
     timeframe_between: str = ' to '
     timeframe_suffix: str = ''
+    auto_locf_params: Dict[str, Any] = {'window': 3, 'impute_method': 'median',
+                                        'impute_direction': 'forward', 'add_noise': False}
 
     def translate(self, key: str, **kwargs) -> str:
         """ Helper function that allows Style objects to translate text according to the provided Rosetta mappings
@@ -82,4 +84,8 @@ class Style(BaseModel):
         else:
             raise ValueError(f"Unsure how to interpret 3+ inputs to override")
 
-        return Style(**{**self.dict(), **override_dict})
+        return self.__class__(**{**self.dict(), **override_dict})
+
+# Alias for legacy code
+class Style(Config):
+    pass
