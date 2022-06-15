@@ -371,3 +371,8 @@ Changelog
 -------------------
 
 * tweak: slice method kwargs and no inplace return
+
+0.0.81 (2022-06-15)
+-------------------
+
+* tweak: wrap FLUSS
