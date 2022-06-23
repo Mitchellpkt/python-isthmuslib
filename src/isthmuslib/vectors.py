@@ -716,9 +716,9 @@ class VectorSequence(VectorMultiset):
         except IndexError as e:
             window_description: str = f"{start_at=}\n{window_width=}\n"
             if not len(window_data):
-                raise IndexError("\nCaught IndexError.\n\n Hint: there were no timestamps in this window:\n" +
+                raise IndexError("\nCaught IndexError.\n\nHint: there were no timestamps in this window:\n" +
                                  f"{window_description}\n(The best way to resolve this is probably to tweak\n" +
-                                 f"your eval function to gracefully handle empty slices.)\n\nOriginal error:\n{e}")
+                                 f"your eval function to gracefully handle empty slices)\n\nOriginal error:\n{e}")
             else:
                 raise IndexError(f"Eval function had IndexError at window:\n{window_description}\nOriginal error:\n{e}")
 
