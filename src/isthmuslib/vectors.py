@@ -711,7 +711,16 @@ class VectorSequence(VectorMultiset):
         """
         window_data: VectorSequence = self.slice(start_at=start_at, stop_at=start_at + window_width,
                                                  inplace=False, reset_index=True)
-        return {**function(window_data, *args, **kwargs), 'window_start': start_at, 'window_width': window_width}
+        try:
+            return {**function(window_data, *args, **kwargs), 'window_start': start_at, 'window_width': window_width}
+        except IndexError as e:
+            window_description: str = f"{start_at=}\n{window_width=}\n"
+            if not len(window_data):
+                raise IndexError("Caught IndexError. Hint: there were no timestamps in this window:\n" +
+                                 f"{window_description}The best way to resolve this is probably to tweak\n" +
+                                 f"your eval function to gracefully handle empty slices.\nOriginal error:\n{e}")
+            else:
+                raise IndexError(f"Eval function had IndexError at window:\n{window_description}\nOriginal error:\n{e}")
 
     #                                       vv sequence vv       vv args vv          vv kwargs vv
     def sliding_window(self, function: Callable[[Any, Union[Tuple[Any], List[Any]], Dict[str, Any]], Dict[str, Any]],
@@ -1018,7 +1027,6 @@ class VectorSequence(VectorMultiset):
         axs[1].plot(range(cac.shape[0]), cac, color='k')
         axs[1].axvline(x=regime_locations[0], linestyle="dashed")
         return f
-
 
     def human_time_start_and_stop(self, **kwargs) -> Tuple[str, str]:
         """
