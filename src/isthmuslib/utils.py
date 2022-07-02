@@ -298,6 +298,7 @@ def recursive_batch_evaluation(func: Callable,
                                print_current_value: bool = False,
                                print_current_inputs: bool = False,
                                evaluate_initial_inputs: bool = True,
+                               infinite_memory: bool = True,
                                *_, **kwargs) -> Union[Any, Tuple[Any, Any]]:
     """
     Helper function that applies f recursively in batches
@@ -315,6 +316,7 @@ def recursive_batch_evaluation(func: Callable,
     :param print_current_inputs: whether to print stepwise spot (might be ok for int or str, but avoid if big / complex)
     :param evaluate_initial_inputs: whether to evaluate the inputs before beginning the main cycle
     :param kwargs: additional kwargs for process_queue, which are passed through to Pool's map() and starmap()
+    :param infinite_memory: if True, selects for next iteration _all_ outputs instead of just the most recent batch
     :return: the best inputs (or if return_input_and_value_tuple=True, returns the value too)
     """
 
@@ -333,6 +335,8 @@ def recursive_batch_evaluation(func: Callable,
     else:
         current_best_value = None
     func_inputs_iterable: List[Dict[str, Any]] = batch_generator(current_best_input, **batch_generator_kwargs)
+    all_inputs: List[Dict[str, Any]] = []
+    all_outputs: List[Any] = []
 
     # Begin recursively applying
     start_time = time.perf_counter()
@@ -342,8 +346,18 @@ def recursive_batch_evaluation(func: Callable,
             tic: float = time.perf_counter()
             kwargs.setdefault('pool_function', 'map')
             output_vals: List[Any] = process_queue(func, func_inputs_iterable, **kwargs)
-            current_best_value = selection_method(output_vals)
-            current_best_input = [i for i, v in zip(func_inputs_iterable, output_vals) if v == current_best_value][0]
+
+            if infinite_memory:
+                # Keep track of all inputs / outputs, and select from the whole list
+                all_inputs += func_inputs_iterable
+                all_outputs += output_vals
+                current_best_value = selection_method(all_outputs)
+                current_best_input = [i for i, v in zip(all_inputs, all_outputs) if v == current_best_value][0]
+            else:
+                # Only select from the last batch
+                current_best_value = selection_method(output_vals)
+                current_best_input = [i for i, v in zip(func_inputs_iterable, output_vals) if v == current_best_value][0]
+
             func_inputs_iterable = batch_generator(current_best_input, **batch_generator_kwargs)
             counter += 1
             if print_progress:
