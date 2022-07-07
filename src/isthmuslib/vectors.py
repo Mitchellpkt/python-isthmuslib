@@ -17,6 +17,7 @@ from pydantic import BaseModel
 from sklearn.feature_selection import SelectKBest, chi2
 from tqdm.auto import tqdm
 import matrixprofile
+import math
 
 
 class SVD(BaseModel):
@@ -1064,6 +1065,85 @@ class VectorSequence(VectorMultiset):
 class Timeseries(VectorSequence):
     """ Thin wrapper for VectorSequence in the context of time  """
     basis_col_name: str = 'timestamp'
+
+    def calc_weights(self, lowest_weight: float = 0.5, decay_timeframe_sec: float = None, show_plots: bool = False,
+                     method: str = 'linear', post_window_weight: float = None, base: float = np.e) -> List[float]:
+        """
+        Calculates a vector of weights from an exponential or linear decay
+
+        :param lowest_weight: what should be the minimum weight? (i.e. at the end of the decay timeframe)
+        :param decay_timeframe_sec: how long should the decay window be?
+        :param post_window_weight: what should weights be after the decay window? Set to 0 to forget anything older.
+        :param show_plots: whether to show plots of the weights
+        :param method: whether the decay should be linear or exponential
+        :param base: the base for the decay, but I don't think it matters
+        :return: a list of weights
+        """
+        min_timestamp: float = min(self.data.loc[:, self.basis_col_name])
+        max_timestamp: float = max(self.data.loc[:, self.basis_col_name])
+
+        # If decay_timeframe_sec not specified, apply to the whole data set
+        if decay_timeframe_sec is None:
+            decay_timeframe_sec = max_timestamp - min_timestamp
+
+        # If post_window_weight not specified, carry the last weight forward
+        if post_window_weight is None:
+            post_window_weight = lowest_weight
+
+        # Make sure that we don't collide on column name
+        age_col_name: str = 'age'
+        i: int = 0
+        while age_col_name in self.data.keys():
+            age_col_name += '_'
+            i += 1
+            if i > 10:  # this 10 is not a magic number, I just picked age_, age__, age___, up to 10 as excessive
+                raise NotImplementedError(f"Having {i} age columns with trailing underscores is not allowed...")
+
+        # Calculate age in a copy of the data frame
+        df: pd.DataFrame = deepcopy(self.data)
+        df[age_col_name] = max_timestamp - df.loc[:, self.basis_col_name]
+
+        # Calculate the weights (not taking into account the decay timeframe)
+        if 'lin' in method.lower():  # 'lin' or 'linear'
+            #  y = m * x + b
+            slope: float = (lowest_weight - 1) / decay_timeframe_sec
+            weights_all: List[float] = [slope * x + 1 for x in df.loc[:, age_col_name]]
+        elif 'exp' in method.lower():  # 'exp' or 'exponential'
+            #  y = b ^ (-k * x) where k is the decay constant and x is the age
+            decay_constant: float = -1 * math.log(lowest_weight, base) / decay_timeframe_sec
+            weights_all: List[float] = [base ** (-1 * decay_constant * tau) for tau in df.loc[:, age_col_name]]
+        else:
+            raise ValueError(f"Unknown method {method}, please try 'linear' or 'exponential'")
+
+        # Replace any out-of-timeframe data points with the post_window_weight
+        ages_and_weights: zip = zip(df.loc[:, age_col_name], weights_all)
+        weights_raw: List[float] = [w if a < decay_timeframe_sec else post_window_weight for a, w in ages_and_weights]
+        normalization_factor = sum(weights_raw)
+        final_weights: List[float] = [w / normalization_factor for w in weights_raw]
+
+        # Show plots of weights for the curious user
+        if show_plots:
+            self.scatter(df.loc[:, self.basis_col_name].tolist(), final_weights,
+                         xlabel=self.translate(self.basis_col_name),
+                         ylabel='weights', title='weights vs timestamps')
+
+            self.scatter(df.loc[:, age_col_name].tolist(), final_weights, xlabel='age',
+                         ylabel='weights', title='weights vs ages')
+            plt.show('all')
+
+        return final_weights
+
+    def weighted_mean(self, col_name: str, **kwargs) -> float:
+        """
+        Calculates the weighted mean of the provided column name. kwargs are passed to calc_weights
+
+        :param col_name: which column to calculate the weight for
+        :param kwargs: kwargs for calc_weights, e.g. lowest_weight, decay_timeframe_sec, post_window_weight, method
+        :return: weighted mean of that column
+        """
+
+        weights = self.calc_weights(**kwargs)
+        return sum([weight * val for weight, val in zip(weights, self.data.loc[:, col_name])])
 
 
 ################
