@@ -722,6 +722,8 @@ class VectorSequence(VectorMultiset):
                                  f"your eval function to gracefully handle empty slices)\n\nOriginal error:\n{e}")
             else:
                 raise IndexError(f"Eval function had IndexError at window:\n{window_description}\nOriginal error:\n{e}")
+        except TypeError as e:
+            raise TypeError(f"Caught type error (below). Hint: your eval function needs to return a dictionary.\n\n{e}")
 
     #                                       vv sequence vv       vv args vv          vv kwargs vv
     def sliding_window(self, function: Callable[[Any, Union[Tuple[Any], List[Any]], Dict[str, Any]], Dict[str, Any]],
