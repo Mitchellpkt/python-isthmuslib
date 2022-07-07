@@ -329,14 +329,19 @@ def recursive_batch_evaluation(func: Callable,
         selection_method = max
 
     # Initialize
+    all_inputs: List[Dict[str, Any]] = []
+    all_outputs: List[Any] = []
     current_best_input = initial_input
     if evaluate_initial_inputs:
         current_best_value = func(current_best_input)
+        if infinite_memory:
+            all_inputs.append(current_best_input)
+            all_outputs.append(current_best_value)
     else:
         current_best_value = None
     func_inputs_iterable: List[Dict[str, Any]] = batch_generator(current_best_input, **batch_generator_kwargs)
-    all_inputs: List[Dict[str, Any]] = []
-    all_outputs: List[Any] = []
+
+
 
     # Begin recursively applying
     start_time = time.perf_counter()
