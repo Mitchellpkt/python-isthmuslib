@@ -498,7 +498,8 @@ class SlidingWindowResults(VectorMultiset):
         return visualize_x_y(x_arrays, y_arrays, legend_strings=labels, style=Style(**self.dict()), **kwargs)
 
     def plot_pdfs(self, col_name: str, legend_override: List[str] = None, **kwargs) -> plt.Figure:
-        """ Plot the probability density function(s) of the sliding window results. Useful kwargs: [cumulative, density]
+        """
+        Plot the probability density function(s) of the sliding window results. Useful kwargs: [cumulative, density]
 
         :param col_name: which field should be plotted
         :param legend_override: custom legend labels if desired (must have same length as number of unique widths)
@@ -518,6 +519,13 @@ class SlidingWindowResults(VectorMultiset):
         return visualize_1d_distribution(data_sets, legend_strings=labels, **kwargs)
 
     def heatmap_feature(self, col_name: str, **kwargs) -> plt.Figure:
+        """
+        Returns a heatmap of some feature as a function of window start time and start width
+
+        :param col_name: which column to plot
+        :param kwargs: additional keyword arguments for surface method
+        :return: figure handle of the plot
+        """
         return self.surface(self.window_start_col_name, self.window_width_col_name, col_name, **kwargs)
 
 
