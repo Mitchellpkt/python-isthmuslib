@@ -1139,7 +1139,7 @@ class Timeseries(VectorSequence):
 
             self.scatter(df.loc[:, age_col_name].tolist(), final_weights, xlabel='age',
                          ylabel='weights', title='weights vs ages')
-            plt.show('all')
+            plt.show()
 
         return final_weights
 
