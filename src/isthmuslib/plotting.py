@@ -234,6 +234,7 @@ def visualize_x_y(x_data: Any, y_data: Any, xlabel: str = '', ylabel: str = '', 
     plt.axes().set_prop_cycle(config.cycler)
     scatter_handles: List[Any] = []
 
+    includes_line_plot: bool = False
     for i, data_set in enumerate(zip(x_data, y_data)):
         if 'x' in cumulative:
             x_array: np.ndarray = np.cumsum(data_set[0])
@@ -251,7 +252,8 @@ def visualize_x_y(x_data: Any, y_data: Any, xlabel: str = '', ylabel: str = '', 
                 kwargs.setdefault("color", config.color)
             scatter_handles.append(plt.scatter(x_array, y_array, config.markersize, **kwargs))
 
-        if includes_line_plot := any(x in types for x in ['plot', 'line']):
+        if any(x in types for x in ['plot', 'line']):
+            includes_line_plot: bool = True
             p = plt.plot(x_array, y_array, color=config.color, linewidth=config.linewidth)
 
         if plot_best_fit:
@@ -287,8 +289,11 @@ def visualize_x_y(x_data: Any, y_data: Any, xlabel: str = '', ylabel: str = '', 
         cbar: plt.colorbar.Colorbar = plt.colorbar()
         if colorbar_label:
             cbar.set_label(colorbar_label, rotation=90, fontsize=config.label_fontsize)
-    if legend_strings and ('scatter' in types):
-        plt.legend(scatter_handles, legend_strings, fontsize=config.legend_fontsize)
+    if legend_strings:
+        if 'scatter' in types:
+            plt.legend(scatter_handles, legend_strings, fontsize=config.legend_fontsize)
+        elif includes_line_plot:  # scatter legend overrides plot legend for now
+            plt.legend(legend_strings, fontsize=config.legend_fontsize)
     adjust_axes(log_axes=log_axes, style=config, xlim=xlim, ylim=ylim)
     apply_watermark(watermark, style=config)
     return figure_handle
