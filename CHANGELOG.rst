@@ -376,3 +376,8 @@ Changelog
 -------------------
 
 * tweak: wrap FLUSS
+
+0.0.82 (2022-07-11)
+-------------------
+
+* chore: memory and annotation
