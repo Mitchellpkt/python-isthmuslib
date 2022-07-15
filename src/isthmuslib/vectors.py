@@ -458,6 +458,11 @@ class VectorMultiset(PickleUtils, Style, Rosetta):
 
         return fig
 
+    # Group the multiset by a given row
+    def group_by_col(self, by: str) -> Dict[Any, pd.DataFrame]:
+        """ Helper function that returns a dictionary of individual dataframes separated by 'by' """
+        return {x: self.data.loc[self.data.loc[:, by] == x, :] for x in set(self.data.loc[:, by])}
+
 
 class SlidingWindowResults(VectorMultiset):
     """ Results from Sequence.sliding_window(), which is a VectorMultiset with extra context baked in """
@@ -466,7 +471,7 @@ class SlidingWindowResults(VectorMultiset):
 
     def group_by_window_width(self) -> Dict[float, pd.DataFrame]:
         """ Helper function that returns individual dataframes for each window width """
-        return {x: self.data.loc[self.data.loc[:, 'window_width'] == x, :] for x in set(self.data.window_width)}
+        return self.group_by_col(by=self.window_width_col_name)
 
     def plot_results(self, col_name: str, legend_override: List[str] = None, **kwargs) -> plt.Figure:
         """ Plot any sequence (based on the data frame column name)
