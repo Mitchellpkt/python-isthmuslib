@@ -52,7 +52,7 @@ def basis_quality_checks(array: Any) -> Tuple[bool, str]:
         summary_string += f'[OK] UNIFORMITY: appears to be uniform with spacing: {data_diffs(array)[0]}\n'
         return True, summary_string
     else:
-        summary_string += f'[WARNING] UNIFORMITY: multiple spacings: {data_diffs(array)}\n'
+        summary_string += f'[WARNING] UNIFORMITY: multiple spacings: {set(data_diffs(array))}\n'
         return False, summary_string
 
 
