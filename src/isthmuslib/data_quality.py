@@ -153,4 +153,8 @@ def basis_quality_plots(array: List[float], style: Style = None, which_plots: Li
         h.append(visualize_x_y(vals_x, vals_y, types='line', xlabel='basis', ylabel='difference between elements',
                                title=title, style=style.override({'color': color}), **kwargs))
 
+    # Give a hint if the wrong which_plots are specified
+    if (not h) and (which_plots is not None):
+        print(f"There are no plots; this might be because basis_quality_plots does not recognize {which_plots=}.")
+
     return h
