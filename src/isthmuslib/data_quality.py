@@ -54,7 +54,7 @@ def basis_quality_checks(array: Any) -> Tuple[bool, str]:
     else:
         diffs_sorted: List[float] = sorted(list(set(data_diffs(array))))
         diffs_sorted.reverse()
-        summary_string += f'[WARNING] UNIFORMITY: multiple ({len(diffs_sorted)})spacings: {diffs_sorted}\n'
+        summary_string += f'[WARNING] UNIFORMITY: multiple ({len(diffs_sorted)}) spacings: {diffs_sorted}\n'
         return False, summary_string
 
 
