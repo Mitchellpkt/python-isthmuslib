@@ -381,3 +381,8 @@ Changelog
 -------------------
 
 * chore: memory and annotation
+
+0.0.83 (2022-08-04)
+-------------------
+
+* chore: match facecolor for figure and axes

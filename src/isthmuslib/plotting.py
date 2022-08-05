@@ -165,6 +165,9 @@ def visualize_1d_distribution(data: Any, xlabel: str = '', ylabel: str = 'counts
             hist_bins = kwargs.get("bins")
         plt.hist(data_set, color=config.color, bins=hist_bins, **{k: v for k, v in kwargs.items() if k != 'bins'})
 
+    # Make sure that the axes facecolor matches the figure facecolor
+    plt.gca().set(facecolor=config.facecolor)
+
     # Adjust view & style where applicable
     xlabel_buffer: str = config.translate(xlabel, missing_response='return_input')
     ylabel_translated: str = config.translate(ylabel, missing_response='return_input')
@@ -255,6 +258,9 @@ def visualize_x_y(x_data: Any, y_data: Any, xlabel: str = '', ylabel: str = '', 
         if any(x in types for x in ['plot', 'line']):
             includes_line_plot: bool = True
             p = plt.plot(x_array, y_array, color=config.color, linewidth=config.linewidth)
+
+        # Make sure that the axes facecolor matches the figure facecolor
+        plt.gca().set(facecolor=config.facecolor)
 
         if plot_best_fit:
             if includes_line_plot:
