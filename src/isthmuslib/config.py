@@ -50,6 +50,8 @@ class Style(BaseModel):
         "impute_direction": "forward",
         "add_noise": False,
     }
+    x_axis_human_tick_labels: bool = False
+    x_axis_formatter: str = None
 
     def translate(self, key: str, **kwargs) -> str:
         """Helper function that allows Style objects to translate text according to the provided Rosetta mappings

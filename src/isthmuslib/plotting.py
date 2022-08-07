@@ -62,8 +62,8 @@ def adjust_axes(
     style: Style = None,
     xlim: Any = None,
     ylim: Any = None,
-    x_axis_human: bool = False,
-    x_axis_formatter: str = "%Y-%m-%d",
+    x_axis_human_tick_labels: bool = False,
+    x_axis_formatter: str = None,
 ) -> None:
     """Helper function that adjusts the axes of a plot as specified
 
@@ -71,7 +71,7 @@ def adjust_axes(
     :param style: the Style object to apply
     :param xlim: bound for the x-axis
     :param ylim: bound for the y-axis
-    :param x_axis_human: True if the x-axis labels should be displayed as human-readable
+    :param x_axis_human_tick_labels: True if the x-axis labels should be displayed as human-readable
     :param x_axis_formatter: format string for the x-axis if human-readable
     :return: None
     """
@@ -89,7 +89,9 @@ def adjust_axes(
         plt.xscale("log")
     if "y" in log_axes:
         plt.yscale("log")
-    if x_axis_human:
+    if x_axis_human_tick_labels:
+        if x_axis_formatter is None:
+            x_axis_formatter: str = "%Y-%m-%d"
         xfmt = matplotlib.dates.DateFormatter(x_axis_formatter)
         plt.gca().xaxis.set_major_formatter(xfmt)
 
@@ -286,6 +288,7 @@ def visualize_x_y(
     log_norm_colors: bool = False,
     colorbar_label: str = None,
     x_axis_human_tick_labels: bool = False,
+    x_axis_formatter: str = "%Y-%m-%d",
     **kwargs,
 ) -> plt.Figure:
     """Core function for visualizing 2-dimensional data sets
@@ -295,6 +298,8 @@ def visualize_x_y(
     :param xlabel: label text for the x-axis
     :param ylabel: label text for the y-axis
     :param title: title text
+    :param x_axis_formatter: format string for the x-axis if human-readable
+
     :param cumulative: which axes to make cumulative, e.g. 'x' or ['x','y'] or 'xy'
     :param log_axes: which axes should be on a log scale, e.g. 'x' or ['x','y'] or 'xy'
     :param types: which types of plot to make, currently supports: 'scatter' and 'plot'
@@ -347,8 +352,12 @@ def visualize_x_y(
             y_array: np.ndarray = np.asarray(data_set[1])
 
         # Convert to datetime for plotting if intending to use human-readable format
-        if x_axis_human_tick_labels and any(not isinstance(x, datetime.datetime) for x in x_array):
-            x_array: List[datetime.datetime] = [datetime.datetime.fromtimestamp(ts) for ts in x_array]
+        if x_axis_human_tick_labels and any(
+            not isinstance(x, datetime.datetime) for x in x_array
+        ):
+            x_array: List[datetime.datetime] = [
+                datetime.datetime.fromtimestamp(ts) for ts in x_array
+            ]
 
         if "scatter" in types:
             if log_norm_colors:
@@ -420,7 +429,14 @@ def visualize_x_y(
             plt.legend(scatter_handles, legend_strings, fontsize=config.legend_fontsize)
         elif includes_line_plot:  # scatter legend overrides plot legend for now
             plt.legend(legend_strings, fontsize=config.legend_fontsize)
-    adjust_axes(log_axes=log_axes, style=config, xlim=xlim, ylim=ylim, x_axis_human=x_axis_human)
+    adjust_axes(
+        log_axes=log_axes,
+        style=config,
+        xlim=xlim,
+        ylim=ylim,
+        x_axis_human_tick_labels=x_axis_human_tick_labels,
+        x_axis_formatter=x_axis_formatter,
+    )
     apply_watermark(watermark, style=config)
     return figure_handle
 
