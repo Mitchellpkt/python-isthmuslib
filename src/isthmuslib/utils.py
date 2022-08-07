@@ -16,41 +16,45 @@ import random
 
 
 class PickleUtils(BaseModel):
-    """ Pickle IO - adds pickle import & export helper functions to any class that imports these utils  """
+    """Pickle IO - adds pickle import & export helper functions to any class that imports these utils"""
 
     def to_pickle(self, file_path: Union[str, pathlib.Path]) -> None:
         """Exports self as a pickle
         @param file_path: where to write the file
         """
-        with open(file_path, 'wb') as outfile:
+        with open(file_path, "wb") as outfile:
             pickle.dump(self, outfile)
 
-    def read_pickle(self, file_path: Union[str, pathlib.Path]) -> Any:  # noqa: static, placed here for organization
-        """ Imports a pickle. Note: this is _not_ inplace; the pickle contents are _returned_ by this method
+    def read_pickle(
+        self, file_path: Union[str, pathlib.Path]
+    ) -> Any:  # noqa: static, placed here for organization
+        """Imports a pickle. Note: this is _not_ inplace; the pickle contents are _returned_ by this method
         @param file_path: file to import
         """
-        with open(file_path, 'rb') as infile:
+        with open(file_path, "rb") as infile:
             return pickle.load(infile)
 
 
 class PickleJar(PickleUtils):
-    """ Class with to_pickle() and from_pickle(), supporting arbitrary data in `contents` attribute """
+    """Class with to_pickle() and from_pickle(), supporting arbitrary data in `contents` attribute"""
+
     contents: Any = None
 
     class Config:
         arbitrary_types_allowed = True
 
     def from_pickle(self, file_path: Union[str, pathlib.Path]) -> None:
-        """ Imports a pickle (similar to read_pickle(), but this method is inplace)
+        """Imports a pickle (similar to read_pickle(), but this method is inplace)
         @param file_path: file to import
         """
         self.contents = self.read_pickle(file_path).contents
 
 
 class Rosetta(BaseModel):
-    """ Rules and methods for converting timestamps and raw labels to human-readable formats """
-    timezone: str = 'US/Pacific'
-    formatter: str = '%Y-%m-%d %H:%M:%S'
+    """Rules and methods for converting timestamps and raw labels to human-readable formats"""
+
+    timezone: str = "US/Pacific"
+    formatter: str = "%Y-%m-%d %H:%M:%S"
     stone: Dict[str, str] = {
         # input string : human-readable output
         "input": "The Input (formatted)",
@@ -58,17 +62,17 @@ class Rosetta(BaseModel):
         "window_width": "Window width"
         # ... (fill out the rest of the human-readable names)
     }
-    default_missing_response: str = 'return_input'
+    default_missing_response: str = "return_input"
 
     def translate(self, key: str, missing_response: str = None) -> str:
-        """ Main function that wraps dictionary access with robust handling for missing inputs, missing keys, etc.
+        """Main function that wraps dictionary access with robust handling for missing inputs, missing keys, etc.
         Consider using for cases like axis.label(self.translate('timestamp_sec')) --> axis.label("Timestamp (sec)")
         @param key: input to be translated
         @param missing_response: how to handle a missing entry ("return_input" or "error")
         @return: human-readable output
         """
         if not key:
-            return ''
+            return ""
         if key in self.stone:
             return self.stone[key]
         if not missing_response:
@@ -80,18 +84,27 @@ class Rosetta(BaseModel):
         else:
             raise ValueError(f"Unknown missing_response parameter: {missing_response}")
 
-    def translate_time(self, key: Union[str, float, int], include_timezone: bool = True) -> str:
-        """ Convert a timestamp (seconds) into human readable string """
-        return human_time(key, formatter=self.formatter, timezone=self.timezone, include_timezone=include_timezone)
+    def translate_time(
+        self, key: Union[str, float, int], include_timezone: bool = True
+    ) -> str:
+        """Convert a timestamp (seconds) into human readable string"""
+        return human_time(
+            key,
+            formatter=self.formatter,
+            timezone=self.timezone,
+            include_timezone=include_timezone,
+        )
 
     def add_entry(self, key: str, value: str, silent_overwrite: bool = True) -> None:
-        """ Adds an entry to the mappings
+        """Adds an entry to the mappings
         @param key: input string
         @param value: human-readable output
         @param silent_overwrite: if True, overwrites existing entries. If false, raises KeyError
         """
         if (key in self.stone) and (not silent_overwrite):
-            raise KeyError(f"Key {key} is already in mappings, and silent_overwrite is False")
+            raise KeyError(
+                f"Key {key} is already in mappings, and silent_overwrite is False"
+            )
         self.stone[key] = value
 
     def human_time(self, *args, **kwargs) -> str:
@@ -101,13 +114,13 @@ class Rosetta(BaseModel):
         return machine_time(*args, **kwargs)
 
     def __add__(self, other):
-        """ Rosetta objects can be combined. Note: if both stones have the same key with a different value,
-            the output will reflect the value from the second (`other`) stone """
+        """Rosetta objects can be combined. Note: if both stones have the same key with a different value,
+        the output will reflect the value from the second (`other`) stone"""
         return {**self.stone, **other.stone}
 
     def __iadd__(self, other):
-        """ Rosetta objects can be combined. Note: if both stones have the same key with a different value,
-            the output will reflect the value from the second (`other`) stone """
+        """Rosetta objects can be combined. Note: if both stones have the same key with a different value,
+        the output will reflect the value from the second (`other`) stone"""
         self.stone = {**self.stone, **other.stone}
 
     def merge(self, string: str, **kwargs) -> str:
@@ -119,33 +132,47 @@ class Rosetta(BaseModel):
         """
         return object_string_merge(string=string, values_from=self.stone, **kwargs)
 
-    def risky_cast(self, x: Any) -> Any:  # noqa: it is static, attached here only for convenience.
-        """ Reckless helper function that tries to cast the input to a number (float) or boolean """
+    def risky_cast(
+        self, x: Any
+    ) -> Any:  # noqa: it is static, attached here only for convenience.
+        """Reckless helper function that tries to cast the input to a number (float) or boolean"""
         return risky_cast(x)
 
 
-def human_time(timestamp_sec: Union[float, str, int], formatter: str = '%Y-%m-%d %H:%M:%S',
-               timezone: str = 'US/Pacific', include_timezone: bool = True) -> str:
-    """ Converts timestamp to human readable time, taking into account time zone (US/Pacific by default)
-        To see other time zone options, see `pytz.common_timezones` """
+def human_time(
+    timestamp_sec: Union[float, str, int],
+    formatter: str = "%Y-%m-%d %H:%M:%S",
+    timezone: str = "US/Pacific",
+    include_timezone: bool = True,
+) -> str:
+    """Converts timestamp to human readable time, taking into account time zone (US/Pacific by default)
+    To see other time zone options, see `pytz.common_timezones`"""
 
     # If input is a string, try to parse it as a float or int
     if isinstance(timestamp_sec, str):
-        if timestamp_sec == 'now':
+        if timestamp_sec == "now":
             timestamp_sec = time.time()
         else:
-            if timestamp_sec.replace('.', '', 1).isdigit():
+            if timestamp_sec.replace(".", "", 1).isdigit():
                 timestamp_sec: float = float(timestamp_sec)
             else:
-                raise ValueError(f"Could not interpret string as a numeric timestamp: {timestamp_sec})")
-    datetime_string: str = datetime.fromtimestamp(timestamp_sec, pytz.timezone(timezone)).strftime(formatter)
+                raise ValueError(
+                    f"Could not interpret string as a numeric timestamp: {timestamp_sec})"
+                )
+    datetime_string: str = datetime.fromtimestamp(
+        timestamp_sec, pytz.timezone(timezone)
+    ).strftime(formatter)
     if include_timezone:
         datetime_string += f" ({timezone})"
     return datetime_string
 
 
-def machine_time(time_or_times: Union[str, Any], units: str = 'seconds',
-                 disable_progress_bar: bool = True, **kwargs) -> Union[float, List[float]]:
+def machine_time(
+    time_or_times: Union[str, Any],
+    units: str = "seconds",
+    disable_progress_bar: bool = True,
+    **kwargs,
+) -> Union[float, List[float]]:
     """
     Convert a string to a timestamp
 
@@ -156,13 +183,13 @@ def machine_time(time_or_times: Union[str, Any], units: str = 'seconds',
     """
 
     # Get the units multiplier (todo - make this cleaner with a mapper)
-    if units in ['s', 'sec', 'second', 'seconds']:
+    if units in ["s", "sec", "second", "seconds"]:
         multiplier: int = 1
-    elif units in ['ms', 'milli', 'millisecond', 'milliseconds']:
+    elif units in ["ms", "milli", "millisecond", "milliseconds"]:
         multiplier: int = 1_000
-    elif units in ['us', 'micro', 'microsecond', 'microseconds']:
+    elif units in ["us", "micro", "microsecond", "microseconds"]:
         multiplier: int = 1_000_000
-    elif units in ['ns', 'nano', 'nanosecond', 'nanoseconds']:
+    elif units in ["ns", "nano", "nanosecond", "nanoseconds"]:
         multiplier: int = 1_000_000_000
     else:
         raise ValueError(f"Unknown units: {units}")
@@ -171,8 +198,10 @@ def machine_time(time_or_times: Union[str, Any], units: str = 'seconds',
     if isinstance(time_or_times, str):
         return float(multiplier * parser.parse(time_or_times).timestamp())
     else:
-        return [float(multiplier * parser.parse(x).timestamp()) for x in
-                tqdm(time_or_times, disable=disable_progress_bar, **kwargs)]
+        return [
+            float(multiplier * parser.parse(x).timestamp())
+            for x in tqdm(time_or_times, disable=disable_progress_bar, **kwargs)
+        ]
 
 
 def grid(individual_parameter_values: Dict[str, Iterable]) -> List[Dict[str, Any]]:
@@ -191,7 +220,10 @@ def grid(individual_parameter_values: Dict[str, Iterable]) -> List[Dict[str, Any
     keys_list: Tuple[str] = tuple(individual_parameter_values.keys())
     values_list: Tuple[Iterable] = tuple(individual_parameter_values.values())
     combinations = itertools.product(*values_list)
-    return [{keys_list[i]: value for i, value in enumerate(combination)} for combination in combinations]
+    return [
+        {keys_list[i]: value for i, value in enumerate(combination)}
+        for combination in combinations
+    ]
 
 
 def neighborhood_grid(starting_point: Dict[str, Any], **kwargs) -> List[Dict[str, Any]]:
@@ -205,8 +237,13 @@ def neighborhood_grid(starting_point: Dict[str, Any], **kwargs) -> List[Dict[str
     return grid(neighborhood_multivariate(starting_point, **kwargs))
 
 
-def neighborhood_multivariate(starting_point: Dict[str, Any], errors: str = 'passthrough', fields: List[str] = None,
-                              keep_other_vals: bool = True, **kwargs) -> Dict[str, List[float]]:
+def neighborhood_multivariate(
+    starting_point: Dict[str, Any],
+    errors: str = "passthrough",
+    fields: List[str] = None,
+    keep_other_vals: bool = True,
+    **kwargs,
+) -> Dict[str, List[float]]:
     """
     Helper function that wraps the univariate helper function for dictionaries with multiple fields
 
@@ -222,31 +259,45 @@ def neighborhood_multivariate(starting_point: Dict[str, Any], errors: str = 'pas
         fields = list(starting_point.keys())
 
     if keep_other_vals:
-        return_dictionary: Dict[str, List[float]] = {k: [v] for k, v in starting_point.items()}
+        return_dictionary: Dict[str, List[float]] = {
+            k: [v] for k, v in starting_point.items()
+        }
     else:
         return_dictionary: Dict[str, List[float]] = dict()
 
     for key, value in [x for x in starting_point.items() if x[0] in fields]:
         try:
             if isinstance(value, bool) or (not isinstance(value, (int, float))):
-                raise TypeError(f'The variable {key} has a value that is not a float or integer: {value}')
+                raise TypeError(
+                    f"The variable {key} has a value that is not a float or integer: {value}"
+                )
             return_dictionary[key] = neighborhood_univariate(value, **kwargs)
         except TypeError as e:
-            if 'passthrough' in errors.lower():
+            if "passthrough" in errors.lower():
                 return_dictionary[key] = [value]
-            elif 'drop' in errors.lower():
+            elif "drop" in errors.lower():
                 pass
-            elif 'raise' in errors.lower():
-                raise ValueError(f"The value of {key} ({value}) does not appear to be numeric. Lower error: {e}")
+            elif "raise" in errors.lower():
+                raise ValueError(
+                    f"The value of {key} ({value}) does not appear to be numeric. Lower error: {e}"
+                )
             else:
-                raise ValueError(f"Unknown error handling method {errors}. Try 'passthrough', 'drop', or 'raise'.")
+                raise ValueError(
+                    f"Unknown error handling method {errors}. Try 'passthrough', 'drop', or 'raise'."
+                )
 
     return return_dictionary
 
 
-def neighborhood_univariate(starting_point: float, width_prct: float = 50, num_samples: int = 5,
-                            spacing: str = 'linear', placement: str = 'center',
-                            width_temperature_prct: float = None, **kwargs) -> List[float]:
+def neighborhood_univariate(
+    starting_point: float,
+    width_prct: float = 50,
+    num_samples: int = 5,
+    spacing: str = "linear",
+    placement: str = "center",
+    width_temperature_prct: float = None,
+    **kwargs,
+) -> List[float]:
     """
     Helper function that samples the area around a point (just a wrapper for numpy linspace and logspace)
 
@@ -261,22 +312,30 @@ def neighborhood_univariate(starting_point: float, width_prct: float = 50, num_s
     """
     width: float = starting_point * width_prct / 100
     if width_temperature_prct:
-        width: float = width * (1 + random.uniform(-1 * abs(width_temperature_prct), abs(width_temperature_prct)) / 100)
+        width: float = width * (
+            1
+            + random.uniform(
+                -1 * abs(width_temperature_prct), abs(width_temperature_prct)
+            )
+            / 100
+        )
 
-    if placement.lower() == 'left_edge':
+    if placement.lower() == "left_edge":
         left, right = starting_point, starting_point + width
-    elif placement.lower() in 'centered':  # 'center' or 'centered' is fine
+    elif placement.lower() in "centered":  # 'center' or 'centered' is fine
         left, right = starting_point - width / 2, starting_point + width / 2
-    elif placement.lower() == 'right_edge':
+    elif placement.lower() == "right_edge":
         left, right = starting_point - width, starting_point
     else:
-        raise ValueError(f"Unknown placement: {placement}. Try 'left_edge', 'center', or 'right_edge'.")
+        raise ValueError(
+            f"Unknown placement: {placement}. Try 'left_edge', 'center', or 'right_edge'."
+        )
 
-    if spacing.lower() == 'linear':
+    if spacing.lower() == "linear":
         return list(np.linspace(left, right, num_samples, **kwargs))
-    elif 'log' in spacing.lower():  # 'log' or 'logarithmic' is fine
+    elif "log" in spacing.lower():  # 'log' or 'logarithmic' is fine
         return list(np.logspace(np.log10(left), np.log10(right), num_samples, **kwargs))
-    elif spacing.lower() == 'inverse_hyperbolic_transform':
+    elif spacing.lower() == "inverse_hyperbolic_transform":
         raise NotImplementedError(f"Not implemented ... yet ... spoiler alert")
     else:
         raise ValueError(f"Unknown spacing: {spacing}. Try 'linear' or 'log'.")
@@ -286,20 +345,23 @@ class MaxTimeException(KeyboardInterrupt):
     pass
 
 
-def recursive_batch_evaluation(func: Callable,
-                               initial_input: Union[Dict[str, Any], Any],
-                               selection_method: Callable = None,
-                               batch_generator: Callable = None,
-                               batch_generator_kwargs: Dict[str, Any] = None,
-                               max_deep: int = None,
-                               max_time_sec: int = None,
-                               return_input_and_value_tuple: bool = False,
-                               print_progress: bool = False,
-                               print_current_value: bool = False,
-                               print_current_inputs: bool = False,
-                               evaluate_initial_inputs: bool = True,
-                               infinite_memory: bool = True,
-                               *_, **kwargs) -> Union[Any, Tuple[Any, Any]]:
+def recursive_batch_evaluation(
+    func: Callable,
+    initial_input: Union[Dict[str, Any], Any],
+    selection_method: Callable = None,
+    batch_generator: Callable = None,
+    batch_generator_kwargs: Dict[str, Any] = None,
+    max_deep: int = None,
+    max_time_sec: int = None,
+    return_input_and_value_tuple: bool = False,
+    print_progress: bool = False,
+    print_current_value: bool = False,
+    print_current_inputs: bool = False,
+    evaluate_initial_inputs: bool = True,
+    infinite_memory: bool = True,
+    *_,
+    **kwargs,
+) -> Union[Any, Tuple[Any, Any]]:
     """
     Helper function that applies f recursively in batches
 
@@ -339,9 +401,9 @@ def recursive_batch_evaluation(func: Callable,
             all_outputs.append(current_best_value)
     else:
         current_best_value = None
-    func_inputs_iterable: List[Dict[str, Any]] = batch_generator(current_best_input, **batch_generator_kwargs)
-
-
+    func_inputs_iterable: List[Dict[str, Any]] = batch_generator(
+        current_best_input, **batch_generator_kwargs
+    )
 
     # Begin recursively applying
     start_time = time.perf_counter()
@@ -349,7 +411,7 @@ def recursive_batch_evaluation(func: Callable,
     try:
         while (max_deep is None) or (counter < max_deep):
             tic: float = time.perf_counter()
-            kwargs.setdefault('pool_function', 'map')
+            kwargs.setdefault("pool_function", "map")
             output_vals: List[Any] = process_queue(func, func_inputs_iterable, **kwargs)
 
             if infinite_memory:
@@ -357,16 +419,28 @@ def recursive_batch_evaluation(func: Callable,
                 all_inputs += func_inputs_iterable
                 all_outputs += output_vals
                 current_best_value = selection_method(all_outputs)
-                current_best_input = [i for i, v in zip(all_inputs, all_outputs) if v == current_best_value][0]
+                current_best_input = [
+                    i
+                    for i, v in zip(all_inputs, all_outputs)
+                    if v == current_best_value
+                ][0]
             else:
                 # Only select from the last batch
                 current_best_value = selection_method(output_vals)
-                current_best_input = [i for i, v in zip(func_inputs_iterable, output_vals) if v == current_best_value][0]
+                current_best_input = [
+                    i
+                    for i, v in zip(func_inputs_iterable, output_vals)
+                    if v == current_best_value
+                ][0]
 
-            func_inputs_iterable = batch_generator(current_best_input, **batch_generator_kwargs)
+            func_inputs_iterable = batch_generator(
+                current_best_input, **batch_generator_kwargs
+            )
             counter += 1
             if print_progress:
-                print(f"Completed cycle #{counter} in {time.perf_counter() - tic:.6f} seconds")
+                print(
+                    f"Completed cycle #{counter} in {time.perf_counter() - tic:.6f} seconds"
+                )
             if print_current_value:
                 print(f"... Current best value: {current_best_value}")
             if print_current_inputs:
@@ -376,7 +450,9 @@ def recursive_batch_evaluation(func: Callable,
                     raise MaxTimeException
     except KeyboardInterrupt as e:
         if isinstance(e, MaxTimeException):
-            print(f"Breaking after {counter} cycles for max time allowance ({max_time_sec / 60:.2f} minutes)")
+            print(
+                f"Breaking after {counter} cycles for max time allowance ({max_time_sec / 60:.2f} minutes)"
+            )
         print(f"Breaking for keyboard interrupt after {counter} cycles.")
     except Exception as e:
         print(f"After {counter} cycles, encountered exception {e}")
@@ -400,45 +476,51 @@ def as_list(anything: Union[Any, List[Any]]) -> List[Any]:
 
 
 def looks_like_list_of_lists(input_var: Any) -> bool:
-    """ Does this look like a list of lists? Wraps a pandas util
+    """Does this look like a list of lists? Wraps a pandas util
 
     :param input_var: input to assess
     :return: True if it looks like a list of lists
     """
-    return pd.api.types.is_list_like(input_var) and pd.api.types.is_list_like(input_var[0])
+    return pd.api.types.is_list_like(input_var) and pd.api.types.is_list_like(
+        input_var[0]
+    )
 
 
 def margin_calc(margin: float, span: Tuple[float, float], scale: str) -> float:
-    """ Helper function for ascertaining watermark or hud placements (in both linear and log environments)
+    """Helper function for ascertaining watermark or hud placements (in both linear and log environments)
 
     :param margin: a fractional placement (e.g. 0.05 --> 5% from the left of the pane)
     :param span: range being spanned
     :param scale: 'linear' or 'log'
     :return: float with the coordinate value
     """
-    if scale == 'linear':
+    if scale == "linear":
         return span[0] + margin * (span[1] - span[0])
-    elif scale == 'log':
-        return 10 ** (np.log10(span[0]) + margin * (np.log10(span[1]) - np.log10(span[0])))
+    elif scale == "log":
+        return 10 ** (
+            np.log10(span[0]) + margin * (np.log10(span[1]) - np.log10(span[0]))
+        )
     else:
         raise ValueError(f"Unexpected {scale=}")
 
 
 def to_list_if_other_array(array: Any) -> List[Any]:
-    """ Helper function that casts 1D data frames and numpy ndarrays to lists (important for inputs of core viz code)
+    """Helper function that casts 1D data frames and numpy ndarrays to lists (important for inputs of core viz code)
 
     :param array: An array-like (1D) object with numeric values
     :return: a list
     """
     if isinstance(array, pd.DataFrame) and (l := len(array.keys()) > 1):
-        raise ValueError(f"Instead of array, received data frame with {l} features / columns")
+        raise ValueError(
+            f"Instead of array, received data frame with {l} features / columns"
+        )
     if isinstance(array, (np.ndarray, pd.Series)):
         return array.tolist()
     return array
 
 
 def zero_mean_unit_deviation(array: any) -> List[float]:
-    """ Helper function that maps a vector to zero mean and unit standard deviation
+    """Helper function that maps a vector to zero mean and unit standard deviation
 
     :param array: anything that looks like an array
     :return: list with the normalized values
@@ -457,7 +539,7 @@ def make_dict(d: Union[Dict, object, None]) -> Dict[Any, Any]:
     """
     if not d:
         return dict()
-    elif isinstance(d, object) and ('dict' in dir(d)):
+    elif isinstance(d, object) and ("dict" in dir(d)):
         return d.dict()  # noqa
     else:
         return d
@@ -471,7 +553,7 @@ def get_num_workers(parallelize_arg: Union[bool, int, None]) -> int:
     :return: number of parallel workers to instantiate
     """
     # (Daemonic processes are not allowed to have children)
-    if current_process().name != 'MainProcess':
+    if current_process().name != "MainProcess":
         return 1
 
     # return CPU count if not specified
@@ -500,7 +582,9 @@ def determine_load_per_worker(num_tasks: int, num_workers: int) -> List[int]:
     :return: List designating how many tasks each worker should take
     """
     remainder: int = num_tasks % num_workers
-    return remainder * [1 + (num_tasks // num_workers)] + (num_workers - remainder) * [num_tasks // num_workers]
+    return remainder * [1 + (num_tasks // num_workers)] + (num_workers - remainder) * [
+        num_tasks // num_workers
+    ]
 
 
 def divvy_workload(num_workers: int, tasks: List[Any]) -> List[List[Any]]:
@@ -511,17 +595,24 @@ def divvy_workload(num_workers: int, tasks: List[Any]) -> List[List[Any]]:
     :param tasks: task list to be carried out
     :return: task list broken up into num_workers segments
     """
-    load_per_worker: List[int] = determine_load_per_worker(num_tasks=len(tasks), num_workers=num_workers)
+    load_per_worker: List[int] = determine_load_per_worker(
+        num_tasks=len(tasks), num_workers=num_workers
+    )
     i: int = 0
     task_list_all: List[List[Any]] = []
     for load_amount in load_per_worker:
-        task_list_all.append(tasks[i:i + load_amount])
+        task_list_all.append(tasks[i : i + load_amount])
         i += load_amount
     return task_list_all
 
 
-def benchmark_process_queue(*args, worker_counts: List[int] = None, verbose: bool = True,
-                            disable_benchmark_progress_bar: bool = None, **kwargs) -> Dict[int, float]:
+def benchmark_process_queue(
+    *args,
+    worker_counts: List[int] = None,
+    verbose: bool = True,
+    disable_benchmark_progress_bar: bool = None,
+    **kwargs,
+) -> Dict[int, float]:
     """
     Helper function that wraps multiprocessing and measures how number of workers impacts execution time
 
@@ -533,33 +624,44 @@ def benchmark_process_queue(*args, worker_counts: List[int] = None, verbose: boo
     :return: dictionary with worker counts for keys and performance time in seconds for the values
     """
     if not worker_counts:
-        worker_counts = [2 ** x for x in range(int(math.log2(cpu_count())) + 1)][::-1]
+        worker_counts = [2**x for x in range(int(math.log2(cpu_count())) + 1)][::-1]
 
     benchmarks: Dict[int, float] = dict()
     try:
         for num_workers in tqdm(worker_counts, disable=disable_benchmark_progress_bar):
             if verbose:
-                print(f'Beginning benchmark with {num_workers} workers...')
+                print(f"Beginning benchmark with {num_workers} workers...")
             tic: float = time.perf_counter()
             process_queue(*args, num_workers=num_workers, **kwargs)
             benchmarks[num_workers] = (duration := time.perf_counter() - tic)
             if verbose:
-                print(f'... completed in {duration:.4f} seconds')
+                print(f"... completed in {duration:.4f} seconds")
     except KeyboardInterrupt:
         pass  # allow early break out of the loop if desired
 
     return benchmarks
 
 
-def multiprocess(*args, suppress_multiprocess_notice: bool = False, **kwargs) -> List[Any]:
-    """ Legacy name wrapper for process_queue with a warning that can be silenced """
+def multiprocess(
+    *args, suppress_multiprocess_notice: bool = False, **kwargs
+) -> List[Any]:
+    """Legacy name wrapper for process_queue with a warning that can be silenced"""
     if not suppress_multiprocess_notice:
-        print("'multiprocess' is now 'process_queue'. Update or pass suppress_multiprocess_notice=True to silence.")
+        print(
+            "'multiprocess' is now 'process_queue'. Update or pass suppress_multiprocess_notice=True to silence."
+        )
     return process_queue(*args, **kwargs)
 
 
-def recursive_process(func: Callable, initial_inputs: Any, max_deep: int = None,
-                      print_progress: bool = False, print_current_value: bool = False, *args, **kwargs) -> Any:
+def recursive_process(
+    func: Callable,
+    initial_inputs: Any,
+    max_deep: int = None,
+    print_progress: bool = False,
+    print_current_value: bool = False,
+    *args,
+    **kwargs,
+) -> Any:
     """
     Helper function for processing recursive functions
 
@@ -580,7 +682,9 @@ def recursive_process(func: Callable, initial_inputs: Any, max_deep: int = None,
             current = func(current, *args, **kwargs)
             counter += 1
             if print_progress:
-                print(f"Completed cycle #{counter} in {time.perf_counter() - tic:.6f} seconds")
+                print(
+                    f"Completed cycle #{counter} in {time.perf_counter() - tic:.6f} seconds"
+                )
             if print_current_value:
                 print(f"... Current value: {current}")
     except KeyboardInterrupt:
@@ -590,9 +694,17 @@ def recursive_process(func: Callable, initial_inputs: Any, max_deep: int = None,
     return current
 
 
-def process_queue(func: Callable, iterable: List[Any], pool_function: str = None,
-                  batching: bool = False, num_workers: int = None, cuts_per_worker: int = 3,
-                  serial_progress_bar: bool = True, *_, **kwargs) -> List[Any]:
+def process_queue(
+    func: Callable,
+    iterable: List[Any],
+    pool_function: str = None,
+    batching: bool = False,
+    num_workers: int = None,
+    cuts_per_worker: int = 3,
+    serial_progress_bar: bool = True,
+    *_,
+    **kwargs,
+) -> List[Any]:
     """
     Convenience wrapper for Pool.map and Pool.starmap that offers manual batching and automatic flattening
 
@@ -614,13 +726,16 @@ def process_queue(func: Callable, iterable: List[Any], pool_function: str = None
     # This is NOT infallible! Suppose you want to 'map' over a list of tuples; it would infer that 'starmap' is desired.
     if not pool_function:
         if isinstance(iterable[0], Iterable) and (not isinstance(iterable[0], str)):
-            pool_function: str = 'starmap'
+            pool_function: str = "starmap"
         else:
-            pool_function: str = 'map'
+            pool_function: str = "map"
 
     # If only 1 worker, do the work in serial since we don't need the pool and its overhead
     if num_workers == 1:
-        return [func(i) for i in tqdm(iterable, disable=None if serial_progress_bar else True)]
+        return [
+            func(i)
+            for i in tqdm(iterable, disable=None if serial_progress_bar else True)
+        ]
 
     # Break the task list into batches if desired
     if batching:
@@ -629,10 +744,14 @@ def process_queue(func: Callable, iterable: List[Any], pool_function: str = None
         def batched_func(tasks: List[Any]) -> List[Any]:  # noqa:
             return [func(args) for args in tasks]
 
-        if pool_function == 'starmap':
-            raise NotImplementedError(f"batching and starmap are mutually exclusive in the current implementation")
+        if pool_function == "starmap":
+            raise NotImplementedError(
+                f"batching and starmap are mutually exclusive in the current implementation"
+            )
 
-        map_style_inputs: List[List[Any]] = divvy_workload(num_workers=num_workers * cuts_per_worker, tasks=iterable)
+        map_style_inputs: List[List[Any]] = divvy_workload(
+            num_workers=num_workers * cuts_per_worker, tasks=iterable
+        )
         use_function: Callable = batched_func
     else:
         # No batching = batches of one (let the pool methods handle chunksize)
@@ -641,12 +760,16 @@ def process_queue(func: Callable, iterable: List[Any], pool_function: str = None
 
     # Run the pool
     with Pool(min(num_workers, len(map_style_inputs))) as pool:
-        if pool_function.lower() == 'starmap':
-            result = pool.starmap(func=use_function, iterable=map_style_inputs, **kwargs)
-        elif pool_function.lower() == 'map':
+        if pool_function.lower() == "starmap":
+            result = pool.starmap(
+                func=use_function, iterable=map_style_inputs, **kwargs
+            )
+        elif pool_function.lower() == "map":
             result = pool.map(func=use_function, iterable=map_style_inputs, **kwargs)
         else:
-            raise ValueError(f"Pool function should be 'map' or 'starmap' but received unknown type: {pool_function}")
+            raise ValueError(
+                f"Pool function should be 'map' or 'starmap' but received unknown type: {pool_function}"
+            )
 
     # Flatten if necessary
     if batching:
@@ -655,8 +778,12 @@ def process_queue(func: Callable, iterable: List[Any], pool_function: str = None
     return result  # noqa: results prouced in lines above
 
 
-def object_string_merge(string: str, values_from: Any, left_merge_token: str = '[[',
-                        right_merge_token: str = ']]') -> str:
+def object_string_merge(
+    string: str,
+    values_from: Any,
+    left_merge_token: str = "[[",
+    right_merge_token: str = "]]",
+) -> str:
     """
     Helper function that replaces merge fields in a string
 
@@ -669,10 +796,12 @@ def object_string_merge(string: str, values_from: Any, left_merge_token: str = '
     """
     if isinstance(values_from, dict):
         values_dict: Dict[str, Any] = values_from
-    elif hasattr(values_from, 'dict'):
+    elif hasattr(values_from, "dict"):
         values_dict: Dict[str, Any] = values_from.dict()
     else:
-        raise ValueError(f"Unsure how to interpret `values_from`. Expecting a dictionary or BaseModel-like object.")
+        raise ValueError(
+            f"Unsure how to interpret `values_from`. Expecting a dictionary or BaseModel-like object."
+        )
 
     for k, v in values_dict.items():
         if k in string:
@@ -681,21 +810,25 @@ def object_string_merge(string: str, values_from: Any, left_merge_token: str = '
 
 
 def risky_cast(x: Any) -> Any:
-    """ Reckless helper function that tries to cast the input to a dictionary or number (float) or boolean or None. """
+    """Reckless helper function that tries to cast the input to a dictionary or number (float) or boolean or None."""
 
     # If not a string, send it back
     if not isinstance(x, str):
         return x
 
     # Try to parse model representations
-    if all(substr in x for substr in ['=', ',']):
+    if all(substr in x for substr in ["=", ","]):
         try:
-            return {k[0]: risky_cast(k[1]) for k in [j.split('=') for j in x.split(', ')]}  # "a=5, b=6"
+            return {
+                k[0]: risky_cast(k[1]) for k in [j.split("=") for j in x.split(", ")]
+            }  # "a=5, b=6"
         except:
             pass
 
-    if x.replace('.', '', 1).isdigit() or (x[0] == '-' and x[1:].replace('.', '', 1).isdigit()):
-        if '.' in x:
+    if x.replace(".", "", 1).isdigit() or (
+        x[0] == "-" and x[1:].replace(".", "", 1).isdigit()
+    ):
+        if "." in x:
             try:
                 return float(x)
             except:
@@ -709,7 +842,7 @@ def risky_cast(x: Any) -> Any:
                 pass
 
     # Bool? None?
-    mapper: Dict[str, Any] = {'true': True, 'false': False, 'none': None}
+    mapper: Dict[str, Any] = {"true": True, "false": False, "none": None}
     if x.lower() in mapper:
         return mapper[x.lower()]
 

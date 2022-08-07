@@ -5,50 +5,54 @@ from copy import deepcopy
 
 
 class Style(BaseModel):
-    """ Miscellaneous properties; set defaults once, then use or inherit elsewhere for consistent style
-        (note: some names are formatted to be congruent with matplotlib.pyplot vars & args, rather than isthmuslib) """
+    """Miscellaneous properties; set defaults once, then use or inherit elsewhere for consistent style
+    (note: some names are formatted to be congruent with matplotlib.pyplot vars & args, rather than isthmuslib)"""
 
-    color: Any = 'DarkGreen'  # isthmuslib default
-    facecolor: Any = 'w'
+    color: Any = "DarkGreen"  # isthmuslib default
+    facecolor: Any = "w"
     title_fontsize: Any = 18.0
     label_fontsize: Any = 15.0
     legend_fontsize: Any = 15.0
     tick_fontsize: Any = 12.0
     figsize: Tuple[Any, Any] = (10.0, 8.0)
     linewidth: Any = 5.0
-    linestyle: Any = '-'
+    linestyle: Any = "-"
     grid: bool = True
     tight_axes: bool = True
-    formatter: str = '%Y-%m-%d %H:%M:%S'
+    formatter: str = "%Y-%m-%d %H:%M:%S"
     markersize: Any = 50
     transparent_alpha: float = 0.5
     watermark_placement: Any = (0.05, 0.05)
     watermark_fontsize: Any = 20
-    watermark_color: Any = 'dimgrey'
-    watermark_text: str = ''
+    watermark_color: Any = "dimgrey"
+    watermark_text: str = ""
     histogram_bins: Any = 25
     multi_hist_alpha: float = 0.5
     rosetta: Rosetta = Rosetta()
-    median_linestyle: Any = '--'
+    median_linestyle: Any = "--"
     median_linewidth: Any = 3.0
-    median_linecolor: Any = 'k'
-    mean_linestyle: Any = '-'
+    median_linecolor: Any = "k"
+    mean_linestyle: Any = "-"
     mean_linewidth: Any = 3.0
-    mean_linecolor: Any = 'k'
+    mean_linecolor: Any = "k"
     cycler: Any = None
-    good_color: Any = 'navy'
-    bad_color: Any = 'firebrick'
-    cmap: Any = 'inferno'
-    sequential_cmap: Any = 'Greens'
+    good_color: Any = "navy"
+    bad_color: Any = "firebrick"
+    cmap: Any = "inferno"
+    sequential_cmap: Any = "Greens"
     log_formatter: str = "\n@@ {time:x} AT: {time} | LEVEL: {level} | IN: {name}.{function}\n\n{message} |\n"
-    timeframe_prefix: str = 'from '
-    timeframe_between: str = ' to '
-    timeframe_suffix: str = ''
-    auto_locf_params: Dict[str, Any] = {'window': 3, 'impute_method': 'median',
-                                        'impute_direction': 'forward', 'add_noise': False}
+    timeframe_prefix: str = "from "
+    timeframe_between: str = " to "
+    timeframe_suffix: str = ""
+    auto_locf_params: Dict[str, Any] = {
+        "window": 3,
+        "impute_method": "median",
+        "impute_direction": "forward",
+        "add_noise": False,
+    }
 
     def translate(self, key: str, **kwargs) -> str:
-        """ Helper function that allows Style objects to translate text according to the provided Rosetta mappings
+        """Helper function that allows Style objects to translate text according to the provided Rosetta mappings
 
         :param key: the string to be translated
         :param kwargs: keyword arguments for the rosetta translate() method
@@ -60,7 +64,7 @@ class Style(BaseModel):
             return key
 
     def override(self, *args):
-        """ Helper function that overrides specific style features
+        """Helper function that overrides specific style features
 
         :return: returns a fresh copy of a Style object with the updated values
         """
@@ -73,10 +77,12 @@ class Style(BaseModel):
                 return deepcopy(self)
             elif isinstance(args[0], dict):
                 override_dict: Dict[str, any] = args[0]
-            elif getattr(args[0], 'dict', None):
+            elif getattr(args[0], "dict", None):
                 override_dict: Dict[str, any] = args[0].dict()
             else:
-                raise ValueError(f"Unsure how to interpret override input of type {type(args[0])}")
+                raise ValueError(
+                    f"Unsure how to interpret override input of type {type(args[0])}"
+                )
 
         elif (len(args) == 2) and isinstance(args[0], str):
             override_dict: Dict[str, any] = {args[0]: args[1]}

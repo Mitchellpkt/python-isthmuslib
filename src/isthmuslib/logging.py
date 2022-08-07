@@ -11,28 +11,37 @@ import pathlib
 
 
 class LogIO(BaseModel):
-    record_delimiter: str = '[@@@]'
-    left_token: str = '[<<'
-    key_value_delimiter: str = '='
-    right_token: str = '>>]'
+    record_delimiter: str = "[@@@]"
+    left_token: str = "[<<"
+    key_value_delimiter: str = "="
+    right_token: str = ">>]"
     parallelize_imports: bool = True
-    embedded_json_line_prefix: str = '[[EMBEDDED_JSON_LINE]]'
-    embedded_csv_line_prefix: str = '[[EMBEDDED_CSV_LINE]]'  # spoiler alert
+    embedded_json_line_prefix: str = "[[EMBEDDED_JSON_LINE]]"
+    embedded_csv_line_prefix: str = "[[EMBEDDED_CSV_LINE]]"  # spoiler alert
     log_formatter: str = "\n@@ {time:x} AT: {time} | LEVEL: {level} | IN: {name}.{function}\n\n{message} |\n"  # TODO: unify this object's string fields with Config?? # noqa
 
     def single_feature_to_log(self, key: str, value: str) -> str:
-        return f"{self.left_token}{key}{self.key_value_delimiter}{value}{self.right_token}"
+        return (
+            f"{self.left_token}{key}{self.key_value_delimiter}{value}{self.right_token}"
+        )
 
-    def dict_to_log(self, key_value_dict: Dict[str, Any], include_delimiter: bool = False) -> str:
-        s: str = self.record_delimiter if include_delimiter else ''
+    def dict_to_log(
+        self, key_value_dict: Dict[str, Any], include_delimiter: bool = False
+    ) -> str:
+        s: str = self.record_delimiter if include_delimiter else ""
         for key, value in key_value_dict.items():
             s += f"{self.single_feature_to_log(key=key, value=value)}"
         return s
 
 
-def parse_string_with_manual_tokens(input_string: str, tokens_dictionary: Dict[str, Tuple[str, str]], limit: int = None,
-                                    record_delimiter: str = '[@@@]', disable_progress_bar: bool = None,
-                                    parallelize_processing: Union[bool, int] = False) -> pd.DataFrame:
+def parse_string_with_manual_tokens(
+    input_string: str,
+    tokens_dictionary: Dict[str, Tuple[str, str]],
+    limit: int = None,
+    record_delimiter: str = "[@@@]",
+    disable_progress_bar: bool = None,
+    parallelize_processing: Union[bool, int] = False,
+) -> pd.DataFrame:
     """
     Extracts a pandas dataframe from a string
 
@@ -53,7 +62,7 @@ def parse_string_with_manual_tokens(input_string: str, tokens_dictionary: Dict[s
 
     # Loop over rows
     for raw_row_text in (p := tqdm(raw_row_texts_list, disable=disable_progress_bar)):
-        p.set_description('Reading and parsing')
+        p.set_description("Reading and parsing")
         row_buffer: Dict[str, Any] = dict()
 
         # Look for each key in this row
@@ -66,21 +75,30 @@ def parse_string_with_manual_tokens(input_string: str, tokens_dictionary: Dict[s
             row_buffers_list.append(row_buffer)
 
     # Convert the list of dictionaries to a dataframe (note: this is a slow step that I plan to optimize later)
-    return list_of_dict_to_dataframe(data_point_dicts=row_buffers_list, disable_progress_bar=disable_progress_bar,
-                                     parallelize_processing=parallelize_processing)
+    return list_of_dict_to_dataframe(
+        data_point_dicts=row_buffers_list,
+        disable_progress_bar=disable_progress_bar,
+        parallelize_processing=parallelize_processing,
+    )
 
 
 def parse_file_with_manual_tokens(path: str, *args, **kwargs):
-    """ Wrapper for above function (parse_string_with_manual_tokens) that applies it to a file """
-    with open(path, 'r') as f:
+    """Wrapper for above function (parse_string_with_manual_tokens) that applies it to a file"""
+    with open(path, "r") as f:
         return parse_string_with_manual_tokens(f.read(), *args, **kwargs)
 
 
-def parse_string_with_key_value_delimiters(input_string: str, left_token: str = None, key_value_delimiter: str = None,
-                                           right_token: str = None, record_delimiter: str = None,
-                                           parallelize_read: Union[bool, int] = False,
-                                           parallelize_processing: Union[bool, int] = False, limit: int = None,
-                                           disable_progress_bar: bool = None) -> pd.DataFrame:
+def parse_string_with_key_value_delimiters(
+    input_string: str,
+    left_token: str = None,
+    key_value_delimiter: str = None,
+    right_token: str = None,
+    record_delimiter: str = None,
+    parallelize_read: Union[bool, int] = False,
+    parallelize_processing: Union[bool, int] = False,
+    limit: int = None,
+    disable_progress_bar: bool = None,
+) -> pd.DataFrame:
     """
     Extracts a data frame from a string
 
@@ -123,33 +141,53 @@ def parse_string_with_key_value_delimiters(input_string: str, left_token: str = 
     # Process the chunks
     num_workers: int = get_num_workers(parallelize_arg=parallelize_read)
     if parallelize_read and (num_workers > 1):
-        batches: List[List[Any]] = divvy_workload(num_workers=num_workers, tasks=raw_row_texts_list)
-        i: List[Tuple[List[str], str, str, str]] = [(b, left_token, key_value_delimiter, right_token) for b in batches]
+        batches: List[List[Any]] = divvy_workload(
+            num_workers=num_workers, tasks=raw_row_texts_list
+        )
+        i: List[Tuple[List[str], str, str, str]] = [
+            (b, left_token, key_value_delimiter, right_token) for b in batches
+        ]
         with Pool(num_workers) as pool:
-            chunk_buffers_nested: List[List[Dict[str, Any]]] = pool.map(func=multi_key_value_extraction_lambda,
-                                                                        iterable=i)
-        row_buffers_list: List[Dict[str, Any]] = [item for sublist in chunk_buffers_nested for item in sublist]
+            chunk_buffers_nested: List[List[Dict[str, Any]]] = pool.map(
+                func=multi_key_value_extraction_lambda, iterable=i
+            )
+        row_buffers_list: List[Dict[str, Any]] = [
+            item for sublist in chunk_buffers_nested for item in sublist
+        ]
 
     else:
         # Serial processing
         for chunk in (p1 := tqdm(raw_row_texts_list, disable=disable_progress_bar)):
-            p1.set_description('Scanning file')
-            row_buffers_list.append(key_value_extraction_lambda(chunk, left_token=left_token, right_token=right_token,
-                                                                key_value_delimiter=key_value_delimiter))
+            p1.set_description("Scanning file")
+            row_buffers_list.append(
+                key_value_extraction_lambda(
+                    chunk,
+                    left_token=left_token,
+                    right_token=right_token,
+                    key_value_delimiter=key_value_delimiter,
+                )
+            )
 
-    return list_of_dict_to_dataframe(row_buffers_list, disable_progress_bar=disable_progress_bar,
-                                     parallelize_processing=parallelize_processing)
+    return list_of_dict_to_dataframe(
+        row_buffers_list,
+        disable_progress_bar=disable_progress_bar,
+        parallelize_processing=parallelize_processing,
+    )
 
 
 def parse_file_with_key_value_delimiters(path: str, *args, **kwargs):
-    """ Wrapper for above function (parse_string_with_key_value_delimiters) that applies it to a file """
-    with open(path, 'r') as f:
+    """Wrapper for above function (parse_string_with_key_value_delimiters) that applies it to a file"""
+    with open(path, "r") as f:
         return parse_string_with_key_value_delimiters(f.read(), *args, **kwargs)
 
 
-def parse_string_with_embedded_json_unprocessed_dicts(input_string: str, embedded_json_line_prefix: str = None,
-                                                      limit: int = None, ignore_decode_errors: bool = False,
-                                                      end_of_line: str = '\n') -> List[Dict[Any, Any]]:
+def parse_string_with_embedded_json_unprocessed_dicts(
+    input_string: str,
+    embedded_json_line_prefix: str = None,
+    limit: int = None,
+    ignore_decode_errors: bool = False,
+    end_of_line: str = "\n",
+) -> List[Dict[Any, Any]]:
     """
     Extracts embedded json from log files
 
@@ -172,7 +210,10 @@ def parse_string_with_embedded_json_unprocessed_dicts(input_string: str, embedde
     embedded_with_trailing_data = input_string.split(embedded_json_line_prefix)[1:]
     if limit and (limit < len(embedded_with_trailing_data)):
         embedded_with_trailing_data = embedded_with_trailing_data[:limit]
-    embedded_clean = [x.split(end_of_line)[0] if end_of_line in x else x for x in embedded_with_trailing_data]
+    embedded_clean = [
+        x.split(end_of_line)[0] if end_of_line in x else x
+        for x in embedded_with_trailing_data
+    ]
 
     return_list: List[Dict[Any, Any]] = []
     for s in embedded_clean:
@@ -184,9 +225,14 @@ def parse_string_with_embedded_json_unprocessed_dicts(input_string: str, embedde
     return return_list
 
 
-def parse_string_with_embedded_json(input_string: str, embedded_json_line_prefix: str = None,
-                                    parallelize_processing: Union[bool, int] = False, disable_progress_bar: bool = None,
-                                    limit: int = None, end_of_line: str = '\n') -> pd.DataFrame:
+def parse_string_with_embedded_json(
+    input_string: str,
+    embedded_json_line_prefix: str = None,
+    parallelize_processing: Union[bool, int] = False,
+    disable_progress_bar: bool = None,
+    limit: int = None,
+    end_of_line: str = "\n",
+) -> pd.DataFrame:
     """
     Extracts embedded json from log files
 
@@ -197,22 +243,34 @@ def parse_string_with_embedded_json(input_string: str, embedded_json_line_prefix
     :param end_of_line: substring between rows
     :param limit: maximum number of rows to process
     """
-    extracted_json_dicts: List[Dict[str, Any]] = parse_string_with_embedded_json_unprocessed_dicts(
-        input_string=input_string, embedded_json_line_prefix=embedded_json_line_prefix,
-        limit=limit, end_of_line=end_of_line)
-    return list_of_dict_to_dataframe(extracted_json_dicts, disable_progress_bar=disable_progress_bar,
-                                     parallelize_processing=parallelize_processing)
+    extracted_json_dicts: List[
+        Dict[str, Any]
+    ] = parse_string_with_embedded_json_unprocessed_dicts(
+        input_string=input_string,
+        embedded_json_line_prefix=embedded_json_line_prefix,
+        limit=limit,
+        end_of_line=end_of_line,
+    )
+    return list_of_dict_to_dataframe(
+        extracted_json_dicts,
+        disable_progress_bar=disable_progress_bar,
+        parallelize_processing=parallelize_processing,
+    )
 
 
 def parse_file_with_embedded_json(path: str, *args, **kwargs) -> pd.DataFrame:
-    """ Wrapper for above (parse_string_with_embedded_json) function that applies it to a file """
-    with open(path, 'r') as f:
+    """Wrapper for above (parse_string_with_embedded_json) function that applies it to a file"""
+    with open(path, "r") as f:
         return parse_string_with_embedded_json(f.read(), *args, **kwargs)
 
 
-def key_value_extraction_lambda(input_chunk: str, left_token: str = None, key_value_delimiter: str = None,
-                                right_token: str = None) -> Dict[str, Any]:
-    """ Helper lambda so we can do this in parallel or series """
+def key_value_extraction_lambda(
+    input_chunk: str,
+    left_token: str = None,
+    key_value_delimiter: str = None,
+    right_token: str = None,
+) -> Dict[str, Any]:
+    """Helper lambda so we can do this in parallel or series"""
     output_chunk_dict: Dict[str, Any] = dict()
     raw_breaks: List[str] = input_chunk.split(left_token)[1:]
     middle: List[str] = [x.split(right_token)[0] for x in raw_breaks]
@@ -224,16 +282,25 @@ def key_value_extraction_lambda(input_chunk: str, left_token: str = None, key_va
         key: str = substrings[0]
         if not key:
             continue  # Do not continue to parse if the key is known
-        value: str = ''.join([x + key_value_delimiter for x in substrings[1:]])[:-1]
+        value: str = "".join([x + key_value_delimiter for x in substrings[1:]])[:-1]
         output_chunk_dict.setdefault(key, value)  # Add the value to this row
     return output_chunk_dict
 
 
-def multi_key_value_extraction_lambda(args: Tuple[List[str], str, str, str]) -> List[Dict[str, Any]]:
-    """ Helper function that works through a queue of chunks (for parallelization) """
+def multi_key_value_extraction_lambda(
+    args: Tuple[List[str], str, str, str]
+) -> List[Dict[str, Any]]:
+    """Helper function that works through a queue of chunks (for parallelization)"""
     input_chunks, left_token, key_value_delimiter, right_token = args
-    return [key_value_extraction_lambda(x, left_token=left_token, key_value_delimiter=key_value_delimiter,
-                                        right_token=right_token) for x in input_chunks]
+    return [
+        key_value_extraction_lambda(
+            x,
+            left_token=left_token,
+            key_value_delimiter=key_value_delimiter,
+            right_token=right_token,
+        )
+        for x in input_chunks
+    ]
 
 
 def data_frame_init_wrapper(data: Any) -> pd.DataFrame:
@@ -246,9 +313,13 @@ def data_frame_init_wrapper(data: Any) -> pd.DataFrame:
     return pd.DataFrame(data, index=range(len(data)))
 
 
-def list_of_dict_to_dataframe(data_point_dicts, parallelize_processing: Union[bool, int] = True,
-                              disable_progress_bar: bool = None, pandas_automatic: bool = True,
-                              suppress_deprecation_warning: bool = False) -> pd.DataFrame:
+def list_of_dict_to_dataframe(
+    data_point_dicts,
+    parallelize_processing: Union[bool, int] = True,
+    disable_progress_bar: bool = None,
+    pandas_automatic: bool = True,
+    suppress_deprecation_warning: bool = False,
+) -> pd.DataFrame:
     """
      Extracts a data frame from a string
 
@@ -274,39 +345,56 @@ def list_of_dict_to_dataframe(data_point_dicts, parallelize_processing: Union[bo
             return pd.DataFrame(data_point_dicts)
         if parallelize_processing:
             if not disable_progress_bar:
-                print(f'Reshaping data (step 1 of 2): processing in parallel with {num_reshape_workers} workers')
-            batches_of_dictionaries: List[List[Any]] = divvy_workload(num_workers=num_reshape_workers,
-                                                                      tasks=data_point_dicts)
+                print(
+                    f"Reshaping data (step 1 of 2): processing in parallel with {num_reshape_workers} workers"
+                )
+            batches_of_dictionaries: List[List[Any]] = divvy_workload(
+                num_workers=num_reshape_workers, tasks=data_point_dicts
+            )
             list_of_dataframes: List[pd.DataFrame] = process_queue(
                 data_frame_init_wrapper,
                 batches_of_dictionaries,
-                pool_function='map',
+                pool_function="map",
                 batching=False,  # here, we batch manually above rather than inside multiprocess
                 num_workers=num_reshape_workers,
             )
             if not disable_progress_bar:
-                print('Reshaping data (step 2 of 2): attaching subframes')
+                print("Reshaping data (step 2 of 2): attaching subframes")
             return pd.concat(list_of_dataframes, ignore_index=True)
 
     if not suppress_deprecation_warning:
         print(f"You are using a very slow method for reshaping the data")
-        print(f"Recommendation: use list_of_dict_to_dataframe(..., pandas_automatic=True)")
-        print(f"To suppress this warning, pass: use list_of_dict_to_dataframe(..., suppress_deprecation_warning=True)")
+        print(
+            f"Recommendation: use list_of_dict_to_dataframe(..., pandas_automatic=True)"
+        )
+        print(
+            f"To suppress this warning, pass: use list_of_dict_to_dataframe(..., suppress_deprecation_warning=True)"
+        )
 
     if parallelize_processing and (num_reshape_workers > 1):
-        batches: List[List[Any]] = divvy_workload(num_workers=num_reshape_workers, tasks=data_point_dicts)
+        batches: List[List[Any]] = divvy_workload(
+            num_workers=num_reshape_workers, tasks=data_point_dicts
+        )
         if not disable_progress_bar:
-            print(f'Reshaping data: processing in parallel with {num_reshape_workers} workers')
+            print(
+                f"Reshaping data: processing in parallel with {num_reshape_workers} workers"
+            )
         with Pool(num_reshape_workers) as pool:
-            dataframes: List[pd.DataFrame] = pool.map(func=dicts_to_dataframe, iterable=batches)
+            dataframes: List[pd.DataFrame] = pool.map(
+                func=dicts_to_dataframe, iterable=batches
+            )
         df: pd.DataFrame = pd.concat(dataframes, ignore_index=True)
     else:
         df: pd.DataFrame = pd.DataFrame()
         # THIS LOOP IS SO SLOW - you should use pandas_automatic=True
-        for chunk_buffer in (p2 := tqdm(data_point_dicts, disable=disable_progress_bar)):
-            p2.set_description('Reshaping data:')
+        for chunk_buffer in (
+            p2 := tqdm(data_point_dicts, disable=disable_progress_bar)
+        ):
+            p2.set_description("Reshaping data:")
             if chunk_buffer:
-                df: pd.DataFrame = pd.concat([df, pd.DataFrame(chunk_buffer, index=[-1])], ignore_index=True)
+                df: pd.DataFrame = pd.concat(
+                    [df, pd.DataFrame(chunk_buffer, index=[-1])], ignore_index=True
+                )
     return df
 
 
@@ -324,7 +412,9 @@ def dicts_to_dataframe(dictionaries: List[Dict[str, Any]]) -> pd.DataFrame:
     return df
 
 
-def batch_dicts_to_dataframe(dictionaries: List[Dict[str, Any]], batch_size: int = 1000) -> pd.DataFrame:
+def batch_dicts_to_dataframe(
+    dictionaries: List[Dict[str, Any]], batch_size: int = 1000
+) -> pd.DataFrame:
     """
     NB: THIS IS AN INEFFICIENT FUNCTION THAT SCALES AWFULLY, PLEASE USE list_of_dict_to_dataframe instead
     Helper function that converts a list of dictionaries into a dataframe (each dictionary = 1 row)
@@ -337,7 +427,9 @@ def batch_dicts_to_dataframe(dictionaries: List[Dict[str, Any]], batch_size: int
     batches: List[pd.DataFrame] = []
     df_in_progress: pd.DataFrame = pd.DataFrame()
     for i, dictionary in enumerate([d for d in dictionaries if d]):
-        df_in_progress = pd.concat([df_in_progress, pd.DataFrame(dictionary, index=[-1])], ignore_index=True)
+        df_in_progress = pd.concat(
+            [df_in_progress, pd.DataFrame(dictionary, index=[-1])], ignore_index=True
+        )
         if i % batch_size == 0:
             batches.append(deepcopy(df_in_progress))
             df_in_progress = pd.DataFrame()
@@ -353,11 +445,19 @@ def batch_dicts_to_dataframe(dictionaries: List[Dict[str, Any]], batch_size: int
 
 
 # LEGACY FUNCTION - New use of this function is not recommended, however it works just fine
-def auto_extract_from_text(input_string: str, return_type: str = 'dataframe', left_token: str = None,
-                           key_value_delimiter: str = None, right_token: str = None, basis_col_name: str = None,
-                           record_delimiter: str = None, parallelize_read: Union[bool, int] = False,
-                           parallelize_processing: Union[bool, int] = False, limit: int = None,
-                           disable_progress_bar: bool = None) -> Union[pd.DataFrame, VectorSequence, VectorMultiset]:
+def auto_extract_from_text(
+    input_string: str,
+    return_type: str = "dataframe",
+    left_token: str = None,
+    key_value_delimiter: str = None,
+    right_token: str = None,
+    basis_col_name: str = None,
+    record_delimiter: str = None,
+    parallelize_read: Union[bool, int] = False,
+    parallelize_processing: Union[bool, int] = False,
+    limit: int = None,
+    disable_progress_bar: bool = None,
+) -> Union[pd.DataFrame, VectorSequence, VectorMultiset]:
     """
     Extracts a data frame from a string
 
@@ -400,37 +500,61 @@ def auto_extract_from_text(input_string: str, return_type: str = 'dataframe', le
     # Process the chunks
     num_workers: int = get_num_workers(parallelize_arg=parallelize_read)
     if parallelize_read and (num_workers > 1):
-        batches: List[List[Any]] = divvy_workload(num_workers=num_workers, tasks=record_chunks)
-        i: List[Tuple[List[str], str, str, str]] = [(b, left_token, key_value_delimiter, right_token) for b in batches]
+        batches: List[List[Any]] = divvy_workload(
+            num_workers=num_workers, tasks=record_chunks
+        )
+        i: List[Tuple[List[str], str, str, str]] = [
+            (b, left_token, key_value_delimiter, right_token) for b in batches
+        ]
         with Pool(num_workers) as pool:
-            chunk_buffers_nested: List[List[Dict[str, Any]]] = pool.map(func=multi_key_value_extraction_lambda,
-                                                                        iterable=i)
-        chunk_buffers: List[Dict[str, Any]] = [item for sublist in chunk_buffers_nested for item in sublist]
+            chunk_buffers_nested: List[List[Dict[str, Any]]] = pool.map(
+                func=multi_key_value_extraction_lambda, iterable=i
+            )
+        chunk_buffers: List[Dict[str, Any]] = [
+            item for sublist in chunk_buffers_nested for item in sublist
+        ]
 
     else:
         # Serial processing
         for chunk in (p1 := tqdm(record_chunks, disable=disable_progress_bar)):
-            p1.set_description('Scanning file (step 1 of 2)')
-            chunk_buffers.append(key_value_extraction_lambda(chunk, left_token=left_token, right_token=right_token,
-                                                             key_value_delimiter=key_value_delimiter))
+            p1.set_description("Scanning file (step 1 of 2)")
+            chunk_buffers.append(
+                key_value_extraction_lambda(
+                    chunk,
+                    left_token=left_token,
+                    right_token=right_token,
+                    key_value_delimiter=key_value_delimiter,
+                )
+            )
 
-    df: pd.DataFrame = list_of_dict_to_dataframe(chunk_buffers, disable_progress_bar=disable_progress_bar,
-                                                 parallelize_processing=parallelize_processing)
+    df: pd.DataFrame = list_of_dict_to_dataframe(
+        chunk_buffers,
+        disable_progress_bar=disable_progress_bar,
+        parallelize_processing=parallelize_processing,
+    )
 
-    if 'dataframe' in return_type.lower():
+    if "dataframe" in return_type.lower():
         return df
-    elif 'multiset' in return_type.lower():
+    elif "multiset" in return_type.lower():
         return VectorMultiset(data=df)
-    elif 'sequence' in return_type.lower():
+    elif "sequence" in return_type.lower():
         return VectorSequence(data=df, basis_col_name=basis_col_name)
 
 
 # LEGACY FUNCTION - New use of this function is not recommended, however it works just fine
-def auto_extract_from_file(file_path: Union[str, pathlib.Path], record_delimiter: str = None, right_token: str = None,
-                           left_token: str = None, key_value_delimiter: str = None, return_type: str = 'dataframe',
-                           basis_col_name: str = None, disable_progress_bar: bool = None,
-                           parallelize_read: Union[bool, int] = False, parallelize_processing: Union[bool, int] = False,
-                           **kwargs) -> Union[pd.DataFrame, VectorSequence, VectorMultiset]:
+def auto_extract_from_file(
+    file_path: Union[str, pathlib.Path],
+    record_delimiter: str = None,
+    right_token: str = None,
+    left_token: str = None,
+    key_value_delimiter: str = None,
+    return_type: str = "dataframe",
+    basis_col_name: str = None,
+    disable_progress_bar: bool = None,
+    parallelize_read: Union[bool, int] = False,
+    parallelize_processing: Union[bool, int] = False,
+    **kwargs,
+) -> Union[pd.DataFrame, VectorSequence, VectorMultiset]:
     """
     Extracts a data frame from a file
 
@@ -465,20 +589,33 @@ def auto_extract_from_file(file_path: Union[str, pathlib.Path], record_delimiter
         record_delimiter = LogIO().record_delimiter
 
     # Read in the file
-    with open(file_path, 'r') as f:
+    with open(file_path, "r") as f:
         input_string: str = f.read()
 
-    return auto_extract_from_text(input_string=input_string, return_type=return_type,
-                                  record_delimiter=record_delimiter, left_token=left_token,
-                                  parallelize_read=parallelize_read, parallelize_processing=parallelize_processing,
-                                  key_value_delimiter=key_value_delimiter, right_token=right_token,
-                                  basis_col_name=basis_col_name, disable_progress_bar=disable_progress_bar, **kwargs)
+    return auto_extract_from_text(
+        input_string=input_string,
+        return_type=return_type,
+        record_delimiter=record_delimiter,
+        left_token=left_token,
+        parallelize_read=parallelize_read,
+        parallelize_processing=parallelize_processing,
+        key_value_delimiter=key_value_delimiter,
+        right_token=right_token,
+        basis_col_name=basis_col_name,
+        disable_progress_bar=disable_progress_bar,
+        **kwargs,
+    )
 
 
 # LEGACY FUNCTION - New use of this function is not recommended, however it works just fine
-def extract_text_to_dataframe(input_string: str, tokens_dictionary: Dict[str, Tuple[str, str]], limit: int = None,
-                              record_delimiter: str = '[@@@]', disable_progress_bar: bool = None,
-                              parallelize_processing: Union[bool, int] = False) -> pd.DataFrame:
+def extract_text_to_dataframe(
+    input_string: str,
+    tokens_dictionary: Dict[str, Tuple[str, str]],
+    limit: int = None,
+    record_delimiter: str = "[@@@]",
+    disable_progress_bar: bool = None,
+    parallelize_processing: Union[bool, int] = False,
+) -> pd.DataFrame:
     """
     Extracts a pandas dataframe from a string
 
@@ -496,7 +633,7 @@ def extract_text_to_dataframe(input_string: str, tokens_dictionary: Dict[str, Tu
     if limit and (limit < len(record_chunks)):
         record_chunks = record_chunks[:limit]
     for chunk in (p := tqdm(record_chunks, disable=disable_progress_bar)):
-        p.set_description('Reading and parsing (step 1 of 2)')
+        p.set_description("Reading and parsing (step 1 of 2)")
         chunk_buffer: Dict[str, Any] = dict()
         for key, (before_token, after_token) in tokens_dictionary.items():
             if before_token in chunk:
@@ -506,14 +643,22 @@ def extract_text_to_dataframe(input_string: str, tokens_dictionary: Dict[str, Tu
         if chunk_buffer:
             chunk_buffers_list.append(chunk_buffer)
 
-    return list_of_dict_to_dataframe(data_point_dicts=chunk_buffers_list, disable_progress_bar=disable_progress_bar,
-                                     parallelize_processing=parallelize_processing)
+    return list_of_dict_to_dataframe(
+        data_point_dicts=chunk_buffers_list,
+        disable_progress_bar=disable_progress_bar,
+        parallelize_processing=parallelize_processing,
+    )
 
 
 # LEGACY FUNCTION - New use of this function is not recommended, however it works just fine
-def extract_text_to_vector(input_string: str, tokens_dictionary: Dict[str, Tuple[str, str]],
-                           record_delimiter: str = '[@@@]', disable_progress_bar: bool = None,
-                           basis_col_name: str = None, **kwargs) -> Union[VectorMultiset, VectorSequence]:
+def extract_text_to_vector(
+    input_string: str,
+    tokens_dictionary: Dict[str, Tuple[str, str]],
+    record_delimiter: str = "[@@@]",
+    disable_progress_bar: bool = None,
+    basis_col_name: str = None,
+    **kwargs,
+) -> Union[VectorMultiset, VectorSequence]:
     """
     Extracts a VectorMultiset from a string (or a VectorSequence if you specify `basis_col_name`)
 
@@ -524,9 +669,13 @@ def extract_text_to_vector(input_string: str, tokens_dictionary: Dict[str, Tuple
     :param disable_progress_bar: pass anything True to silence the progress bar
     :return: Vector data set extracted from the input string
     """
-    df_output: pd.DataFrame = extract_text_to_dataframe(input_string=input_string, record_delimiter=record_delimiter,
-                                                        tokens_dictionary=tokens_dictionary,
-                                                        disable_progress_bar=disable_progress_bar, **kwargs)
+    df_output: pd.DataFrame = extract_text_to_dataframe(
+        input_string=input_string,
+        record_delimiter=record_delimiter,
+        tokens_dictionary=tokens_dictionary,
+        disable_progress_bar=disable_progress_bar,
+        **kwargs,
+    )
     if basis_col_name:
         return VectorSequence(data=df_output, basis_col_name=basis_col_name)
     else:
@@ -534,9 +683,14 @@ def extract_text_to_vector(input_string: str, tokens_dictionary: Dict[str, Tuple
 
 
 # LEGACY FUNCTION - New use of this function is not recommended, however it works just fine
-def extract_file_to_vector(file_path: Union[str, pathlib.Path], record_delimiter: str,
-                           tokens_dictionary: Dict[str, Tuple[str, str]], disable_progress_bar: bool = None,
-                           basis_col_name: str = None, **kwargs) -> Union[VectorSequence, VectorMultiset]:
+def extract_file_to_vector(
+    file_path: Union[str, pathlib.Path],
+    record_delimiter: str,
+    tokens_dictionary: Dict[str, Tuple[str, str]],
+    disable_progress_bar: bool = None,
+    basis_col_name: str = None,
+    **kwargs,
+) -> Union[VectorSequence, VectorMultiset]:
     """
     Wrapper for extract_from_text that pulls vector data out of a file, such as raw log output.
 
@@ -547,7 +701,12 @@ def extract_file_to_vector(file_path: Union[str, pathlib.Path], record_delimiter
     :param disable_progress_bar: pass anything True to silence the progress bar
     :return: Vector data set extracted from the input string
     """
-    with open(file_path, 'r') as f:
-        return extract_text_to_vector(input_string=f.read(), record_delimiter=record_delimiter,
-                                      tokens_dictionary=tokens_dictionary, basis_col_name=basis_col_name,
-                                      disable_progress_bar=disable_progress_bar, **kwargs)
+    with open(file_path, "r") as f:
+        return extract_text_to_vector(
+            input_string=f.read(),
+            record_delimiter=record_delimiter,
+            tokens_dictionary=tokens_dictionary,
+            basis_col_name=basis_col_name,
+            disable_progress_bar=disable_progress_bar,
+            **kwargs,
+        )
