@@ -285,7 +285,7 @@ def visualize_x_y(
     show_colorbar: bool = False,
     log_norm_colors: bool = False,
     colorbar_label: str = None,
-    x_axis_human_ticks: bool = False,
+    x_axis_human_tick_labels: bool = False,
     **kwargs,
 ) -> plt.Figure:
     """Core function for visualizing 2-dimensional data sets
@@ -311,7 +311,7 @@ def visualize_x_y(
     :param colorbar_label: optional label for the colorbar
     :param log_norm_colors: set to True to normalize the colorbar scale
     :param show_colorbar: set to True to show colorbar
-    :param x_axis_human_ticks: set to True to convert numeric values along the x-axis to human-readable timestamps
+    :param x_axis_human_tick_labels: set to True to convert numeric values along the x-axis to human-readable timestamps
     :return: figure handle for the plot
     """
     # Set style. Overrides: kwargs > style input > Style() defaults
@@ -347,7 +347,7 @@ def visualize_x_y(
             y_array: np.ndarray = np.asarray(data_set[1])
 
         # Convert to datetime for plotting if intending to use human-readable format
-        if x_axis_human_ticks and any(not isinstance(x, datetime.datetime) for x in x_array):
+        if x_axis_human_tick_labels and any(not isinstance(x, datetime.datetime) for x in x_array):
             x_array: List[datetime.datetime] = [datetime.datetime.fromtimestamp(ts) for ts in x_array]
 
         if "scatter" in types:
