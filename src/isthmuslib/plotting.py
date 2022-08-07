@@ -12,6 +12,7 @@ from .utils import (
 from typing import List, Any, Union, Tuple, Callable, Dict
 from mpl_toolkits.mplot3d import Axes3D
 import matplotlib
+import datetime
 
 
 ##################
@@ -61,6 +62,8 @@ def adjust_axes(
     style: Style = None,
     xlim: Any = None,
     ylim: Any = None,
+    x_axis_human: bool = False,
+    x_axis_formatter: str = "%Y-%m-%d",
 ) -> None:
     """Helper function that adjusts the axes of a plot as specified
 
@@ -68,6 +71,8 @@ def adjust_axes(
     :param style: the Style object to apply
     :param xlim: bound for the x-axis
     :param ylim: bound for the y-axis
+    :param x_axis_human: True if the x-axis labels should be displayed as human-readable
+    :param x_axis_formatter: format string for the x-axis if human-readable
     :return: None
     """
     if not style:
@@ -84,7 +89,9 @@ def adjust_axes(
         plt.xscale("log")
     if "y" in log_axes:
         plt.yscale("log")
-
+    if x_axis_human:
+        xfmt = matplotlib.dates.DateFormatter(x_axis_formatter)
+        plt.gca().xaxis.set_major_formatter(xfmt)
 
 def apply_plot_labels(
     xlabel: str = "", ylabel: str = "", title: str = "", style: Style = None
@@ -278,10 +285,10 @@ def visualize_x_y(
     show_colorbar: bool = False,
     log_norm_colors: bool = False,
     colorbar_label: str = None,
+    x_axis_human_ticks: bool = False,
     **kwargs,
 ) -> plt.Figure:
     """Core function for visualizing 2-dimensional data sets
-
 
     :param x_data: can be an array-like object or a list of array-like objects (for multiple traces)
     :param y_data: can be an array-like object or a list of array-like objects (for multiple traces)
@@ -304,6 +311,7 @@ def visualize_x_y(
     :param colorbar_label: optional label for the colorbar
     :param log_norm_colors: set to True to normalize the colorbar scale
     :param show_colorbar: set to True to show colorbar
+    :param x_axis_human_ticks: set to True to convert numeric values along the x-axis to human-readable timestamps
     :return: figure handle for the plot
     """
     # Set style. Overrides: kwargs > style input > Style() defaults
@@ -337,6 +345,10 @@ def visualize_x_y(
             y_array: np.ndarray = np.cumsum(data_set[1])
         else:
             y_array: np.ndarray = np.asarray(data_set[1])
+
+        # Convert to datetime for plotting if intending to use human-readable format
+        if x_axis_human_ticks and any(not isinstance(x, datetime.datetime) for x in x_array):
+            x_array: List[datetime.datetime] = [datetime.datetime.fromtimestamp(ts) for ts in x_array]
 
         if "scatter" in types:
             if log_norm_colors:
@@ -408,7 +420,7 @@ def visualize_x_y(
             plt.legend(scatter_handles, legend_strings, fontsize=config.legend_fontsize)
         elif includes_line_plot:  # scatter legend overrides plot legend for now
             plt.legend(legend_strings, fontsize=config.legend_fontsize)
-    adjust_axes(log_axes=log_axes, style=config, xlim=xlim, ylim=ylim)
+    adjust_axes(log_axes=log_axes, style=config, xlim=xlim, ylim=ylim, x_axis_human=x_axis_human)
     apply_watermark(watermark, style=config)
     return figure_handle
 
