@@ -179,7 +179,7 @@ class VectorMultiset(PickleUtils, Style, Rosetta):
 
         kwargs.setdefault("title", self.translate(self.name_root))
         style: Style = kwargs.pop("style", Style(**self.dict()))
-        return visualize_x_y(x_data, y_data, style=style, **kwargs)
+        return visualize_x_y(x_data, y_data, **style.dict(), **kwargs)
 
     def viz2d(self, *args, **kwargs) -> plt.Figure:
         """
@@ -1390,7 +1390,7 @@ class VectorSequence(VectorMultiset):
         # Plot the results
         f, axs = plt.subplots(
             2,
-            sharex=True,
+            sharex=True,  # noqa: bool is in fact allowed
             gridspec_kw={"hspace": 0},
             figsize=figsize,
             facecolor=self.facecolor,
@@ -1446,6 +1446,7 @@ class Timeseries(VectorSequence):
     """Thin wrapper for VectorSequence in the context of time"""
 
     basis_col_name: str = "timestamp"
+    x_axis_human_tick_labels: bool = True
 
     def calc_weights(
         self,
