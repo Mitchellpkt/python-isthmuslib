@@ -298,8 +298,6 @@ def visualize_x_y(
     :param xlabel: label text for the x-axis
     :param ylabel: label text for the y-axis
     :param title: title text
-    :param x_axis_formatter: format string for the x-axis if human-readable
-
     :param cumulative: which axes to make cumulative, e.g. 'x' or ['x','y'] or 'xy'
     :param log_axes: which axes should be on a log scale, e.g. 'x' or ['x','y'] or 'xy'
     :param types: which types of plot to make, currently supports: 'scatter' and 'plot'
@@ -317,6 +315,7 @@ def visualize_x_y(
     :param log_norm_colors: set to True to normalize the colorbar scale
     :param show_colorbar: set to True to show colorbar
     :param x_axis_human_tick_labels: set to True to convert numeric values along the x-axis to human-readable timestamps
+    :param x_axis_formatter: format string for the x-axis if human-readable
     :return: figure handle for the plot
     """
     # Set style. Overrides: kwargs > style input > Style() defaults
