@@ -386,3 +386,9 @@ Changelog
 -------------------
 
 * chore: match facecolor for figure and axes
+
+0.0.84 (2022-08-07)
+-------------------
+
+* chore: human-readable x-axis for scatter plots with time
+* chore: use pandas builtin for datetime to timestamp conversion (much faster)
