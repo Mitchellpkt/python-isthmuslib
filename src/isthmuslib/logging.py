@@ -39,7 +39,7 @@ def parse_string_with_manual_tokens(
     tokens_dictionary: Dict[str, Tuple[str, str]],
     limit: int = None,
     record_delimiter: str = "[@@@]",
-    disable_progress_bar: bool = None,
+    disable_progress_bar: bool = False,
     parallelize_processing: Union[bool, int] = False,
 ) -> pd.DataFrame:
     """
@@ -61,8 +61,11 @@ def parse_string_with_manual_tokens(
         raw_row_texts_list = raw_row_texts_list[:limit]
 
     # Loop over rows
-    for raw_row_text in (p := tqdm(raw_row_texts_list, disable=disable_progress_bar)):
+    p = tqdm(raw_row_texts_list, disable=disable_progress_bar)
+    if not disable_progress_bar:
         p.set_description("Reading and parsing")
+
+    for raw_row_text in p:
         row_buffer: Dict[str, Any] = dict()
 
         # Look for each key in this row
@@ -97,7 +100,7 @@ def parse_string_with_key_value_delimiters(
     parallelize_read: Union[bool, int] = False,
     parallelize_processing: Union[bool, int] = False,
     limit: int = None,
-    disable_progress_bar: bool = None,
+    disable_progress_bar: bool = False,
 ) -> pd.DataFrame:
     """
     Extracts a data frame from a string
@@ -157,8 +160,12 @@ def parse_string_with_key_value_delimiters(
 
     else:
         # Serial processing
-        for chunk in (p1 := tqdm(raw_row_texts_list, disable=disable_progress_bar)):
-            p1.set_description("Scanning file")
+        # Loop over rows
+        p1 = tqdm(raw_row_texts_list, disable=disable_progress_bar)
+        if not disable_progress_bar:
+            p1.set_description("Scanning text")
+
+        for chunk in p1:
             row_buffers_list.append(
                 key_value_extraction_lambda(
                     chunk,
@@ -229,7 +236,7 @@ def parse_string_with_embedded_json(
     input_string: str,
     embedded_json_line_prefix: str = None,
     parallelize_processing: Union[bool, int] = False,
-    disable_progress_bar: bool = None,
+    disable_progress_bar: bool = False,
     limit: int = None,
     end_of_line: str = "\n",
 ) -> pd.DataFrame:
@@ -316,7 +323,7 @@ def data_frame_init_wrapper(data: Any) -> pd.DataFrame:
 def list_of_dict_to_dataframe(
     data_point_dicts,
     parallelize_processing: Union[bool, int] = True,
-    disable_progress_bar: bool = None,
+    disable_progress_bar: bool = False,
     pandas_automatic: bool = True,
     suppress_deprecation_warning: bool = False,
 ) -> pd.DataFrame:
@@ -456,7 +463,7 @@ def auto_extract_from_text(
     parallelize_read: Union[bool, int] = False,
     parallelize_processing: Union[bool, int] = False,
     limit: int = None,
-    disable_progress_bar: bool = None,
+    disable_progress_bar: bool = False,
 ) -> Union[pd.DataFrame, VectorSequence, VectorMultiset]:
     """
     Extracts a data frame from a string
@@ -550,7 +557,7 @@ def auto_extract_from_file(
     key_value_delimiter: str = None,
     return_type: str = "dataframe",
     basis_col_name: str = None,
-    disable_progress_bar: bool = None,
+    disable_progress_bar: bool = False,
     parallelize_read: Union[bool, int] = False,
     parallelize_processing: Union[bool, int] = False,
     **kwargs,
@@ -613,7 +620,7 @@ def extract_text_to_dataframe(
     tokens_dictionary: Dict[str, Tuple[str, str]],
     limit: int = None,
     record_delimiter: str = "[@@@]",
-    disable_progress_bar: bool = None,
+    disable_progress_bar: bool = False,
     parallelize_processing: Union[bool, int] = False,
 ) -> pd.DataFrame:
     """
@@ -655,7 +662,7 @@ def extract_text_to_vector(
     input_string: str,
     tokens_dictionary: Dict[str, Tuple[str, str]],
     record_delimiter: str = "[@@@]",
-    disable_progress_bar: bool = None,
+    disable_progress_bar: bool = False,
     basis_col_name: str = None,
     **kwargs,
 ) -> Union[VectorMultiset, VectorSequence]:
@@ -687,7 +694,7 @@ def extract_file_to_vector(
     file_path: Union[str, pathlib.Path],
     record_delimiter: str,
     tokens_dictionary: Dict[str, Tuple[str, str]],
-    disable_progress_bar: bool = None,
+    disable_progress_bar: bool = False,
     basis_col_name: str = None,
     **kwargs,
 ) -> Union[VectorSequence, VectorMultiset]:
