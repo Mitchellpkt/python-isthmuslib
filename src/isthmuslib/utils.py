@@ -171,15 +171,17 @@ def machine_time(
     time_or_times: Union[str, Any],
     units: str = "seconds",
     disable_progress_bar: bool = True,
+    use_pandas_for_multiple_conversions: bool = None,
     **kwargs,
 ) -> Union[float, List[float]]:
     """
     Convert a string to a timestamp
 
-    @param time_or_times: datetime string to parse (or a list of them)
-    @param units: seconds or milliseconds
-    @param disable_progress_bar: setting to False will activate a tqdm progress bar for conversions over lists
-    @return: unix timestamp
+    :param time_or_times: datetime string to parse (or a list of them)
+    :param units: seconds or milliseconds
+    :param disable_progress_bar: setting to False will activate a tqdm progress bar for conversions over lists
+    :param use_pandas_for_multiple_conversions: Use pandas for converting many timestamps (recommended)
+    :return: unix timestamp
     """
 
     # Get the units multiplier (todo - make this cleaner with a mapper)
@@ -198,10 +200,20 @@ def machine_time(
     if isinstance(time_or_times, str):
         return float(multiplier * parser.parse(time_or_times).timestamp())
     else:
-        return [
-            float(multiplier * parser.parse(x).timestamp())
-            for x in tqdm(time_or_times, disable=disable_progress_bar, **kwargs)
-        ]
+        if use_pandas_for_multiple_conversions is None:
+            use_pandas_for_multiple_conversions: bool = (
+                len(time_or_times) > 64
+            )  # use pandas if lots of entries
+        if use_pandas_for_multiple_conversions:
+            return [
+                multiplier * t / 1e9
+                for t in pd.to_datetime(time_or_times).astype(int).tolist()
+            ]
+        else:
+            return [
+                float(multiplier * parser.parse(x).timestamp())
+                for x in tqdm(time_or_times, disable=disable_progress_bar, **kwargs)
+            ]
 
 
 def grid(individual_parameter_values: Dict[str, Iterable]) -> List[Dict[str, Any]]:
