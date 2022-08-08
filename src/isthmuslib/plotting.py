@@ -95,6 +95,7 @@ def adjust_axes(
         xfmt = matplotlib.dates.DateFormatter(x_axis_formatter)
         plt.gca().xaxis.set_major_formatter(xfmt)
 
+
 def apply_plot_labels(
     xlabel: str = "", ylabel: str = "", title: str = "", style: Style = None
 ) -> None:
