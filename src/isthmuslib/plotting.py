@@ -355,6 +355,10 @@ def visualize_x_y(
         if x_axis_human_tick_labels and any(
             not isinstance(x, datetime.datetime) for x in x_array
         ):
+            if any(np.isnan(x_array)):
+                raise ValueError(
+                    "Cannot convert NaN to datetime. Use numeric x-axis labels or filter NaNs upstream."
+                )
             x_array: List[datetime.datetime] = [
                 datetime.datetime.fromtimestamp(ts) for ts in x_array
             ]
