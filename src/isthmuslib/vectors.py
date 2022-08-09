@@ -178,8 +178,8 @@ class VectorMultiset(PickleUtils, Style, Rosetta):
             y_data: Any = y
 
         kwargs.setdefault("title", self.translate(self.name_root))
-        style: Style = kwargs.pop("style", Style(**self.dict()))
-        return visualize_x_y(x_data, y_data, **style.dict(), **kwargs)
+        style: Dict[str, Any] = kwargs.pop("style", Style(**self.dict())).dict()
+        return visualize_x_y(x_data, y_data, **style, **{k:v for k, v in kwargs.items() if k not in style.keys()})
 
     def viz2d(self, *args, **kwargs) -> plt.Figure:
         """
