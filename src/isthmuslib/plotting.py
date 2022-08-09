@@ -402,7 +402,7 @@ def visualize_x_y(
                     df.x,
                     df.y.rolling(rolling_mean_width).mean(),
                     color=config.mean_linecolor,
-                    linewidth=style.mean_linewidth,
+                    linewidth=config.mean_linewidth,
                     linestyle=config.mean_linestyle,
                 )
             if rolling_median_width:
@@ -410,7 +410,7 @@ def visualize_x_y(
                     df.x,
                     df.y.rolling(rolling_median_width).median(),
                     color=config.median_linecolor,
-                    linewidth=style.median_linewidth,
+                    linewidth=config.median_linewidth,
                     linestyle=config.median_linestyle,
                 )
 
