@@ -178,13 +178,7 @@ class VectorMultiset(PickleUtils, Style, Rosetta):
             y_data: Any = y
 
         kwargs.setdefault("title", self.translate(self.name_root))
-        style: Dict[str, Any] = kwargs.pop("style", Style(**self.dict())).dict()
-        return visualize_x_y(
-            x_data,
-            y_data,
-            **style,
-            **{k: v for k, v in kwargs.items() if k not in style.keys()},
-        )
+        return visualize_x_y(x_data, y_data, **kwargs)
 
     def viz2d(self, *args, **kwargs) -> plt.Figure:
         """
@@ -1451,7 +1445,7 @@ class Timeseries(VectorSequence):
     """Thin wrapper for VectorSequence in the context of time"""
 
     basis_col_name: str = "timestamp"
-    x_axis_human_tick_labels: bool = True
+    # x_axis_human_tick_labels: bool = True
 
     def calc_weights(
         self,
