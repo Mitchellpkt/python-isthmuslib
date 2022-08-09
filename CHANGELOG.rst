@@ -392,3 +392,8 @@ Changelog
 
 * chore: human-readable x-axis for scatter plots with time
 * chore: use pandas builtin for datetime to timestamp conversion (much faster)
+
+0.0.85 (2022-08-08)
+-------------------
+
+* chore: better config parameter handling
