@@ -36,10 +36,7 @@ def demo_data(setID: int = 1):  # noqa: legacy notation
         return x, y
 
     if setID == 2:
-        (
-            x1,
-            y1,
-        ) = demo_data(1)
+        (x1, y1) = demo_data(1)
         color1: str = "r"
         label1: str = "Group data"
 
@@ -74,9 +71,10 @@ def demo_data(setID: int = 1):  # noqa: legacy notation
         return df
 
     if setID == 4:
-        return [random.gauss(2, 2) for _ in range(500)], [
-            random.gauss(1, 3) for _ in range(500)
-        ]
+        return (
+            [random.gauss(2, 2) for _ in range(500)],
+            [random.gauss(1, 3) for _ in range(500)],
+        )
     if setID == 5:
         # Same as #4 but deterministic
         x = [

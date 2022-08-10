@@ -23,12 +23,12 @@ from .utils import (
 
 
 def plot_best_fit_line(
-        x_data: Any,
-        y_data: Any,
-        degree: int = None,
-        color: str = "k",
-        style: Style = None,
-        **kwargs,
+    x_data: Any,
+    y_data: Any,
+    degree: int = None,
+    color: str = "k",
+    style: Style = None,
+    **kwargs,
 ) -> None:
     """Adds the line of best fit to a plot
 
@@ -60,12 +60,12 @@ def plot_best_fit_line(
 
 
 def adjust_axes(
-        log_axes: Union[str, List[str]] = "",
-        style: Style = None,
-        xlim: Any = None,
-        ylim: Any = None,
-        x_axis_human_tick_labels: bool = False,
-        x_axis_formatter: str = None,
+    log_axes: Union[str, List[str]] = "",
+    style: Style = None,
+    xlim: Any = None,
+    ylim: Any = None,
+    x_axis_human_tick_labels: bool = False,
+    x_axis_formatter: str = None,
 ) -> None:
     """Helper function that adjusts the axes of a plot as specified
 
@@ -101,7 +101,7 @@ def adjust_axes(
 
 
 def apply_plot_labels(
-        xlabel: str = "", ylabel: str = "", title: str = "", style: Style = None
+    xlabel: str = "", ylabel: str = "", title: str = "", style: Style = None
 ) -> None:
     """Helper function to apply labels (xlabel, ylabel, title) according to the style guide (including translation)
 
@@ -127,7 +127,7 @@ def apply_plot_labels(
 
 
 def apply_watermark(
-        watermark_text: str, style: Style = None, use_default: bool = True, **kwargs
+    watermark_text: str, style: Style = None, use_default: bool = True, **kwargs
 ) -> None:
     """Helper function to apply watermark text to a plot based on config Style object parameters
 
@@ -178,18 +178,18 @@ def apply_watermark(
 
 
 def visualize_1d_distribution(
-        data: Any,
-        xlabel: str = "",
-        ylabel: str = "counts",
-        title: str = "",
-        log_axes: str = "",
-        style: Style = None,
-        watermark: str = "",
-        multi: bool = None,
-        legend_strings: Union[Tuple[str], List[str]] = None,
-        xlim: Any = None,
-        ylim: Any = None,
-        **kwargs,
+    data: Any,
+    xlabel: str = "",
+    ylabel: str = "counts",
+    title: str = "",
+    log_axes: str = "",
+    style: Style = None,
+    watermark: str = "",
+    multi: bool = None,
+    legend_strings: Union[Tuple[str], List[str]] = None,
+    xlim: Any = None,
+    ylim: Any = None,
+    **kwargs,
 ) -> plt.Figure:
     """Core function for visualizing 1-dimensional distribution(s)
 
@@ -272,29 +272,29 @@ def visualize_1d_distribution(
 
 
 def visualize_x_y(
-        x_data: Any,
-        y_data: Any,
-        xlabel: str = "",
-        ylabel: str = "",
-        title: str = "",
-        cumulative: str = "",
-        log_axes: Union[str, List[str]] = "",
-        types: Union[str, List[str]] = "scatter",
-        style: Style = None,
-        watermark: str = "",
-        multi: bool = None,
-        legend_strings: Union[Tuple[str], List[str]] = None,
-        xlim: Any = None,
-        ylim: Any = None,
-        plot_best_fit: Union[bool, int] = False,
-        rolling_mean_width: int = None,
-        rolling_median_width: int = None,
-        show_colorbar: bool = False,
-        log_norm_colors: bool = False,
-        colorbar_label: str = None,
-        x_axis_human_tick_labels: bool = False,
-        x_axis_formatter: str = "%Y-%m-%d",
-        **kwargs,
+    x_data: Any,
+    y_data: Any,
+    xlabel: str = "",
+    ylabel: str = "",
+    title: str = "",
+    cumulative: str = "",
+    log_axes: Union[str, List[str]] = "",
+    types: Union[str, List[str]] = "scatter",
+    style: Style = None,
+    watermark: str = "",
+    multi: bool = None,
+    legend_strings: Union[Tuple[str], List[str]] = None,
+    xlim: Any = None,
+    ylim: Any = None,
+    plot_best_fit: Union[bool, int] = False,
+    rolling_mean_width: int = None,
+    rolling_median_width: int = None,
+    show_colorbar: bool = False,
+    log_norm_colors: bool = False,
+    colorbar_label: str = None,
+    x_axis_human_tick_labels: bool = False,
+    x_axis_formatter: str = "%Y-%m-%d",
+    **kwargs,
 ) -> plt.Figure:
     """Core function for visualizing 2-dimensional data sets
 
@@ -357,7 +357,7 @@ def visualize_x_y(
 
         # Convert to datetime for plotting if intending to use human-readable format
         if x_axis_human_tick_labels and any(
-                not isinstance(x, datetime.datetime) for x in x_array
+            not isinstance(x, datetime.datetime) for x in x_array
         ):
             if any(np.isnan(x_array)):
                 raise ValueError(
@@ -519,7 +519,7 @@ def visualize_x_y_input_interpreter(*args, **kwargs) -> plt.Figure:
             x_data = args[0]
             y_data = args[1]
         elif (not looks_like_list_of_lists(args[0])) or (
-                looks_like_list_of_lists(args[0]) and (len(args[0]) == 1)
+            looks_like_list_of_lists(args[0]) and (len(args[0]) == 1)
         ):
             if len(args[1]) > 1:
                 # infer: fxn([x_all], [y1, y2, ..., yN], ...); also accepts: fxn(x_all, [y1, y2, ..., yN], ...)
@@ -567,20 +567,20 @@ def visualize_x_y_input_interpreter(*args, **kwargs) -> plt.Figure:
 
 
 def visualize_hist2d(
-        x_data: Any,
-        y_data: Any,
-        xlabel: str = "",
-        ylabel: str = "",
-        title: str = "",
-        style: Style = None,
-        watermark: str = "",
-        plot_best_fit: Union[bool, int] = False,
-        xlim: Any = None,
-        ylim: Any = None,
-        show_colorbar: bool = True,
-        colorbar_label: str = "counts",
-        zscale: str = "linear",
-        **kwargs,
+    x_data: Any,
+    y_data: Any,
+    xlabel: str = "",
+    ylabel: str = "",
+    title: str = "",
+    style: Style = None,
+    watermark: str = "",
+    plot_best_fit: Union[bool, int] = False,
+    xlim: Any = None,
+    ylim: Any = None,
+    show_colorbar: bool = True,
+    colorbar_label: str = "counts",
+    zscale: str = "linear",
+    **kwargs,
 ) -> plt.Figure:
     """Visualize a 2-dimensional histogram (basically a heatmap of counts)
 
@@ -638,18 +638,18 @@ def visualize_hist2d(
 
 
 def visualize_surface(
-        x_data,
-        y_data,
-        z_data,
-        xlabel: str = "",
-        ylabel: str = "",
-        title: str = "",
-        xlim: Any = None,
-        ylim: Any = None,
-        style: Style = None,
-        watermark: str = None,
-        y_axis_ascending: bool = True,
-        **kwargs,
+    x_data,
+    y_data,
+    z_data,
+    xlabel: str = "",
+    ylabel: str = "",
+    title: str = "",
+    xlim: Any = None,
+    ylim: Any = None,
+    style: Style = None,
+    watermark: str = None,
+    y_axis_ascending: bool = True,
+    **kwargs,
 ) -> plt.Figure:
     """Plots a surface (note: seaborn heatmap has somewhat rigid requirements for data completeness)
 
@@ -701,18 +701,18 @@ def visualize_surface(
 
 
 def visualize_embedded_surface(
-        x_data,
-        y_data,
-        z_data,
-        xlabel: str = "",
-        ylabel: str = "",
-        title: str = "",
-        xlim: Any = None,
-        ylim: Any = None,
-        style: Style = None,
-        show_colorbar: bool = True,
-        log_norm_colors: bool = True,
-        **kwargs,
+    x_data,
+    y_data,
+    z_data,
+    xlabel: str = "",
+    ylabel: str = "",
+    title: str = "",
+    xlim: Any = None,
+    ylim: Any = None,
+    style: Style = None,
+    show_colorbar: bool = True,
+    log_norm_colors: bool = True,
+    **kwargs,
 ) -> plt.Figure:
     """Plots a 2D surface in 3D
 
@@ -762,11 +762,11 @@ def visualize_embedded_surface(
 
 
 def surface_from_dataframe(
-        df: pd.DataFrame,
-        x_col_name: str = "x",
-        y_col_name: str = "y",
-        z_col_name: str = "z",
-        **kwargs,
+    df: pd.DataFrame,
+    x_col_name: str = "x",
+    y_col_name: str = "y",
+    z_col_name: str = "z",
+    **kwargs,
 ) -> plt.Figure:
     """Extremely thin wrapper around plot_surface() that extracts the data from a dataframe"""
     col_names: List[str] = [x_col_name, y_col_name, z_col_name]
