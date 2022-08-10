@@ -842,6 +842,20 @@ class VectorSequence(VectorMultiset):
                 else:
                     raise ValueError(f"Unknown return type: {return_type}")
 
+    def split(self, split_at: Union[float, str], gap: float = 0, **kwargs) -> tuple:
+        """
+        Splits the sequence into two subsequences (with an optional gap, which is placed after sthe split point)
+
+        :param split_at: basis value to split
+        :param gap: whether to leave a gap between the end of the pre-split and the start of the post-split (optional)
+        :param kwargs: additional keyword arguments passed to the slice method (e.g. reset_index, return_type)
+        :return: two objects separate at the split point
+        """
+        kwargs["inplace"] = False  # Cannot split one object in place
+        pre_split = self.slice(stop_at=split_at, **kwargs)
+        post_split = self.slice(start_at=split_at + gap, **kwargs)
+        return pre_split, post_split
+
     def index_to_basis(self) -> None:
         """Adds (or overwrites) 'basis' column with a default index [0, 1, 2, ...]"""
         self.data.loc[:, self.basis_col_name] = list(range(len(self.data)))
@@ -1445,6 +1459,7 @@ class Timeseries(VectorSequence):
     """Thin wrapper for VectorSequence in the context of time"""
 
     basis_col_name: str = "timestamp"
+
     # x_axis_human_tick_labels: bool = True
 
     def calc_weights(
