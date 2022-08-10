@@ -397,3 +397,8 @@ Changelog
 -------------------
 
 * chore: better config parameter handling
+
+0.0.86 (2022-08-10)
+-------------------
+
+* chore: VectorSequence split
