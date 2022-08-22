@@ -1,18 +1,19 @@
+import itertools as itertools
+import math
+import pathlib
 import pickle as pickle
+import random
 import time
-from pydantic import BaseModel
 from datetime import datetime
+from multiprocessing import cpu_count, Pool, current_process
+from typing import Iterable, List, Tuple, Dict, Any, Union, Callable
+
+import numpy as np
+import pandas as pd
 import pytz
 from dateutil import parser
-import pandas as pd
-import pathlib
-import numpy as np
+from pydantic import BaseModel
 from tqdm.auto import tqdm
-from multiprocessing import cpu_count, Pool, current_process
-import itertools as itertools
-from typing import Iterable, List, Tuple, Dict, Any, Union, Callable
-import math
-import random
 
 
 class PickleUtils(BaseModel):
@@ -386,28 +387,27 @@ def return_best_input(
         )
 
     # Extract the fitnesses and return the best one
-    fitness_values: List[Any] = [o.get(fitness_key, None) for o in eval_outputs]
+    fitness_values: List[Any] = [o.get(fitness_key) for o in eval_outputs]
     return inputs[fitness_values.index(selector(fitness_values))]
 
 
 def recursive_batch_evaluation(
     func: Callable,
     initial_input: Union[Dict[str, Any], Any],
-    selection_method: Callable = None,
+    selection_method: Union[Callable, str] = None,
     batch_generator: Callable = None,
     batch_generator_kwargs: Dict[str, Any] = None,
     max_deep: int = None,
     max_time_sec: int = None,
-    return_input_and_value_tuple: bool = False,
+    return_history: bool = False,
     print_progress: bool = False,
-    print_current_value: bool = False,
     print_current_inputs: bool = False,
     evaluate_initial_inputs: bool = True,
     infinite_memory: bool = True,
     catch_exceptions: bool = True,
     *_,
     **kwargs,
-) -> Union[Any, Tuple[Any, Any]]:
+) -> Union[Any, Tuple[Any, List[Dict[str, Any]]]]:
     """
     Helper function that applies f recursively in batches
 
@@ -415,12 +415,11 @@ def recursive_batch_evaluation(
     :param initial_input: initial inputs (typically a dictionary for standard methods, but is flexible)
     :param batch_generator: how to generate the next batch from a given seed
     :param batch_generator_kwargs: additional keyword arguments for the batch generator
-    :param return_input_and_value_tuple: if True, returns a (inputs, value) tuple; otherwise only returns the inputs
+    :param return_history: if True, returns a dictionary
     :param max_time_sec: max time to run in seconds
     :param max_deep: how many layers deep to go
     :param selection_method: how to select one element from the outputs to use for seeding the next batch
     :param print_progress: whether to log information like depth and timing
-    :param print_current_value: whether to print stepwise value (might be ok for int or str, but avoid if big / complex)
     :param print_current_inputs: whether to print stepwise spot (might be ok for int or str, but avoid if big / complex)
     :param evaluate_initial_inputs: whether to evaluate the inputs before beginning the main cycle
     :param kwargs: additional kwargs for process_queue, which are passed through to Pool's map() and starmap()
@@ -439,83 +438,100 @@ def recursive_batch_evaluation(
     kwargs.setdefault("pool_function", "map")
 
     # Initialize
-    all_inputs: List[Dict[str, Any]] = []
-    all_outputs: List[Any] = []
-    current_best_input = initial_input
+    inputs_buffer: List[Any] = []
+    outputs_buffer: List[Any] = []
+    current_best_input: Any = initial_input
+
+    # Evaluate the initial inputs if desired
     if evaluate_initial_inputs:
-        current_best_value = func(current_best_input)
-        if infinite_memory:
-            all_inputs.append(current_best_input)
-            all_outputs.append(current_best_value)
-    else:
-        current_best_value = None
+        inputs_buffer.append(initial_input)
+        outputs_buffer.append(func(initial_input))
+
+    # Get the frst batch of points
     func_inputs_iterable: List[Dict[str, Any]] = batch_generator(
-        current_best_input, **batch_generator_kwargs
+        initial_input, **batch_generator_kwargs
     )
 
     # Begin recursively applying
     start_time = time.perf_counter()
     counter: int = 0
-
     try:
         while (max_deep is None) or (counter < max_deep):
             tic: float = time.perf_counter()
-            output_vals: List[Any] = process_queue(
-                func, func_inputs_iterable, **kwargs
-            )
 
+            # Get the inputs and outputs
+            output_vals: List[Any] = process_queue(func, func_inputs_iterable, **kwargs)
+
+            # Continue with all data or just the last batch depending on `infinite_memory` toggle
             if infinite_memory:
-                # Keep track of all inputs / outputs, and select from the whole list
-                all_inputs += func_inputs_iterable
-                all_outputs += output_vals
-                current_best_value = selection_method(all_outputs)
-                current_best_input = [
-                    i
-                    for i, v in zip(all_inputs, all_outputs)
-                    if v == current_best_value
-                ][0]
+                inputs_buffer += func_inputs_iterable
+                outputs_buffer += output_vals
+                pick_from_inputs: List[Any] = inputs_buffer
+                pick_from_outputs: List[Any] = outputs_buffer
             else:
-                # Only select from the last batch
-                current_best_value = selection_method(output_vals)
-                current_best_input = [
-                    i
-                    for i, v in zip(func_inputs_iterable, output_vals)
-                    if v == current_best_value
-                ][0]
+                inputs_buffer: List[Any] = func_inputs_iterable
+                outputs_buffer: List[Any] = output_vals
+                pick_from_inputs: List[Any] = func_inputs_iterable
+                pick_from_outputs: List[Any] = output_vals
 
+            # Handle the selection
+            # ... if the selection method is a callable, apply it
+            if isinstance(selection_method, Callable):
+                selected_value: Any = selection_method(pick_from_outputs)
+                current_best_input: Any = pick_from_inputs[
+                    pick_from_outputs.index(selected_value)
+                ]
+
+            # ... if the section method is a dictionary, extract from that:
+            elif isinstance(selection_method, str) and all(
+                isinstance(d, dict) for d in pick_from_outputs
+            ):
+                current_best_input: Any = return_best_input(
+                    inputs=pick_from_inputs,
+                    eval_outputs=pick_from_outputs,
+                    fitness_key=selection_method,
+                    selector=max,
+                )
+            # Generate the next batch of inputs
             func_inputs_iterable = batch_generator(
                 current_best_input, **batch_generator_kwargs
             )
             counter += 1
+
+            # Printing if desired
             if print_progress:
                 print(
                     f"Completed cycle #{counter} in {time.perf_counter() - tic:.6f} seconds"
                 )
-            if print_current_value:
-                print(f"... Current best value: {current_best_value}")
             if print_current_inputs:
                 print(f"... Current best input is: {current_best_input}")
             if max_time_sec:
                 if time.perf_counter() > start_time + max_time_sec:
                     raise MaxTimeException
+
+    # Catch keyboard interrupts
     except KeyboardInterrupt as e:
         if isinstance(e, MaxTimeException):
             print(
                 f"Breaking after {counter} cycles for max time allowance ({max_time_sec / 60:.2f} minutes)"
             )
         print(f"Breaking for keyboard interrupt after {counter} cycles.")
+
+    # Catch or raise exceptions
     except Exception as e:
         if catch_exceptions:
             print(f"After {counter} cycles, encountered exception {e}")
+            print("Hint: possible reasons include: unexpected input argument or wrong syntax for v0.0.87+")
         else:
             raise e
 
-
-    # Return the results
-    if return_input_and_value_tuple:
-        return current_best_input, current_best_value
-    else:
-        return current_best_input
+    # Return the best input (optionally with the input & output data pairs as a second return)
+    if return_history:
+        return current_best_input, [
+            {"in": x_in, "out": x_out}
+            for x_in, x_out in zip(inputs_buffer, outputs_buffer)
+        ]
+    return current_best_input
 
 
 def as_list(anything: Union[Any, List[Any]]) -> List[Any]:

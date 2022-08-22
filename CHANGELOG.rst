@@ -402,3 +402,8 @@ Changelog
 -------------------
 
 * chore: VectorSequence split
+
+0.0.87 (2022-08-22)
+-------------------
+
+* refactor: batch evaluation. NB: this may change behavior!

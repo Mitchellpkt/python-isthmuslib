@@ -1,5 +1,7 @@
 from typing import Tuple, Any, List, Dict
 
+import matplotlib.pyplot as plt
+
 from isthmuslib import VectorMultiset
 from src.isthmuslib.logging import parse_string_with_embedded_json, parse_string_with_manual_tokens
 from src.isthmuslib.utils import risky_cast, process_queue, recursive_batch_evaluation, return_best_input
@@ -95,17 +97,15 @@ def mock_hill(kwargs) -> float:
 
 def test_recursive_batch_evaluation():
     inital_point: Dict[str, Any] = {'x': 400, 'y': 300}
-    current_best_input, current_best_value = recursive_batch_evaluation(
+    current_best_input, history = recursive_batch_evaluation(
         func=mock_hill,
         initial_input=inital_point,
         selection_method=max,
         batch_generator_kwargs={'width_prct': 10, 'num_samples': 3},
-        max_deep=1,
-        return_input_and_value_tuple=True,
+        max_deep=5,
         print_progress=True,
-        print_current_value=True,
-        print_current_inputs=True,
         num_workers=64,
+        return_history=True,
     )
     assert current_best_input['x'] < inital_point['x']
     assert current_best_input['y'] < inital_point['y']
@@ -117,3 +117,85 @@ def test_selector():
                                           {'fitness': -5}]
     best = return_best_input(inputs, eval_outputs)
     assert best == 'def'
+
+
+def y(x: float) -> float:
+    return 10 - (x - 5) ** 2
+
+
+def y_return_scalar(d) -> float:
+    return y(d.get('x'))
+
+
+
+def test_recursive_batch_evaluation_new_with_scalar(show_plot: bool = True):
+    # Set up the run
+    start_at: float = 15
+
+    best_x, run_data = recursive_batch_evaluation(
+        func=y_return_scalar,
+        initial_input={'x': start_at},
+        max_deep=5,
+        return_history=True,
+        evaluate_initial_inputs=True,
+        infinite_memory=True,
+        selection_method=max,
+        catch_exceptions=False,
+        batch_generator_kwargs={
+            "width_prct": 50,
+            "num_samples": 5,
+            "fields": ['x'],
+            "width_temperature_prct": 0,
+        },
+    )
+
+    print(f"{best_x=}\n{run_data}")
+    if show_plot:
+        x_vals: List[float] = list(range(-10, 25))
+        plt.figure(facecolor='w')
+        plt.plot(x_vals, [y_return_scalar({'x': x}) for x in x_vals], color='k')
+        x_vec = [d.get('in').get('x') for d in run_data]
+        y_vec = [x.get('out') for x in run_data]
+        plt.scatter(x_vec, y_vec, c=list(range(len(x_vec))), s=50)
+        plt.show()
+
+    assert best_x['x'] < start_at
+
+
+
+def y_return_dict(d) -> dict:
+    return {'y': y(d.get('x'))}
+
+
+def test_recursive_batch_evaluation_new_with_dict(show_plot: bool = True):
+    # Set up the run
+    start_at: float = 15
+
+    best_x, run_data = recursive_batch_evaluation(
+        func=y_return_dict,
+        initial_input={'x': start_at},
+        max_deep=5,
+        return_history=True,
+        evaluate_initial_inputs=True,
+        infinite_memory=True,
+        selection_method='y',
+        catch_exceptions=False,
+        batch_generator_kwargs={
+            "width_prct": 50,
+            "num_samples": 5,
+            "fields": ['x'],
+            "width_temperature_prct": 0,
+        },
+    )
+
+    print(f"{best_x=}\n{run_data}")
+    if show_plot:
+        x_vals: List[float] = list(range(-10, 25))
+        plt.figure(facecolor='w')
+        plt.plot(x_vals, [y_return_dict({'x': x})['y'] for x in x_vals], color='k')
+        x_vec = [d.get('in').get('x') for d in run_data]
+        y_vec = [x.get('out').get('y') for x in run_data]
+        plt.scatter(x_vec, y_vec, c=list(range(len(x_vec))), s=50)
+        plt.show()
+
+    assert best_x['x'] < start_at

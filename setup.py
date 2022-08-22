@@ -23,7 +23,7 @@ def read(*names, **kwargs):
 
 setup(
     name='isthmuslib',
-    version='0.0.86',
+    version='0.0.87',
     license='LGPL-3.0-only',
     description='Tooling for rapid data exploration, timeseries analysis, log extraction & visualization, etc',
     long_description='%s\n%s' % (
