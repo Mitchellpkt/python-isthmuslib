@@ -1,9 +1,8 @@
-import pytest
+from typing import Tuple, Any, List, Dict
 
 from isthmuslib import VectorMultiset
-from src.isthmuslib.utils import risky_cast, process_queue, recursive_batch_evaluation
 from src.isthmuslib.logging import parse_string_with_embedded_json, parse_string_with_manual_tokens
-from typing import Tuple, Any, List, Dict
+from src.isthmuslib.utils import risky_cast, process_queue, recursive_batch_evaluation, return_best_input
 
 
 def test_risky_cast():
@@ -110,3 +109,11 @@ def test_recursive_batch_evaluation():
     )
     assert current_best_input['x'] < inital_point['x']
     assert current_best_input['y'] < inital_point['y']
+
+
+def test_selector():
+    inputs: List[Any] = ['abc', 'def', 'efg']
+    eval_outputs: List[Dict[str, Any]] = [{'foobar': 'xyz', 'fitness': 4}, {'fitness': 99, 'baz': 12345},
+                                          {'fitness': -5}]
+    best = return_best_input(inputs, eval_outputs)
+    assert best == 'def'

@@ -357,6 +357,39 @@ class MaxTimeException(KeyboardInterrupt):
     pass
 
 
+def return_best_input(
+    inputs: List[Any],
+    eval_outputs: List[Dict[str, Any]],
+    fitness_key: str = "fitness",
+    selector: Callable[[List[Any]], Any] = max,
+) -> Any:
+    """
+    Helper function to return the "best" input, based on the selector and fitness key.
+
+    For example, suppose we desire to find the maximum value of the `fitness` of outptus
+        >> "inputs": ['abc', 'def', 'efg']
+        >> "eval_outputs": [{'foobar': 'xyz', 'fitness': 4}, {'fitness': 99, 'baz': 12345}, {'fitness': -5}]
+    returns:
+        >> 'def'
+           (corresponding to fitness 99)
+
+    :param inputs: list of inputs
+    :param eval_outputs: list of evaluation outputs
+    :param fitness_key: the key pointing to value to be sorted & selected
+    :param selector: function (e.g. max or min) to select the best value
+    :return: the inputs corresponding to the best value (in the case of a tie, the first set by index is returned)
+    """
+    # Warn if function is being used without matching inputs & outputs
+    if len(inputs) != len(eval_outputs):
+        raise ValueError(
+            f"Critical: inputs and eval_outputs lengths don't match. {len(inputs)=}, {len(eval_outputs)=}"
+        )
+
+    # Extract the fitnesses and return the best one
+    fitness_values: List[Any] = [o.get(fitness_key, None) for o in eval_outputs]
+    return inputs[fitness_values.index(selector(fitness_values))]
+
+
 def recursive_batch_evaluation(
     func: Callable,
     initial_input: Union[Dict[str, Any], Any],
