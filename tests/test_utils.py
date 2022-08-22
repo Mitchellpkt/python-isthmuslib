@@ -127,7 +127,6 @@ def y_return_scalar(d) -> float:
     return y(d.get('x'))
 
 
-
 def test_recursive_batch_evaluation_new_with_scalar(show_plot: bool = True):
     # Set up the run
     start_at: float = 15
@@ -160,7 +159,6 @@ def test_recursive_batch_evaluation_new_with_scalar(show_plot: bool = True):
         plt.show()
 
     assert best_x['x'] < start_at
-
 
 
 def y_return_dict(d) -> dict:
