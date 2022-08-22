@@ -456,108 +456,60 @@ def recursive_batch_evaluation(
     start_time = time.perf_counter()
     counter: int = 0
 
-    # (double code for exception handling is a temp patch, todo - refactor)
-    if catch_exceptions:
-        try:
-            while (max_deep is None) or (counter < max_deep):
-                tic: float = time.perf_counter()
-                kwargs.setdefault("pool_function", "map")
-                output_vals: List[Any] = process_queue(
-                    func, func_inputs_iterable, **kwargs
-                )
+    try:
+        while (max_deep is None) or (counter < max_deep):
+            tic: float = time.perf_counter()
+            kwargs.setdefault("pool_function", "map")
+            output_vals: List[Any] = process_queue(
+                func, func_inputs_iterable, **kwargs
+            )
 
-                if infinite_memory:
-                    # Keep track of all inputs / outputs, and select from the whole list
-                    all_inputs += func_inputs_iterable
-                    all_outputs += output_vals
-                    current_best_value = selection_method(all_outputs)
-                    current_best_input = [
-                        i
-                        for i, v in zip(all_inputs, all_outputs)
-                        if v == current_best_value
-                    ][0]
-                else:
-                    # Only select from the last batch
-                    current_best_value = selection_method(output_vals)
-                    current_best_input = [
-                        i
-                        for i, v in zip(func_inputs_iterable, output_vals)
-                        if v == current_best_value
-                    ][0]
+            if infinite_memory:
+                # Keep track of all inputs / outputs, and select from the whole list
+                all_inputs += func_inputs_iterable
+                all_outputs += output_vals
+                current_best_value = selection_method(all_outputs)
+                current_best_input = [
+                    i
+                    for i, v in zip(all_inputs, all_outputs)
+                    if v == current_best_value
+                ][0]
+            else:
+                # Only select from the last batch
+                current_best_value = selection_method(output_vals)
+                current_best_input = [
+                    i
+                    for i, v in zip(func_inputs_iterable, output_vals)
+                    if v == current_best_value
+                ][0]
 
-                func_inputs_iterable = batch_generator(
-                    current_best_input, **batch_generator_kwargs
-                )
-                counter += 1
-                if print_progress:
-                    print(
-                        f"Completed cycle #{counter} in {time.perf_counter() - tic:.6f} seconds"
-                    )
-                if print_current_value:
-                    print(f"... Current best value: {current_best_value}")
-                if print_current_inputs:
-                    print(f"... Current best input is: {current_best_input}")
-                if max_time_sec:
-                    if time.perf_counter() > start_time + max_time_sec:
-                        raise MaxTimeException
-        except KeyboardInterrupt as e:
-            if isinstance(e, MaxTimeException):
+            func_inputs_iterable = batch_generator(
+                current_best_input, **batch_generator_kwargs
+            )
+            counter += 1
+            if print_progress:
                 print(
-                    f"Breaking after {counter} cycles for max time allowance ({max_time_sec / 60:.2f} minutes)"
+                    f"Completed cycle #{counter} in {time.perf_counter() - tic:.6f} seconds"
                 )
-            print(f"Breaking for keyboard interrupt after {counter} cycles.")
-        except Exception as e:
+            if print_current_value:
+                print(f"... Current best value: {current_best_value}")
+            if print_current_inputs:
+                print(f"... Current best input is: {current_best_input}")
+            if max_time_sec:
+                if time.perf_counter() > start_time + max_time_sec:
+                    raise MaxTimeException
+    except KeyboardInterrupt as e:
+        if isinstance(e, MaxTimeException):
+            print(
+                f"Breaking after {counter} cycles for max time allowance ({max_time_sec / 60:.2f} minutes)"
+            )
+        print(f"Breaking for keyboard interrupt after {counter} cycles.")
+    except Exception as e:
+        if catch_exceptions:
             print(f"After {counter} cycles, encountered exception {e}")
+        else:
+            raise e
 
-    else:
-        try:
-            while (max_deep is None) or (counter < max_deep):
-                tic: float = time.perf_counter()
-                kwargs.setdefault("pool_function", "map")
-                output_vals: List[Any] = process_queue(
-                    func, func_inputs_iterable, **kwargs
-                )
-
-                if infinite_memory:
-                    # Keep track of all inputs / outputs, and select from the whole list
-                    all_inputs += func_inputs_iterable
-                    all_outputs += output_vals
-                    current_best_value = selection_method(all_outputs)
-                    current_best_input = [
-                        i
-                        for i, v in zip(all_inputs, all_outputs)
-                        if v == current_best_value
-                    ][0]
-                else:
-                    # Only select from the last batch
-                    current_best_value = selection_method(output_vals)
-                    current_best_input = [
-                        i
-                        for i, v in zip(func_inputs_iterable, output_vals)
-                        if v == current_best_value
-                    ][0]
-
-                func_inputs_iterable = batch_generator(
-                    current_best_input, **batch_generator_kwargs
-                )
-                counter += 1
-                if print_progress:
-                    print(
-                        f"Completed cycle #{counter} in {time.perf_counter() - tic:.6f} seconds"
-                    )
-                if print_current_value:
-                    print(f"... Current best value: {current_best_value}")
-                if print_current_inputs:
-                    print(f"... Current best input is: {current_best_input}")
-                if max_time_sec:
-                    if time.perf_counter() > start_time + max_time_sec:
-                        raise MaxTimeException
-        except KeyboardInterrupt as e:
-            if isinstance(e, MaxTimeException):
-                print(
-                    f"Breaking after {counter} cycles for max time allowance ({max_time_sec / 60:.2f} minutes)"
-                )
-            print(f"Breaking for keyboard interrupt after {counter} cycles.")
 
     # Return the results
     if return_input_and_value_tuple:
