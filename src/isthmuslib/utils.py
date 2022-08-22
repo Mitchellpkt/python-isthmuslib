@@ -436,6 +436,7 @@ def recursive_batch_evaluation(
         batch_generator_kwargs = dict()
     if selection_method is None:
         selection_method = max
+    kwargs.setdefault("pool_function", "map")
 
     # Initialize
     all_inputs: List[Dict[str, Any]] = []
@@ -459,7 +460,6 @@ def recursive_batch_evaluation(
     try:
         while (max_deep is None) or (counter < max_deep):
             tic: float = time.perf_counter()
-            kwargs.setdefault("pool_function", "map")
             output_vals: List[Any] = process_queue(
                 func, func_inputs_iterable, **kwargs
             )
