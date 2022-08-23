@@ -27,7 +27,7 @@ class PickleUtils(BaseModel):
             pickle.dump(self, outfile)
 
     def read_pickle(
-        self, file_path: Union[str, pathlib.Path]
+            self, file_path: Union[str, pathlib.Path]
     ) -> Any:  # noqa: static, placed here for organization
         """Imports a pickle. Note: this is _not_ inplace; the pickle contents are _returned_ by this method
         @param file_path: file to import
@@ -86,7 +86,7 @@ class Rosetta(BaseModel):
             raise ValueError(f"Unknown missing_response parameter: {missing_response}")
 
     def translate_time(
-        self, key: Union[str, float, int], include_timezone: bool = True
+            self, key: Union[str, float, int], include_timezone: bool = True
     ) -> str:
         """Convert a timestamp (seconds) into human readable string"""
         return human_time(
@@ -134,17 +134,17 @@ class Rosetta(BaseModel):
         return object_string_merge(string=string, values_from=self.stone, **kwargs)
 
     def risky_cast(
-        self, x: Any
+            self, x: Any
     ) -> Any:  # noqa: it is static, attached here only for convenience.
         """Reckless helper function that tries to cast the input to a number (float) or boolean"""
         return risky_cast(x)
 
 
 def human_time(
-    timestamp_sec: Union[float, str, int],
-    formatter: str = "%Y-%m-%d %H:%M:%S",
-    timezone: str = "US/Pacific",
-    include_timezone: bool = True,
+        timestamp_sec: Union[float, str, int],
+        formatter: str = "%Y-%m-%d %H:%M:%S",
+        timezone: str = "US/Pacific",
+        include_timezone: bool = True,
 ) -> str:
     """Converts timestamp to human readable time, taking into account time zone (US/Pacific by default)
     To see other time zone options, see `pytz.common_timezones`"""
@@ -169,11 +169,11 @@ def human_time(
 
 
 def machine_time(
-    time_or_times: Union[str, Any],
-    units: str = "seconds",
-    disable_progress_bar: bool = True,
-    use_pandas_for_multiple_conversions: bool = None,
-    **kwargs,
+        time_or_times: Union[str, Any],
+        units: str = "seconds",
+        disable_progress_bar: bool = True,
+        use_pandas_for_multiple_conversions: bool = None,
+        **kwargs,
 ) -> Union[float, List[float]]:
     """
     Convert a string to a timestamp
@@ -203,7 +203,7 @@ def machine_time(
     else:
         if use_pandas_for_multiple_conversions is None:
             use_pandas_for_multiple_conversions: bool = (
-                len(time_or_times) > 64
+                    len(time_or_times) > 64
             )  # use pandas if lots of entries
         if use_pandas_for_multiple_conversions:
             return [
@@ -251,11 +251,11 @@ def neighborhood_grid(starting_point: Dict[str, Any], **kwargs) -> List[Dict[str
 
 
 def neighborhood_multivariate(
-    starting_point: Dict[str, Any],
-    errors: str = "passthrough",
-    fields: List[str] = None,
-    keep_other_vals: bool = True,
-    **kwargs,
+        starting_point: Dict[str, Any],
+        errors: str = "passthrough",
+        fields: List[str] = None,
+        keep_other_vals: bool = True,
+        **kwargs,
 ) -> Dict[str, List[float]]:
     """
     Helper function that wraps the univariate helper function for dictionaries with multiple fields
@@ -303,13 +303,13 @@ def neighborhood_multivariate(
 
 
 def neighborhood_univariate(
-    starting_point: float,
-    width_prct: float = 50,
-    num_samples: int = 5,
-    spacing: str = "linear",
-    placement: str = "center",
-    width_temperature_prct: float = None,
-    **kwargs,
+        starting_point: float,
+        width_prct: float = 50,
+        num_samples: int = 5,
+        spacing: str = "linear",
+        placement: str = "center",
+        width_temperature_prct: float = None,
+        **kwargs,
 ) -> List[float]:
     """
     Helper function that samples the area around a point (just a wrapper for numpy linspace and logspace)
@@ -326,11 +326,11 @@ def neighborhood_univariate(
     width: float = starting_point * width_prct / 100
     if width_temperature_prct:
         width: float = width * (
-            1
-            + random.uniform(
-                -1 * abs(width_temperature_prct), abs(width_temperature_prct)
-            )
-            / 100
+                1
+                + random.uniform(
+            -1 * abs(width_temperature_prct), abs(width_temperature_prct)
+        )
+                / 100
         )
 
     if placement.lower() == "left_edge":
@@ -359,10 +359,10 @@ class MaxTimeException(KeyboardInterrupt):
 
 
 def return_best_input(
-    inputs: List[Any],
-    eval_outputs: List[Dict[str, Any]],
-    fitness_key: str = "fitness",
-    selector: Callable[[List[Any]], Any] = max,
+        inputs: List[Any],
+        eval_outputs: List[Dict[str, Any]],
+        fitness_key: str = "fitness",
+        selector: Callable[[List[Any]], Any] = max,
 ) -> Any:
     """
     Helper function to return the "best" input, based on the selector and fitness key.
@@ -392,21 +392,22 @@ def return_best_input(
 
 
 def recursive_batch_evaluation(
-    func: Callable,
-    initial_input: Union[Dict[str, Any], Any],
-    selection_method: Union[Callable, str] = None,
-    batch_generator: Callable = None,
-    batch_generator_kwargs: Dict[str, Any] = None,
-    max_deep: int = None,
-    max_time_sec: int = None,
-    return_history: bool = False,
-    print_progress: bool = False,
-    print_current_inputs: bool = False,
-    evaluate_initial_inputs: bool = True,
-    infinite_memory: bool = True,
-    catch_exceptions: bool = True,
-    *_,
-    **kwargs,
+        func: Callable,
+        initial_input: Union[Dict[str, Any], Any],
+        selection_method: Union[Callable, str] = None,
+        batch_generator: Callable = None,
+        batch_generator_kwargs: Dict[str, Any] = None,
+        max_deep: int = None,
+        max_time_sec: int = None,
+        return_history: bool = False,
+        print_progress: bool = False,
+        print_current_inputs: bool = False,
+        evaluate_initial_inputs: bool = True,
+        infinite_memory: bool = True,
+        catch_exceptions: bool = True,
+        counter_key: bool = 'incremented_counter',
+        *_,
+        **kwargs,
 ) -> Union[Any, Tuple[Any, List[Dict[str, Any]]]]:
     """
     Helper function that applies f recursively in batches
@@ -441,6 +442,8 @@ def recursive_batch_evaluation(
     inputs_buffer: List[Any] = []
     outputs_buffer: List[Any] = []
     current_best_input: Any = initial_input
+    if counter_key:
+        current_best_input.setdefault(counter_key, 0)
 
     # Evaluate the initial inputs if desired
     if evaluate_initial_inputs:
@@ -484,7 +487,7 @@ def recursive_batch_evaluation(
 
             # ... if the section method is a dictionary, extract from that:
             elif isinstance(selection_method, str) and all(
-                isinstance(d, dict) for d in pick_from_outputs
+                    isinstance(d, dict) for d in pick_from_outputs
             ):
                 current_best_input: Any = return_best_input(
                     inputs=pick_from_inputs,
@@ -492,6 +495,10 @@ def recursive_batch_evaluation(
                     fitness_key=selection_method,
                     selector=max,
                 )
+
+            if counter_key:
+                current_best_input[counter_key] = current_best_input[counter_key] + 1
+
             # Generate the next batch of inputs
             func_inputs_iterable = batch_generator(
                 current_best_input, **batch_generator_kwargs
@@ -568,7 +575,7 @@ def margin_calc(margin: float, span: Tuple[float, float], scale: str) -> float:
         return span[0] + margin * (span[1] - span[0])
     elif scale == "log":
         return 10 ** (
-            np.log10(span[0]) + margin * (np.log10(span[1]) - np.log10(span[0]))
+                np.log10(span[0]) + margin * (np.log10(span[1]) - np.log10(span[0]))
         )
     else:
         raise ValueError(f"Unexpected {scale=}")
@@ -671,17 +678,17 @@ def divvy_workload(num_workers: int, tasks: List[Any]) -> List[List[Any]]:
     i: int = 0
     task_list_all: List[List[Any]] = []
     for load_amount in load_per_worker:
-        task_list_all.append(tasks[i : i + load_amount])
+        task_list_all.append(tasks[i: i + load_amount])
         i += load_amount
     return task_list_all
 
 
 def benchmark_process_queue(
-    *args,
-    worker_counts: List[int] = None,
-    verbose: bool = True,
-    disable_benchmark_progress_bar: bool = None,
-    **kwargs,
+        *args,
+        worker_counts: List[int] = None,
+        verbose: bool = True,
+        disable_benchmark_progress_bar: bool = None,
+        **kwargs,
 ) -> Dict[int, float]:
     """
     Helper function that wraps multiprocessing and measures how number of workers impacts execution time
@@ -694,7 +701,7 @@ def benchmark_process_queue(
     :return: dictionary with worker counts for keys and performance time in seconds for the values
     """
     if not worker_counts:
-        worker_counts = [2**x for x in range(int(math.log2(cpu_count())) + 1)][::-1]
+        worker_counts = [2 ** x for x in range(int(math.log2(cpu_count())) + 1)][::-1]
 
     benchmarks: Dict[int, float] = dict()
     try:
@@ -713,7 +720,7 @@ def benchmark_process_queue(
 
 
 def multiprocess(
-    *args, suppress_multiprocess_notice: bool = False, **kwargs
+        *args, suppress_multiprocess_notice: bool = False, **kwargs
 ) -> List[Any]:
     """Legacy name wrapper for process_queue with a warning that can be silenced"""
     if not suppress_multiprocess_notice:
@@ -724,13 +731,13 @@ def multiprocess(
 
 
 def recursive_process(
-    func: Callable,
-    initial_inputs: Any,
-    max_deep: int = None,
-    print_progress: bool = False,
-    print_current_value: bool = False,
-    *args,
-    **kwargs,
+        func: Callable,
+        initial_inputs: Any,
+        max_deep: int = None,
+        print_progress: bool = False,
+        print_current_value: bool = False,
+        *args,
+        **kwargs,
 ) -> Any:
     """
     Helper function for processing recursive functions
@@ -765,15 +772,15 @@ def recursive_process(
 
 
 def process_queue(
-    func: Callable,
-    iterable: List[Any],
-    pool_function: str = None,
-    batching: bool = False,
-    num_workers: int = None,
-    cuts_per_worker: int = 3,
-    serial_progress_bar: bool = True,
-    *_,
-    **kwargs,
+        func: Callable,
+        iterable: List[Any],
+        pool_function: str = None,
+        batching: bool = False,
+        num_workers: int = None,
+        cuts_per_worker: int = 3,
+        serial_progress_bar: bool = True,
+        *_,
+        **kwargs,
 ) -> List[Any]:
     """
     Convenience wrapper for Pool.map and Pool.starmap that offers manual batching and automatic flattening
@@ -849,10 +856,10 @@ def process_queue(
 
 
 def object_string_merge(
-    string: str,
-    values_from: Any,
-    left_merge_token: str = "[[",
-    right_merge_token: str = "]]",
+        string: str,
+        values_from: Any,
+        left_merge_token: str = "[[",
+        right_merge_token: str = "]]",
 ) -> str:
     """
     Helper function that replaces merge fields in a string
@@ -896,7 +903,7 @@ def risky_cast(x: Any) -> Any:
             pass
 
     if x.replace(".", "", 1).isdigit() or (
-        x[0] == "-" and x[1:].replace(".", "", 1).isdigit()
+            x[0] == "-" and x[1:].replace(".", "", 1).isdigit()
     ):
         if "." in x:
             try:
