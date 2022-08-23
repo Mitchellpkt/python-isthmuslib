@@ -406,6 +406,7 @@ def recursive_batch_evaluation(
         infinite_memory: bool = True,
         catch_exceptions: bool = True,
         counter_key: bool = 'incremented_counter',
+        clock_time_key: str = 'wall_clock_time_start_time',
         *_,
         **kwargs,
 ) -> Union[Any, Tuple[Any, List[Dict[str, Any]]]]:
@@ -444,6 +445,8 @@ def recursive_batch_evaluation(
     current_best_input: Any = initial_input
     if counter_key:
         current_best_input.setdefault(counter_key, 0)
+    if clock_time_key:
+        current_best_input[clock_time_key] = time.time()
 
     # Evaluate the initial inputs if desired
     if evaluate_initial_inputs:
@@ -498,6 +501,9 @@ def recursive_batch_evaluation(
 
             if counter_key:
                 current_best_input[counter_key] = current_best_input[counter_key] + 1
+
+            if clock_time_key:
+                current_best_input[clock_time_key] = time.time()
 
             # Generate the next batch of inputs
             func_inputs_iterable = batch_generator(

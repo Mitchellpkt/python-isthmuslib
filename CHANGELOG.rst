@@ -407,3 +407,8 @@ Changelog
 -------------------
 
 * refactor: batch evaluation. NB: this may change behavior!
+
+0.0.88 (2022-08-23)
+-------------------
+
+* tweak: additional batch evaluation logging

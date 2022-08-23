@@ -196,4 +196,7 @@ def test_recursive_batch_evaluation_new_with_dict(show_plot: bool = True):
         plt.scatter(x_vec, y_vec, c=list(range(len(x_vec))), s=50)
         plt.show()
 
+    print(f"{run_data[-1]['in']}")
+    assert run_data[-1]['in']['incremented_counter'] == 4
+    assert run_data[-1]['in']['clock_time_at_start'] > 100000
     assert best_x['x'] < start_at
