@@ -712,6 +712,7 @@ def visualize_embedded_surface(
     style: Style = None,
     show_colorbar: bool = True,
     log_norm_colors: bool = True,
+    show: bool = False,
     **kwargs,
 ) -> plt.Figure:
     """Plots a 2D surface in 3D
@@ -728,6 +729,7 @@ def visualize_embedded_surface(
     :param kwargs: additional keyword arguments for seaborn heatmap()
     :param log_norm_colors: set to True to normalize the colorbar scale
     :param show_colorbar: set to True to show colorbar
+    :param show: set to true to trigger plt.show()
     :return: figure handle for the plot
     """
     # Set style. Overrides: kwargs > style input > Style() defaults
@@ -757,7 +759,8 @@ def visualize_embedded_surface(
     if show_colorbar:
         figure_handle.colorbar(figure_surface, shrink=0.5, aspect=5)
     apply_plot_labels(xlabel=xlabel, ylabel=ylabel, title=title, style=config)
-    plt.show()
+    if show:
+        plt.show()
     return figure_handle
 
 
