@@ -52,6 +52,8 @@ class Style(BaseModel):
     }
     x_axis_human_tick_labels: bool = False
     x_axis_formatter: str = None
+    dict_pretty_max_length: int = 32
+    dict_pretty_previews: bool = False
 
     def translate(self, key: str, **kwargs) -> str:
         """Helper function that allows Style objects to translate text according to the provided Rosetta mappings

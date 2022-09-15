@@ -6,7 +6,14 @@ import pandas as pd
 import stumpy
 from matplotlib.patches import Rectangle
 from .config import Style
-from .utils import PickleUtils, Rosetta, make_dict, get_num_workers, process_queue
+from .utils import (
+    PickleUtils,
+    Rosetta,
+    make_dict,
+    get_num_workers,
+    process_queue,
+    dict_pretty,
+)
 from .data_quality import basis_quality_checks, basis_quality_plots, fill_ratio
 from copy import deepcopy
 import statsmodels.api as sm
@@ -78,6 +85,13 @@ class VectorMultiset(PickleUtils, Style, Rosetta):
         if cumulative:
             return np.cumsum(values).tolist()
         return values.tolist()
+
+    def dict_pretty(self, max_length: int = 32, previews: bool = False) -> str:
+        return dict_pretty(
+            self.dict(),
+            max_length=self.dict_pretty_max_length,
+            previews=self.dict_pretty_previews,
+        )
 
     ################
     # I/O
