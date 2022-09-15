@@ -412,3 +412,8 @@ Changelog
 -------------------
 
 * tweak: additional batch evaluation logging
+
+0.0.89 (2022-09-15)
+-------------------
+
+* tweak: DataFrame method passthrough

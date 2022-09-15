@@ -35,7 +35,7 @@ class SVD(BaseModel):
 class VectorMultiset(PickleUtils, Style, Rosetta):
     """A set of vectors (which may or may not be ordered)"""
 
-    data: pd.DataFrame = None
+    data: Any = None  # needs to be dataframe or path/str to CSV file
     name_root: str = None
     svd: SVD = None
 
@@ -51,6 +51,14 @@ class VectorMultiset(PickleUtils, Style, Rosetta):
         to_return = deepcopy(self)
         to_return.data = pd.concat([self.data, other.data])
         return to_return
+
+    def head(self, *args, **kwargs) -> pd.DataFrame:
+        """For convenience, alias to pandas method DataFrame.head()"""
+        return self.data.head(*args, **kwargs)
+
+    def tail(self, *args, **kwargs) -> pd.DataFrame:
+        """For convenience, alias to pandas method DataFrame.tail()"""
+        return self.data.tail(*args, **kwargs)
 
     def values(self, feature: str, cumulative: bool = False, *args) -> List[Any]:
         """Retrieves a particular data feature by attribute name. Additional args unpack deeper
@@ -415,7 +423,24 @@ class VectorMultiset(PickleUtils, Style, Rosetta):
             )
 
     def __init__(self, **kwargs):
+
+        # Intercept if 'data' is a path instead of a dataframe
+        if isinstance(kwargs.get("data", None), (str, pathlib.Path)):
+            data_input: Union[str, pathlib.Path] = kwargs.get("data")
+            if ".csv" in str(data_input).lower():
+                if pathlib.Path(data_input).exists():
+                    kwargs["data"] = pd.read_csv(data_input)
+                else:
+                    raise ValueError(
+                        f"Input data string interpreted as a path does not exist:\n{data_input}"
+                    )
+            else:
+                raise ValueError(
+                    f"Input data appears to be a {type(data_input)} but is not a file with .csv extension"
+                )
+
         super().__init__(**kwargs)
+
         if not kwargs.get("disable_auto_conversion_to_numeric", False) and (
             self.data is not None
         ):
