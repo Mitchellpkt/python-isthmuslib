@@ -417,3 +417,8 @@ Changelog
 -------------------
 
 * tweak: DataFrame method passthrough
+
+0.0.90 (2022-09-15)
+-------------------
+
+* tweak: dictionary styling
