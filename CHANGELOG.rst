@@ -422,3 +422,8 @@ Changelog
 -------------------
 
 * tweak: dictionary styling
+
+0.0.91 (2022-11-29)
+-------------------
+
+* tweak: flag for Mac OS
