@@ -427,3 +427,8 @@ Changelog
 -------------------
 
 * tweak: flag for Mac OS
+
+0.0.92 (2022-11-29)
+-------------------
+
+* tweak: deprecate some matrixprofile methods due to end of support for the underlying library
