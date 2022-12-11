@@ -7,6 +7,7 @@ import numpy as np
 import pandas as pd
 import seaborn as sns
 from mpl_toolkits.mplot3d import Axes3D
+import matplotlib.dates as mdates
 
 from .config import Style
 from .utils import (
@@ -94,10 +95,10 @@ def adjust_axes(
     if x_axis_human_tick_labels:
         if x_axis_formatter is None:
             x_axis_formatter: str = "%Y-%m-%d"
-        xfmt = matplotlib.dates.DateFormatter(x_axis_formatter)
         ax = plt.gca()
-        ax.set_xticklabels(ax.get_xticks(), rotation=45)
-        ax.xaxis.set_major_formatter(xfmt)
+        ax.xaxis.set_major_formatter(mdates.DateFormatter(x_axis_formatter))
+        for tick_label in ax.get_xticklabels(which="major"):
+            tick_label.set(rotation=30, horizontalalignment="right")
 
 
 def apply_plot_labels(xlabel: str = "", ylabel: str = "", title: str = "", style: Style = None) -> None:
