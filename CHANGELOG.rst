@@ -447,3 +447,8 @@ Changelog
 -------------------
 
 * tweak: allow string specification of color column
+
+0.0.96 (2022-12-11)
+-------------------
+
+* tweak: option to trigger plt.show() in visualizations
