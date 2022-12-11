@@ -14,7 +14,7 @@ class Style(BaseModel):
     label_fontsize: Any = 15.0
     legend_fontsize: Any = 15.0
     tick_fontsize: Any = 12.0
-    figsize: Tuple[Any, Any] = (10.0, 8.0)
+    figsize: Tuple[Any, Any] = (12.0, 8.0)
     linewidth: Any = 5.0
     linestyle: Any = "-"
     grid: bool = False
