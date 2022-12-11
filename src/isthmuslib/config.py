@@ -20,6 +20,7 @@ class Style(BaseModel):
     grid: bool = True
     tight_axes: bool = True
     formatter: str = "%Y-%m-%d %H:%M:%S"
+    include_timezone: bool = False
     markersize: Any = 50
     transparent_alpha: float = 0.5
     watermark_placement: Any = (0.05, 0.05)

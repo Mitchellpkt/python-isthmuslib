@@ -13,6 +13,7 @@ from .utils import (
     get_num_workers,
     process_queue,
     dict_pretty,
+    zero_mean_unit_variance,
 )
 from .data_quality import basis_quality_checks, basis_quality_plots, fill_ratio
 from copy import deepcopy
@@ -29,7 +30,8 @@ import pathlib
 from pydantic import BaseModel
 from sklearn.feature_selection import SelectKBest, chi2
 from tqdm.auto import tqdm
-import matrixprofile
+
+# import matrixprofile
 import math
 
 
@@ -86,12 +88,23 @@ class VectorMultiset(PickleUtils, Style, Rosetta):
             return np.cumsum(values).tolist()
         return values.tolist()
 
-    def dict_pretty(self, max_length: int = 32, previews: bool = False) -> str:
+    def dict_pretty(self, max_length: int = None, previews: bool = False) -> str:
+        """
+        Helper function to make a preview string (that doesn't become excessively long with data present)
+
+        :param max_length: max length of value
+        :param previews: whether to include previews for longer values
+        :return: dictionary summary string
+        """
         return dict_pretty(
             self.dict(),
-            max_length=self.dict_pretty_max_length,
-            previews=self.dict_pretty_previews,
+            max_length=max_length if max_length else self.dict_pretty_max_length,
+            previews=previews if previews is not None else self.dict_pretty_previews,
         )
+
+    def keys(self) -> List[str]:
+        """Returns the dataframe columns as a list of strings"""
+        return self.data.keys().tolist()
 
     ################
     # I/O
@@ -492,63 +505,67 @@ class VectorMultiset(PickleUtils, Style, Rosetta):
         suppress_nan_warning: bool = False,
         **kwargs,
     ) -> List[Tuple[Any, List[plt.Figure]]]:
-        """
-        Very thin wrapper around matrixprofile with some warnings and opt-in preprocessing automation
+        raise NotImplementedError(
+            f"This function was deprecated when active support for matrixprofile was dropped"
+        )
 
-        :param col_names: a column name (or list of column names) to be profiled
-        :param auto_locf:
-        :param kwargs: keyword arguments passed through to matrixprofile.analyze()
-        :return: List of outputs from matrixprofile.analyze()
-        """
-        queue: List[str] = [col_names] if isinstance(col_names, str) else col_names
-        results: List[Tuple[Any, List[plt.Figure]]] = []
-        try:
-            for q in queue:
-                ts: List[float] = self.data.loc[:, q].astype(float).tolist()
-
-                if not kwargs.get("preprocessing_kwargs") and any(
-                    np.isnan(x) for x in ts
-                ):
-                    if hasattr(self, "auto_locf_params"):
-                        auto_locf_params: Dict[str, Any] = self.auto_locf_params
-                    else:
-                        auto_locf_params: Dict[str, Any] = {
-                            "window": 3,
-                            "impute_method": "median",
-                            "impute_direction": "forward",
-                            "add_noise": False,
-                        }
-                    if auto_locf:
-                        kwargs.setdefault("preprocessing_kwargs", auto_locf_params)
-                    else:
-                        if not suppress_nan_warning:
-                            print(
-                                """
-    Warning: matrix profiling data with NaNs and no preprocessing specified
-             (potential anomalies or errors ahead)\n
-    > To suppress this warning in the future, specify `suppress_nan_warning=True`.
-    > One way to address NaNs is specifying a 'preprocessing_kwargs' dictionary, like:
-        {'window': 3, 'impute_method': 'median', 'impute_direction': 'forward', 'add_noise': False}
-    > Alternatively, you can specify `auto_locf=True` to use the config presets:\n"""
-                                + "".join(
-                                    [
-                                        f"       ~ {k}={v}\n"
-                                        for k, v in auto_locf_params.items()
-                                    ]
-                                )
-                            )
-                results.append(matrixprofile.analyze(ts, **kwargs))
-        except TypeError as e:
-            s: str = f"""
-            Encountered a TypeError in matrixprofile.analyze(). Hint: this might happen if you are
-            trying to use a custom parameter like 'use_right_edge' with the standard matrixprofile
-            package. If that is the case, try running:\n
-              pip uninstall matrixprofile && pip install git+https://github.com/mitchellpkt/matrixprofile
-            \nOriginal error: {e}"""
-            print(s)
-            raise TypeError(s)
-
-        return results
+    #     """
+    #     Very thin wrapper around matrixprofile with some warnings and opt-in preprocessing automation
+    #
+    #     :param col_names: a column name (or list of column names) to be profiled
+    #     :param auto_locf:
+    #     :param kwargs: keyword arguments passed through to matrixprofile.analyze()
+    #     :return: List of outputs from matrixprofile.analyze()
+    #     """
+    #     queue: List[str] = [col_names] if isinstance(col_names, str) else col_names
+    #     results: List[Tuple[Any, List[plt.Figure]]] = []
+    #     try:
+    #         for q in queue:
+    #             ts: List[float] = self.data.loc[:, q].astype(float).tolist()
+    #
+    #             if not kwargs.get("preprocessing_kwargs") and any(
+    #                 np.isnan(x) for x in ts
+    #             ):
+    #                 if hasattr(self, "auto_locf_params"):
+    #                     auto_locf_params: Dict[str, Any] = self.auto_locf_params
+    #                 else:
+    #                     auto_locf_params: Dict[str, Any] = {
+    #                         "window": 3,
+    #                         "impute_method": "median",
+    #                         "impute_direction": "forward",
+    #                         "add_noise": False,
+    #                     }
+    #                 if auto_locf:
+    #                     kwargs.setdefault("preprocessing_kwargs", auto_locf_params)
+    #                 else:
+    #                     if not suppress_nan_warning:
+    #                         print(
+    #                             """
+    # Warning: matrix profiling data with NaNs and no preprocessing specified
+    #          (potential anomalies or errors ahead)\n
+    # > To suppress this warning in the future, specify `suppress_nan_warning=True`.
+    # > One way to address NaNs is specifying a 'preprocessing_kwargs' dictionary, like:
+    #     {'window': 3, 'impute_method': 'median', 'impute_direction': 'forward', 'add_noise': False}
+    # > Alternatively, you can specify `auto_locf=True` to use the config presets:\n"""
+    #                             + "".join(
+    #                                 [
+    #                                     f"       ~ {k}={v}\n"
+    #                                     for k, v in auto_locf_params.items()
+    #                                 ]
+    #                             )
+    #                         )
+    #             results.append(matrixprofile.analyze(ts, **kwargs))
+    #     except TypeError as e:
+    #         s: str = f"""
+    #         Encountered a TypeError in matrixprofile.analyze(). Hint: this might happen if you are
+    #         trying to use a custom parameter like 'use_right_edge' with the standard matrixprofile
+    #         package. If that is the case, try running:\n
+    #           pip uninstall matrixprofile && pip install git+https://github.com/mitchellpkt/matrixprofile
+    #         \nOriginal error: {e}"""
+    #         print(s)
+    #         raise TypeError(s)
+    #
+    #     return results
 
     def calculate_stumpy_profile_univariate(
         self, col_name: str, window_size: int, **kwargs
@@ -1484,6 +1501,7 @@ class VectorSequence(VectorMultiset):
         :return: a single string describing the timeframe
         """
         kwargs.setdefault("formatter", self.formatter)
+        kwargs.setdefault("include_timezone", self.include_timezone)
         if prefix is None:
             prefix: str = self.timeframe_prefix
         if between is None:
@@ -1662,17 +1680,31 @@ def info_surface_slider(vs: VectorSequence, *args, **kwargs) -> Dict[str, Any]:
 
 
 def singular_value_decomposition(
-    df: pd.DataFrame, cols: Union[str, List[str]] = None, **kwargs
+    df: pd.DataFrame,
+    cols: Union[str, List[str]] = None,
+    normalize: bool = False,
+    **kwargs,
 ) -> SVD:
     """
     Helper function that wraps numpy svd to feed in a subset of data features (see kwarg: 'full_matrices')
 
     :param df: pandas dataframe to analyze
     :param cols: which data features to use
+    :param normalize: whether to normalize the data to zero mean and unit variance
     :param kwargs: keyword arguments for SVD
     :return: u, s, vh arrays
     """
-    u, s, vh = np.linalg.svd(deepcopy(df.loc[:, cols]), **kwargs)
+
+    if not cols:
+        df_: pd.DataFrame = df.copy()
+    else:
+        df_: pd.DataFrame = deepcopy(df.loc[:, cols])
+
+    if normalize:
+        for f in df_.keys():
+            df_[f] = zero_mean_unit_variance(df_[f])
+
+    u, s, vh = np.linalg.svd(df_, **kwargs)
     return SVD(u=u, s=s, vh=vh)
 
 

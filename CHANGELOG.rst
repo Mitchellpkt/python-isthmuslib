@@ -432,3 +432,13 @@ Changelog
 -------------------
 
 * tweak: deprecate some matrixprofile methods due to end of support for the underlying library
+
+0.0.93 (2022-12-06)
+-------------------
+
+* tweak: misc quality of life improvements including function aliases and timezone style config
+
+0.0.94 (2022-12-11)
+-------------------
+
+* tweak: keys helper

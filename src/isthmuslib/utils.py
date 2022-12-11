@@ -604,15 +604,23 @@ def to_list_if_other_array(array: Any) -> List[Any]:
     return array
 
 
-def zero_mean_unit_deviation(array: any) -> List[float]:
+def zero_mean_unit_deviation(array: Any) -> List[float]:
     """Helper function that maps a vector to zero mean and unit standard deviation
 
     :param array: anything that looks like an array
     :return: list with the normalized values
     """
-    std_dev: float = float(np.std(array))
-    mean: float = float(np.mean(array))
-    return [(x - mean) / std_dev for x in array]
+    std_dev: float = float(np.nanstd(array))
+    mean: float = float(np.nanmean(array))
+    if not std_dev:
+        return [0] * len(array)
+    else:
+        return [(x - mean) / std_dev for x in array]
+
+
+# Alias for shorthand
+zero_mean_unit_variance: Callable[[Any], List[float]] = zero_mean_unit_deviation
+zmuv: Callable[[Any], List[float]] = zero_mean_unit_deviation
 
 
 def make_dict(d: Union[Dict, object, None]) -> Dict[Any, Any]:
@@ -985,3 +993,12 @@ def dict_pretty(
 
     dd = dict_brief(d, max_length=max_length, previews=previews) if max_length else d
     return "".join([f"{before}{k}{between}{v}{after}" for k, v in dd.items()])
+
+
+def hush_warnings() -> None:
+    """
+    Helper function that silences warnings
+    """
+    import warnings
+
+    warnings.filterwarnings("ignore")
