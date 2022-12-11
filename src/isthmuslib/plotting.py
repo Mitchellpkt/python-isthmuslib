@@ -325,7 +325,9 @@ def visualize_x_y(
     """
     # Set style. Overrides: kwargs > style input > Style() defaults
     config: Style = Style(**{**Style().dict(), **make_dict(style), **make_dict(kwargs)})
-    kwargs: Dict[str, Any] = {k: v for k, v in kwargs.items() if k not in config.dict()}
+    kwargs: Dict[str, Any] = {
+        k: v for k, v in kwargs.items() if (k not in config.dict()) or (k == "cmap")
+    }  # allowlisting cmap is a hacky fix until the config handling is refactored
 
     x_data: List[Any] = to_list_if_other_array(x_data)
     y_data: List[Any] = to_list_if_other_array(y_data)
