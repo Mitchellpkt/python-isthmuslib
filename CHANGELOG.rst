@@ -452,3 +452,8 @@ Changelog
 -------------------
 
 * tweak: option to trigger plt.show() in visualizations
+
+0.0.97 (2022-12-11)
+-------------------
+
+* chore: distro stats in histogram watermark, and can mark mean & median on the plot
