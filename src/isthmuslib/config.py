@@ -85,9 +85,7 @@ class Style(BaseModel):
             elif getattr(args[0], "dict", None):
                 override_dict: Dict[str, any] = args[0].dict()
             else:
-                raise ValueError(
-                    f"Unsure how to interpret override input of type {type(args[0])}"
-                )
+                raise ValueError(f"Unsure how to interpret override input of type {type(args[0])}")
 
         elif (len(args) == 2) and isinstance(args[0], str):
             override_dict: Dict[str, any] = {args[0]: args[1]}

@@ -85,9 +85,7 @@ class Rosetta(BaseModel):
         else:
             raise ValueError(f"Unknown missing_response parameter: {missing_response}")
 
-    def translate_time(
-        self, key: Union[str, float, int], include_timezone: bool = True
-    ) -> str:
+    def translate_time(self, key: Union[str, float, int], include_timezone: bool = True) -> str:
         """Convert a timestamp (seconds) into human readable string"""
         return human_time(
             key,
@@ -103,9 +101,7 @@ class Rosetta(BaseModel):
         @param silent_overwrite: if True, overwrites existing entries. If false, raises KeyError
         """
         if (key in self.stone) and (not silent_overwrite):
-            raise KeyError(
-                f"Key {key} is already in mappings, and silent_overwrite is False"
-            )
+            raise KeyError(f"Key {key} is already in mappings, and silent_overwrite is False")
         self.stone[key] = value
 
     def human_time(self, *args, **kwargs) -> str:
@@ -133,9 +129,7 @@ class Rosetta(BaseModel):
         """
         return object_string_merge(string=string, values_from=self.stone, **kwargs)
 
-    def risky_cast(
-        self, x: Any
-    ) -> Any:  # noqa: it is static, attached here only for convenience.
+    def risky_cast(self, x: Any) -> Any:  # noqa: it is static, attached here only for convenience.
         """Reckless helper function that tries to cast the input to a number (float) or boolean"""
         return risky_cast(x)
 
@@ -157,12 +151,8 @@ def human_time(
             if timestamp_sec.replace(".", "", 1).isdigit():
                 timestamp_sec: float = float(timestamp_sec)
             else:
-                raise ValueError(
-                    f"Could not interpret string as a numeric timestamp: {timestamp_sec})"
-                )
-    datetime_string: str = datetime.fromtimestamp(
-        timestamp_sec, pytz.timezone(timezone)
-    ).strftime(formatter)
+                raise ValueError(f"Could not interpret string as a numeric timestamp: {timestamp_sec})")
+    datetime_string: str = datetime.fromtimestamp(timestamp_sec, pytz.timezone(timezone)).strftime(formatter)
     if include_timezone:
         datetime_string += f" ({timezone})"
     return datetime_string
@@ -206,10 +196,7 @@ def machine_time(
                 len(time_or_times) > 64
             )  # use pandas if lots of entries
         if use_pandas_for_multiple_conversions:
-            return [
-                multiplier * t / 1e9
-                for t in pd.to_datetime(time_or_times).astype(int).tolist()
-            ]
+            return [multiplier * t / 1e9 for t in pd.to_datetime(time_or_times).astype(int).tolist()]
         else:
             return [
                 float(multiplier * parser.parse(x).timestamp())
@@ -233,10 +220,7 @@ def grid(individual_parameter_values: Dict[str, Iterable]) -> List[Dict[str, Any
     keys_list: Tuple[str] = tuple(individual_parameter_values.keys())
     values_list: Tuple[Iterable] = tuple(individual_parameter_values.values())
     combinations = itertools.product(*values_list)
-    return [
-        {keys_list[i]: value for i, value in enumerate(combination)}
-        for combination in combinations
-    ]
+    return [{keys_list[i]: value for i, value in enumerate(combination)} for combination in combinations]
 
 
 def neighborhood_grid(starting_point: Dict[str, Any], **kwargs) -> List[Dict[str, Any]]:
@@ -272,18 +256,14 @@ def neighborhood_multivariate(
         fields = list(starting_point.keys())
 
     if keep_other_vals:
-        return_dictionary: Dict[str, List[float]] = {
-            k: [v] for k, v in starting_point.items()
-        }
+        return_dictionary: Dict[str, List[float]] = {k: [v] for k, v in starting_point.items()}
     else:
         return_dictionary: Dict[str, List[float]] = dict()
 
     for key, value in [x for x in starting_point.items() if x[0] in fields]:
         try:
             if isinstance(value, bool) or (not isinstance(value, (int, float))):
-                raise TypeError(
-                    f"The variable {key} has a value that is not a float or integer: {value}"
-                )
+                raise TypeError(f"The variable {key} has a value that is not a float or integer: {value}")
             return_dictionary[key] = neighborhood_univariate(value, **kwargs)
         except TypeError as e:
             if "passthrough" in errors.lower():
@@ -326,11 +306,7 @@ def neighborhood_univariate(
     width: float = starting_point * width_prct / 100
     if width_temperature_prct:
         width: float = width * (
-            1
-            + random.uniform(
-                -1 * abs(width_temperature_prct), abs(width_temperature_prct)
-            )
-            / 100
+            1 + random.uniform(-1 * abs(width_temperature_prct), abs(width_temperature_prct)) / 100
         )
 
     if placement.lower() == "left_edge":
@@ -340,9 +316,7 @@ def neighborhood_univariate(
     elif placement.lower() == "right_edge":
         left, right = starting_point - width, starting_point
     else:
-        raise ValueError(
-            f"Unknown placement: {placement}. Try 'left_edge', 'center', or 'right_edge'."
-        )
+        raise ValueError(f"Unknown placement: {placement}. Try 'left_edge', 'center', or 'right_edge'.")
 
     if spacing.lower() == "linear":
         return list(np.linspace(left, right, num_samples, **kwargs))
@@ -454,9 +428,7 @@ def recursive_batch_evaluation(
         outputs_buffer.append(func(initial_input))
 
     # Get the frst batch of points
-    func_inputs_iterable: List[Dict[str, Any]] = batch_generator(
-        initial_input, **batch_generator_kwargs
-    )
+    func_inputs_iterable: List[Dict[str, Any]] = batch_generator(initial_input, **batch_generator_kwargs)
 
     # Begin recursively applying
     start_time = time.perf_counter()
@@ -484,14 +456,10 @@ def recursive_batch_evaluation(
             # ... if the selection method is a callable, apply it
             if isinstance(selection_method, Callable):
                 selected_value: Any = selection_method(pick_from_outputs)
-                current_best_input: Any = pick_from_inputs[
-                    pick_from_outputs.index(selected_value)
-                ]
+                current_best_input: Any = pick_from_inputs[pick_from_outputs.index(selected_value)]
 
             # ... if the section method is a dictionary, extract from that:
-            elif isinstance(selection_method, str) and all(
-                isinstance(d, dict) for d in pick_from_outputs
-            ):
+            elif isinstance(selection_method, str) and all(isinstance(d, dict) for d in pick_from_outputs):
                 current_best_input: Any = return_best_input(
                     inputs=pick_from_inputs,
                     eval_outputs=pick_from_outputs,
@@ -506,16 +474,12 @@ def recursive_batch_evaluation(
                 current_best_input[clock_time_key] = time.time()
 
             # Generate the next batch of inputs
-            func_inputs_iterable = batch_generator(
-                current_best_input, **batch_generator_kwargs
-            )
+            func_inputs_iterable = batch_generator(current_best_input, **batch_generator_kwargs)
             counter += 1
 
             # Printing if desired
             if print_progress:
-                print(
-                    f"Completed cycle #{counter} in {time.perf_counter() - tic:.6f} seconds"
-                )
+                print(f"Completed cycle #{counter} in {time.perf_counter() - tic:.6f} seconds")
             if print_current_inputs:
                 print(f"... Current best input is: {current_best_input}")
             if max_time_sec:
@@ -525,26 +489,21 @@ def recursive_batch_evaluation(
     # Catch keyboard interrupts
     except KeyboardInterrupt as e:
         if isinstance(e, MaxTimeException):
-            print(
-                f"Breaking after {counter} cycles for max time allowance ({max_time_sec / 60:.2f} minutes)"
-            )
+            print(f"Breaking after {counter} cycles for max time allowance ({max_time_sec / 60:.2f} minutes)")
         print(f"Breaking for keyboard interrupt after {counter} cycles.")
 
     # Catch or raise exceptions
     except Exception as e:
         if catch_exceptions:
             print(f"After {counter} cycles, encountered exception {e}")
-            print(
-                "Hint: possible reasons include: unexpected input argument or wrong syntax for v0.0.87+"
-            )
+            print("Hint: possible reasons include: unexpected input argument or wrong syntax for v0.0.87+")
         else:
             raise e
 
     # Return the best input (optionally with the input & output data pairs as a second return)
     if return_history:
         return current_best_input, [
-            {"in": x_in, "out": x_out}
-            for x_in, x_out in zip(inputs_buffer, outputs_buffer)
+            {"in": x_in, "out": x_out} for x_in, x_out in zip(inputs_buffer, outputs_buffer)
         ]
     return current_best_input
 
@@ -566,9 +525,7 @@ def looks_like_list_of_lists(input_var: Any) -> bool:
     :param input_var: input to assess
     :return: True if it looks like a list of lists
     """
-    return pd.api.types.is_list_like(input_var) and pd.api.types.is_list_like(
-        input_var[0]
-    )
+    return pd.api.types.is_list_like(input_var) and pd.api.types.is_list_like(input_var[0])
 
 
 def margin_calc(margin: float, span: Tuple[float, float], scale: str) -> float:
@@ -582,9 +539,7 @@ def margin_calc(margin: float, span: Tuple[float, float], scale: str) -> float:
     if scale == "linear":
         return span[0] + margin * (span[1] - span[0])
     elif scale == "log":
-        return 10 ** (
-            np.log10(span[0]) + margin * (np.log10(span[1]) - np.log10(span[0]))
-        )
+        return 10 ** (np.log10(span[0]) + margin * (np.log10(span[1]) - np.log10(span[0])))
     else:
         raise ValueError(f"Unexpected {scale=}")
 
@@ -596,9 +551,7 @@ def to_list_if_other_array(array: Any) -> List[Any]:
     :return: a list
     """
     if isinstance(array, pd.DataFrame) and (l := len(array.keys()) > 1):
-        raise ValueError(
-            f"Instead of array, received data frame with {l} features / columns"
-        )
+        raise ValueError(f"Instead of array, received data frame with {l} features / columns")
     if isinstance(array, (np.ndarray, pd.Series)):
         return array.tolist()
     return array
@@ -688,9 +641,7 @@ def divvy_workload(num_workers: int, tasks: List[Any]) -> List[List[Any]]:
     :param tasks: task list to be carried out
     :return: task list broken up into num_workers segments
     """
-    load_per_worker: List[int] = determine_load_per_worker(
-        num_tasks=len(tasks), num_workers=num_workers
-    )
+    load_per_worker: List[int] = determine_load_per_worker(num_tasks=len(tasks), num_workers=num_workers)
     i: int = 0
     task_list_all: List[List[Any]] = []
     for load_amount in load_per_worker:
@@ -735,9 +686,7 @@ def benchmark_process_queue(
     return benchmarks
 
 
-def multiprocess(
-    *args, suppress_multiprocess_notice: bool = False, **kwargs
-) -> List[Any]:
+def multiprocess(*args, suppress_multiprocess_notice: bool = False, **kwargs) -> List[Any]:
     """Legacy name wrapper for process_queue with a warning that can be silenced"""
     if not suppress_multiprocess_notice:
         print(
@@ -775,9 +724,7 @@ def recursive_process(
             current = func(current, *args, **kwargs)
             counter += 1
             if print_progress:
-                print(
-                    f"Completed cycle #{counter} in {time.perf_counter() - tic:.6f} seconds"
-                )
+                print(f"Completed cycle #{counter} in {time.perf_counter() - tic:.6f} seconds")
             if print_current_value:
                 print(f"... Current value: {current}")
     except KeyboardInterrupt:
@@ -825,10 +772,7 @@ def process_queue(
 
     # If only 1 worker, do the work in serial since we don't need the pool and its overhead
     if num_workers == 1:
-        return [
-            func(i)
-            for i in tqdm(iterable, disable=None if serial_progress_bar else True)
-        ]
+        return [func(i) for i in tqdm(iterable, disable=None if serial_progress_bar else True)]
 
     # Break the task list into batches if desired
     if batching:
@@ -854,9 +798,7 @@ def process_queue(
     # Run the pool
     with Pool(min(num_workers, len(map_style_inputs))) as pool:
         if pool_function.lower() == "starmap":
-            result = pool.starmap(
-                func=use_function, iterable=map_style_inputs, **kwargs
-            )
+            result = pool.starmap(func=use_function, iterable=map_style_inputs, **kwargs)
         elif pool_function.lower() == "map":
             result = pool.map(func=use_function, iterable=map_style_inputs, **kwargs)
         else:
@@ -912,15 +854,11 @@ def risky_cast(x: Any) -> Any:
     # Try to parse model representations
     if all(substr in x for substr in ["=", ","]):
         try:
-            return {
-                k[0]: risky_cast(k[1]) for k in [j.split("=") for j in x.split(", ")]
-            }  # "a=5, b=6"
+            return {k[0]: risky_cast(k[1]) for k in [j.split("=") for j in x.split(", ")]}  # "a=5, b=6"
         except:
             pass
 
-    if x.replace(".", "", 1).isdigit() or (
-        x[0] == "-" and x[1:].replace(".", "", 1).isdigit()
-    ):
+    if x.replace(".", "", 1).isdigit() or (x[0] == "-" and x[1:].replace(".", "", 1).isdigit()):
         if "." in x:
             try:
                 return float(x)
@@ -952,9 +890,7 @@ def flatten_list(nested_list: List[List[Any]]) -> List[Any]:
     return [item for sublist in nested_list for item in sublist]
 
 
-def dict_brief(
-    d: Dict[str, Any], max_length: int = 32, previews: bool = False
-) -> Dict[str, Any]:
+def dict_brief(d: Dict[str, Any], max_length: int = 32, previews: bool = False) -> Dict[str, Any]:
     """
     Helper function that returns only the elements of a dictionary whose string representation is less than max_length
     :param d: dictionary

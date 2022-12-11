@@ -21,13 +21,9 @@ class LogIO(BaseModel):
     log_formatter: str = "\n@@ {time:x} AT: {time} | LEVEL: {level} | IN: {name}.{function}\n\n{message} |\n"  # TODO: unify this object's string fields with Config?? # noqa
 
     def single_feature_to_log(self, key: str, value: str) -> str:
-        return (
-            f"{self.left_token}{key}{self.key_value_delimiter}{value}{self.right_token}"
-        )
+        return f"{self.left_token}{key}{self.key_value_delimiter}{value}{self.right_token}"
 
-    def dict_to_log(
-        self, key_value_dict: Dict[str, Any], include_delimiter: bool = False
-    ) -> str:
+    def dict_to_log(self, key_value_dict: Dict[str, Any], include_delimiter: bool = False) -> str:
         s: str = self.record_delimiter if include_delimiter else ""
         for key, value in key_value_dict.items():
             s += f"{self.single_feature_to_log(key=key, value=value)}"
@@ -144,9 +140,7 @@ def parse_string_with_key_value_delimiters(
     # Process the chunks
     num_workers: int = get_num_workers(parallelize_arg=parallelize_read)
     if parallelize_read and (num_workers > 1):
-        batches: List[List[Any]] = divvy_workload(
-            num_workers=num_workers, tasks=raw_row_texts_list
-        )
+        batches: List[List[Any]] = divvy_workload(num_workers=num_workers, tasks=raw_row_texts_list)
         i: List[Tuple[List[str], str, str, str]] = [
             (b, left_token, key_value_delimiter, right_token) for b in batches
         ]
@@ -217,10 +211,7 @@ def parse_string_with_embedded_json_unprocessed_dicts(
     embedded_with_trailing_data = input_string.split(embedded_json_line_prefix)[1:]
     if limit and (limit < len(embedded_with_trailing_data)):
         embedded_with_trailing_data = embedded_with_trailing_data[:limit]
-    embedded_clean = [
-        x.split(end_of_line)[0] if end_of_line in x else x
-        for x in embedded_with_trailing_data
-    ]
+    embedded_clean = [x.split(end_of_line)[0] if end_of_line in x else x for x in embedded_with_trailing_data]
 
     return_list: List[Dict[Any, Any]] = []
     for s in embedded_clean:
@@ -250,9 +241,7 @@ def parse_string_with_embedded_json(
     :param end_of_line: substring between rows
     :param limit: maximum number of rows to process
     """
-    extracted_json_dicts: List[
-        Dict[str, Any]
-    ] = parse_string_with_embedded_json_unprocessed_dicts(
+    extracted_json_dicts: List[Dict[str, Any]] = parse_string_with_embedded_json_unprocessed_dicts(
         input_string=input_string,
         embedded_json_line_prefix=embedded_json_line_prefix,
         limit=limit,
@@ -294,9 +283,7 @@ def key_value_extraction_lambda(
     return output_chunk_dict
 
 
-def multi_key_value_extraction_lambda(
-    args: Tuple[List[str], str, str, str]
-) -> List[Dict[str, Any]]:
+def multi_key_value_extraction_lambda(args: Tuple[List[str], str, str, str]) -> List[Dict[str, Any]]:
     """Helper function that works through a queue of chunks (for parallelization)"""
     input_chunks, left_token, key_value_delimiter, right_token = args
     return [
@@ -371,37 +358,25 @@ def list_of_dict_to_dataframe(
 
     if not suppress_deprecation_warning:
         print(f"You are using a very slow method for reshaping the data")
-        print(
-            f"Recommendation: use list_of_dict_to_dataframe(..., pandas_automatic=True)"
-        )
+        print(f"Recommendation: use list_of_dict_to_dataframe(..., pandas_automatic=True)")
         print(
             f"To suppress this warning, pass: use list_of_dict_to_dataframe(..., suppress_deprecation_warning=True)"
         )
 
     if parallelize_processing and (num_reshape_workers > 1):
-        batches: List[List[Any]] = divvy_workload(
-            num_workers=num_reshape_workers, tasks=data_point_dicts
-        )
+        batches: List[List[Any]] = divvy_workload(num_workers=num_reshape_workers, tasks=data_point_dicts)
         if not disable_progress_bar:
-            print(
-                f"Reshaping data: processing in parallel with {num_reshape_workers} workers"
-            )
+            print(f"Reshaping data: processing in parallel with {num_reshape_workers} workers")
         with Pool(num_reshape_workers) as pool:
-            dataframes: List[pd.DataFrame] = pool.map(
-                func=dicts_to_dataframe, iterable=batches
-            )
+            dataframes: List[pd.DataFrame] = pool.map(func=dicts_to_dataframe, iterable=batches)
         df: pd.DataFrame = pd.concat(dataframes, ignore_index=True)
     else:
         df: pd.DataFrame = pd.DataFrame()
         # THIS LOOP IS SO SLOW - you should use pandas_automatic=True
-        for chunk_buffer in (
-            p2 := tqdm(data_point_dicts, disable=disable_progress_bar)
-        ):
+        for chunk_buffer in (p2 := tqdm(data_point_dicts, disable=disable_progress_bar)):
             p2.set_description("Reshaping data:")
             if chunk_buffer:
-                df: pd.DataFrame = pd.concat(
-                    [df, pd.DataFrame(chunk_buffer, index=[-1])], ignore_index=True
-                )
+                df: pd.DataFrame = pd.concat([df, pd.DataFrame(chunk_buffer, index=[-1])], ignore_index=True)
     return df
 
 
@@ -419,9 +394,7 @@ def dicts_to_dataframe(dictionaries: List[Dict[str, Any]]) -> pd.DataFrame:
     return df
 
 
-def batch_dicts_to_dataframe(
-    dictionaries: List[Dict[str, Any]], batch_size: int = 1000
-) -> pd.DataFrame:
+def batch_dicts_to_dataframe(dictionaries: List[Dict[str, Any]], batch_size: int = 1000) -> pd.DataFrame:
     """
     NB: THIS IS AN INEFFICIENT FUNCTION THAT SCALES AWFULLY, PLEASE USE list_of_dict_to_dataframe instead
     Helper function that converts a list of dictionaries into a dataframe (each dictionary = 1 row)
@@ -434,9 +407,7 @@ def batch_dicts_to_dataframe(
     batches: List[pd.DataFrame] = []
     df_in_progress: pd.DataFrame = pd.DataFrame()
     for i, dictionary in enumerate([d for d in dictionaries if d]):
-        df_in_progress = pd.concat(
-            [df_in_progress, pd.DataFrame(dictionary, index=[-1])], ignore_index=True
-        )
+        df_in_progress = pd.concat([df_in_progress, pd.DataFrame(dictionary, index=[-1])], ignore_index=True)
         if i % batch_size == 0:
             batches.append(deepcopy(df_in_progress))
             df_in_progress = pd.DataFrame()
@@ -507,9 +478,7 @@ def auto_extract_from_text(
     # Process the chunks
     num_workers: int = get_num_workers(parallelize_arg=parallelize_read)
     if parallelize_read and (num_workers > 1):
-        batches: List[List[Any]] = divvy_workload(
-            num_workers=num_workers, tasks=record_chunks
-        )
+        batches: List[List[Any]] = divvy_workload(num_workers=num_workers, tasks=record_chunks)
         i: List[Tuple[List[str], str, str, str]] = [
             (b, left_token, key_value_delimiter, right_token) for b in batches
         ]
@@ -517,9 +486,7 @@ def auto_extract_from_text(
             chunk_buffers_nested: List[List[Dict[str, Any]]] = pool.map(
                 func=multi_key_value_extraction_lambda, iterable=i
             )
-        chunk_buffers: List[Dict[str, Any]] = [
-            item for sublist in chunk_buffers_nested for item in sublist
-        ]
+        chunk_buffers: List[Dict[str, Any]] = [item for sublist in chunk_buffers_nested for item in sublist]
 
     else:
         # Serial processing

@@ -176,7 +176,9 @@ def basis_quality_plots(
             sorted_array: Any = sorted(array)
             vals_x: List[Any] = sorted_array[1:]
             vals_y: List[Any] = data_diffs(sorted_array)
-            title: str = f"{mappings[is_uniform(array)][0]} data intervals over time\n(want 1 horizontal line)"
+            title: str = (
+                f"{mappings[is_uniform(array)][0]} data intervals over time\n(want 1 horizontal line)"
+            )
             color: Any = mappings[is_uniform(array)][1]
         else:
             vals_x = vals_y = [[]]

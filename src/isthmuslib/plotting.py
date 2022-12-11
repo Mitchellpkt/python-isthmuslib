@@ -100,9 +100,7 @@ def adjust_axes(
         ax.xaxis.set_major_formatter(xfmt)
 
 
-def apply_plot_labels(
-    xlabel: str = "", ylabel: str = "", title: str = "", style: Style = None
-) -> None:
+def apply_plot_labels(xlabel: str = "", ylabel: str = "", title: str = "", style: Style = None) -> None:
     """Helper function to apply labels (xlabel, ylabel, title) according to the style guide (including translation)
 
     :param xlabel: text or rosetta key for the x-axis label
@@ -126,9 +124,7 @@ def apply_plot_labels(
     )
 
 
-def apply_watermark(
-    watermark_text: str, style: Style = None, use_default: bool = True, **kwargs
-) -> None:
+def apply_watermark(watermark_text: str, style: Style = None, use_default: bool = True, **kwargs) -> None:
     """Helper function to apply watermark text to a plot based on config Style object parameters
 
     :param watermark_text: Text to display
@@ -221,9 +217,7 @@ def visualize_1d_distribution(
         data: List[Any] = [data]
 
     # Plot the data and (and best fits if applicable)
-    figure_handle: plt.Figure = plt.figure(
-        facecolor=config.facecolor, figsize=config.figsize
-    )
+    figure_handle: plt.Figure = plt.figure(facecolor=config.facecolor, figsize=config.figsize)
     plt.axes().set_prop_cycle(config.cycler)
     for data_set in data:
         # plotting on log x-axis requires special pre-treatment (log-distributed bin edges)
@@ -232,9 +226,7 @@ def visualize_1d_distribution(
                 if not isinstance(bins, (int, float)):
                     hist_bins = bins
                 else:
-                    hist_bins = np.logspace(
-                        np.log10(min(data_set)), np.log10(max(data_set)), bins
-                    )
+                    hist_bins = np.logspace(np.log10(min(data_set)), np.log10(max(data_set)), bins)
             else:
                 hist_bins = np.logspace(
                     np.log10(min(data_set)),
@@ -262,9 +254,7 @@ def visualize_1d_distribution(
         ylabel_buffer: str = ylabel_translated
     if kwargs.get("density"):
         ylabel_buffer += " (density)"
-    apply_plot_labels(
-        xlabel=xlabel_buffer, ylabel=ylabel_buffer, title=title, style=config
-    )
+    apply_plot_labels(xlabel=xlabel_buffer, ylabel=ylabel_buffer, title=title, style=config)
     if legend_strings:
         plt.legend(legend_strings, fontsize=config.legend_fontsize)
 
@@ -346,9 +336,7 @@ def visualize_x_y(
         y_data: List[Any] = [y_data]
 
     # Plot the data and (and best fits if applicable)
-    figure_handle: plt.Figure = plt.figure(
-        facecolor=config.facecolor, figsize=config.figsize
-    )
+    figure_handle: plt.Figure = plt.figure(facecolor=config.facecolor, figsize=config.figsize)
     plt.axes().set_prop_cycle(config.cycler)
     scatter_handles: List[Any] = []
 
@@ -364,31 +352,23 @@ def visualize_x_y(
             y_array: np.ndarray = np.asarray(data_set[1])
 
         # Convert to datetime for plotting if intending to use human-readable format
-        if x_axis_human_tick_labels and any(
-            not isinstance(x, datetime.datetime) for x in x_array
-        ):
+        if x_axis_human_tick_labels and any(not isinstance(x, datetime.datetime) for x in x_array):
             if any(np.isnan(x_array)):
                 raise ValueError(
                     "Cannot convert NaN to datetime. Use numeric x-axis labels or filter NaNs upstream."
                 )
-            x_array: List[datetime.datetime] = [
-                datetime.datetime.fromtimestamp(ts) for ts in x_array
-            ]
+            x_array: List[datetime.datetime] = [datetime.datetime.fromtimestamp(ts) for ts in x_array]
 
         if "scatter" in types:
             if log_norm_colors:
                 kwargs.setdefault("norm", matplotlib.colors.LogNorm())
             if kwargs.get("c") is None:
                 kwargs.setdefault("color", config.color)
-            scatter_handles.append(
-                plt.scatter(x_array, y_array, config.markersize, **kwargs)
-            )
+            scatter_handles.append(plt.scatter(x_array, y_array, config.markersize, **kwargs))
 
         if any(x in types for x in ["plot", "line"]):
             includes_line_plot: bool = True
-            p = plt.plot(
-                x_array, y_array, color=config.color, linewidth=config.linewidth
-            )
+            p = plt.plot(x_array, y_array, color=config.color, linewidth=config.linewidth)
 
         # Make sure that the axes facecolor matches the figure facecolor
         plt.gca().set(facecolor=config.facecolor)
@@ -402,9 +382,7 @@ def visualize_x_y(
                 degree: int = plot_best_fit
             else:
                 degree: int = 1
-            plot_best_fit_line(
-                x_array, y_array, degree=degree, color=color, style=config
-            )
+            plot_best_fit_line(x_array, y_array, degree=degree, color=color, style=config)
 
         if rolling_mean_width or rolling_median_width:
             df: pd.DataFrame = pd.DataFrame({"x": x_array, "y": y_array})
@@ -433,9 +411,7 @@ def visualize_x_y(
     ylabel_buffer: str = config.translate(ylabel, missing_response="return_input")
     if "y" in cumulative:
         ylabel_buffer += " (cumulative)"
-    apply_plot_labels(
-        xlabel=xlabel_buffer, ylabel=ylabel_buffer, title=title, style=config
-    )
+    apply_plot_labels(xlabel=xlabel_buffer, ylabel=ylabel_buffer, title=title, style=config)
     if show_colorbar or colorbar_label:
         cbar: plt.colorbar.Colorbar = plt.colorbar()
         if colorbar_label:
@@ -475,9 +451,7 @@ def visualize_1d_distribution_interpreter(*args, **kwargs) -> plt.Figure:
         if isinstance(args[0], pd.DataFrame):
             if isinstance(args[1], list):
                 data = [args[0].loc[:, x].tolist() for x in args[1]]
-                kwargs.setdefault(
-                    "legend_strings", [config.translate(x) for x in args[1]]
-                )
+                kwargs.setdefault("legend_strings", [config.translate(x) for x in args[1]])
             elif isinstance(args[1], str):
                 data = args[0].loc[:, args[1]].tolist()
                 kwargs.setdefault("xlabel", config.translate(args[1]))
@@ -556,9 +530,7 @@ def visualize_x_y_input_interpreter(*args, **kwargs) -> plt.Figure:
                     f"Keys {args[1]} & {args[2]} not both in dataframe with: {df.keys().tolist()}"
                 )
         else:
-            raise ValueError(
-                f"Expected positional arguments for feature names, got {args[1]} and {args[2]}"
-            )
+            raise ValueError(f"Expected positional arguments for feature names, got {args[1]} and {args[2]}")
         x_data = df[args[1]]
         y_data = df[args[2]]
         kwargs.setdefault("xlabel", config.translate(args[1]))
@@ -614,18 +586,14 @@ def visualize_hist2d(
     """
     # Set style. Overrides: kwargs > style input > Style() defaults
     config: Style = Style(**{**Style().dict(), **make_dict(style), **make_dict(kwargs)})
-    kwargs: Dict[str, Any] = {
-        k: v for k, v in kwargs.items() if (k not in config.dict()) or (k == "cmap")
-    }
+    kwargs: Dict[str, Any] = {k: v for k, v in kwargs.items() if (k not in config.dict()) or (k == "cmap")}
     kwargs.setdefault("cmap", config.sequential_cmap)
 
     x_data: List[Any] = to_list_if_other_array(x_data)
     y_data: List[Any] = to_list_if_other_array(y_data)
 
     # Make the plot
-    figure_handle: plt.Figure = plt.figure(
-        facecolor=config.facecolor, figsize=config.figsize
-    )
+    figure_handle: plt.Figure = plt.figure(facecolor=config.facecolor, figsize=config.figsize)
     if zscale.lower() == "log":
         kwargs.setdefault("norm", matplotlib.colors.LogNorm())
     elif zscale.lower() != "linear":
@@ -686,9 +654,7 @@ def visualize_surface(
     # Set style. Overrides: kwargs > style input > Style() defaults
     config: Style = Style(**{**Style().dict(), **make_dict(style), **make_dict(kwargs)})
 
-    kwargs: Dict[str, Any] = {
-        k: v for k, v in kwargs.items() if (k not in config.dict()) or (k == "cmap")
-    }
+    kwargs: Dict[str, Any] = {k: v for k, v in kwargs.items() if (k not in config.dict()) or (k == "cmap")}
     kwargs.setdefault("cmap", config.sequential_cmap)
 
     x_data: List[Any] = to_list_if_other_array(x_data)
@@ -700,9 +666,7 @@ def visualize_surface(
     pivoted: pd.DataFrame = df.pivot("y", "x", "z")
 
     # Make the plot
-    figure_handle: plt.Figure = plt.figure(
-        facecolor=config.facecolor, figsize=config.figsize
-    )
+    figure_handle: plt.Figure = plt.figure(facecolor=config.facecolor, figsize=config.figsize)
     ax: plt.Axes = sns.heatmap(pivoted, **kwargs)
 
     # Adjust view & style where applicable
@@ -752,9 +716,7 @@ def visualize_embedded_surface(
     """
     # Set style. Overrides: kwargs > style input > Style() defaults
     config: Style = Style(**{**Style().dict(), **make_dict(style), **make_dict(kwargs)})
-    kwargs: Dict[str, Any] = {
-        k: v for k, v in kwargs.items() if (k not in config.dict()) or (k == "cmap")
-    }
+    kwargs: Dict[str, Any] = {k: v for k, v in kwargs.items() if (k not in config.dict()) or (k == "cmap")}
     kwargs.setdefault("cmap", config.sequential_cmap)
 
     x_data: List[Any] = to_list_if_other_array(x_data)
@@ -762,9 +724,7 @@ def visualize_embedded_surface(
     z_data: List[Any] = to_list_if_other_array(z_data)
 
     # Make the plot
-    figure_handle: plt.Figure = plt.figure(
-        facecolor=config.facecolor, figsize=config.figsize
-    )
+    figure_handle: plt.Figure = plt.figure(facecolor=config.facecolor, figsize=config.figsize)
     ax = Axes3D(figure_handle)
     if log_norm_colors:
         kwargs.setdefault("norm", matplotlib.colors.LogNorm())
@@ -792,9 +752,7 @@ def surface_from_dataframe(
     """Extremely thin wrapper around plot_surface() that extracts the data from a dataframe"""
     col_names: List[str] = [x_col_name, y_col_name, z_col_name]
     if any(element not in (keys := df.keys().tolist()) for element in col_names):
-        raise ValueError(
-            f"Could not find all of {col_names} in data frame keys: {keys}"
-        )
+        raise ValueError(f"Could not find all of {col_names} in data frame keys: {keys}")
     return visualize_surface(df[x_col_name], df[y_col_name], df[z_col_name], **kwargs)
 
 

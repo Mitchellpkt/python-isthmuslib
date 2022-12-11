@@ -77,9 +77,7 @@ class VectorMultiset(PickleUtils, Style, Rosetta):
         :return: Extracted data
         """
         if feature not in self.data.keys():
-            raise ValueError(
-                f"Feature {feature} not in known keys: {self.data.keys().tolist()}"
-            )
+            raise ValueError(f"Feature {feature} not in known keys: {self.data.keys().tolist()}")
         values: pd.Series = self.data.loc[:, feature]
         if args:
             for unpack_next in args:
@@ -117,9 +115,7 @@ class VectorMultiset(PickleUtils, Style, Rosetta):
         """
         return self.data
 
-    def from_dataframe(
-        self, data_frame: pd.DataFrame, inplace: bool = True, **kwargs
-    ) -> Union[Any, None]:
+    def from_dataframe(self, data_frame: pd.DataFrame, inplace: bool = True, **kwargs) -> Union[Any, None]:
         """Makes an VectorMultiset from a pandas data frame
 
         :param data_frame: data frame to import
@@ -249,9 +245,7 @@ class VectorMultiset(PickleUtils, Style, Rosetta):
                 args[0],
             )  # sequences we can infer the basis for the x-axis
         if isinstance(self, SlidingWindowResults) and (len(args) == 1):
-            raise ValueError(
-                f"Plot requires x & y. Hint: You might want SlidingWindowResults.plot_results()"
-            )
+            raise ValueError(f"Plot requires x & y. Hint: You might want SlidingWindowResults.plot_results()")
         return self.visualize_x_y(types="plot", *args, **kwargs)
 
     def hist(self, col_name: str, **kwargs) -> plt.Figure:
@@ -298,15 +292,9 @@ class VectorMultiset(PickleUtils, Style, Rosetta):
         """
         if isinstance(self, VectorSequence) and (not x_name):
             x_name: str = self.basis_col_name
-        kwargs.setdefault(
-            "xlabel", self.translate(x_name, missing_response="return_input")
-        )
-        kwargs.setdefault(
-            "ylabel", self.translate(y_name, missing_response="return_input")
-        )
-        kwargs.setdefault(
-            "title", self.translate(z_name, missing_response="return_input")
-        )
+        kwargs.setdefault("xlabel", self.translate(x_name, missing_response="return_input"))
+        kwargs.setdefault("ylabel", self.translate(y_name, missing_response="return_input"))
+        kwargs.setdefault("title", self.translate(z_name, missing_response="return_input"))
         return visualize_surface(
             self.data.loc[:, x_name],
             self.data.loc[:, y_name],
@@ -365,9 +353,9 @@ class VectorMultiset(PickleUtils, Style, Rosetta):
         :param kwargs: additional keyword arguments for pandas groupby method
         :return: data frame with combined according `aggregation_method` into bins of `group_by_col_names`
         """
-        return getattr(
-            self.data.groupby(by=group_by_col_names, **kwargs), aggregation_method
-        )().reset_index(drop=False)
+        return getattr(self.data.groupby(by=group_by_col_names, **kwargs), aggregation_method)().reset_index(
+            drop=False
+        )
 
     def plot_projection_to_surface(
         self,
@@ -410,21 +398,15 @@ class VectorMultiset(PickleUtils, Style, Rosetta):
         :return: trimmed input feature data set
         """
         if not input_feature_names:
-            input_feature_names = [
-                x for x in self.data.keys() if x != target_feature_name
-            ]
+            input_feature_names = [x for x in self.data.keys() if x != target_feature_name]
         input_feature_data = self.data.loc[:, input_feature_names]
         if normalize:
             for fieldname in input_feature_data.keys():
-                std_dev: float = float(
-                    np.std(this_field_data := self.data.loc[:, fieldname])
-                )
+                std_dev: float = float(np.std(this_field_data := self.data.loc[:, fieldname]))
                 input_feature_data[fieldname] = [x / std_dev for x in this_field_data]
 
         target_feature_data = self.data.loc[:, target_feature_name].to_numpy()
-        return SelectKBest(chi2, k=k_best).fit_transform(
-            input_feature_data, target_feature_data, **kwargs
-        )
+        return SelectKBest(chi2, k=k_best).fit_transform(input_feature_data, target_feature_data, **kwargs)
 
     def cast_to_numeric(
         self,
@@ -451,9 +433,7 @@ class VectorMultiset(PickleUtils, Style, Rosetta):
         if inplace:
             self.data = df
         else:
-            return self.__class__(
-                data=df, **{k: v for k, v in self.dict().items() if k != "data"}
-            )
+            return self.__class__(data=df, **{k: v for k, v in self.dict().items() if k != "data"})
 
     def __init__(self, **kwargs):
 
@@ -464,9 +444,7 @@ class VectorMultiset(PickleUtils, Style, Rosetta):
                 if pathlib.Path(data_input).exists():
                     kwargs["data"] = pd.read_csv(data_input)
                 else:
-                    raise ValueError(
-                        f"Input data string interpreted as a path does not exist:\n{data_input}"
-                    )
+                    raise ValueError(f"Input data string interpreted as a path does not exist:\n{data_input}")
             else:
                 raise ValueError(
                     f"Input data appears to be a {type(data_input)} but is not a file with .csv extension"
@@ -474,14 +452,10 @@ class VectorMultiset(PickleUtils, Style, Rosetta):
 
         super().__init__(**kwargs)
 
-        if not kwargs.get("disable_auto_conversion_to_numeric", False) and (
-            self.data is not None
-        ):
+        if not kwargs.get("disable_auto_conversion_to_numeric", False) and (self.data is not None):
             self.cast_to_numeric()
 
-    def drop_col_types(
-        self, drop_types: Union[type, List[type]], inplace: bool = True
-    ) -> Union[Any, None]:
+    def drop_col_types(self, drop_types: Union[type, List[type]], inplace: bool = True) -> Union[Any, None]:
         """
         Helper function to drop columns of a particular type(s)
 
@@ -492,9 +466,7 @@ class VectorMultiset(PickleUtils, Style, Rosetta):
         if not isinstance(drop_types, (list, tuple)):
             drop_types = [drop_types]
         target_cols: List[str] = [
-            k
-            for k in self.data.keys()
-            if isinstance(self.data.loc[:, k][0], drop_types)
+            k for k in self.data.keys() if isinstance(self.data.loc[:, k][0], drop_types)
         ]
         if inplace:
             self.data.drop(columns=target_cols, inplace=True)
@@ -573,9 +545,7 @@ class VectorMultiset(PickleUtils, Style, Rosetta):
     #
     #     return results
 
-    def calculate_stumpy_profile_univariate(
-        self, col_name: str, window_size: int, **kwargs
-    ) -> np.ndarray:
+    def calculate_stumpy_profile_univariate(self, col_name: str, window_size: int, **kwargs) -> np.ndarray:
         """
         Very thin wrapper around stumpy's matrix profile method. NB: for use in MultiSet, user is responsible for order
 
@@ -599,13 +569,9 @@ class VectorMultiset(PickleUtils, Style, Rosetta):
         :return: figure handle of the plot
         """
         # Make the plot and profile
-        figsize: Any = kwargs.pop(
-            "figsize", self.figsize
-        )  # typically a 2-element tuple or list
+        figsize: Any = kwargs.pop("figsize", self.figsize)  # typically a 2-element tuple or list
         title: str = kwargs.pop("title", self.translate(self.name_root))
-        profile: np.ndarray = self.calculate_stumpy_profile_univariate(
-            col_name, window_size, **kwargs
-        )
+        profile: np.ndarray = self.calculate_stumpy_profile_univariate(col_name, window_size, **kwargs)
         minimum: float = float(np.nanmin(self.data.loc[:, col_name].tolist()))
         maximum: float = float(np.nanmax(self.data.loc[:, col_name].tolist()))
         fig, axs = plt.subplots(
@@ -616,9 +582,7 @@ class VectorMultiset(PickleUtils, Style, Rosetta):
             facecolor=self.facecolor,
         )
         plt.suptitle(title, fontsize=self.title_fontsize)
-        axs[0].plot(
-            self.data.loc[:, col_name].tolist(), color=kwargs.get("color", self.color)
-        )
+        axs[0].plot(self.data.loc[:, col_name].tolist(), color=kwargs.get("color", self.color))
         axs[0].set_ylabel(self.translate(col_name), fontsize=self.label_fontsize)
         axs[1].set_xlabel(self.translate("Index"), fontsize=self.label_fontsize)
         axs[1].set_ylabel("Matrix Profile", fontsize=self.label_fontsize)
@@ -628,9 +592,7 @@ class VectorMultiset(PickleUtils, Style, Rosetta):
         if annotate_motif:
             motif_idx = np.argsort(profile[:, 0])[0]
             nearest_neighbor_idx = profile[motif_idx, 1]
-            rect = Rectangle(
-                (motif_idx, minimum), window_size, maximum, facecolor="palegoldenrod"
-            )
+            rect = Rectangle((motif_idx, minimum), window_size, maximum, facecolor="palegoldenrod")
             axs[0].add_patch(rect)
             rect = Rectangle(
                 (nearest_neighbor_idx, minimum),
@@ -647,10 +609,7 @@ class VectorMultiset(PickleUtils, Style, Rosetta):
     # Group the multiset by a given row
     def group_by_col(self, by: str) -> Dict[Any, pd.DataFrame]:
         """Helper function that returns a dictionary of individual dataframes separated by 'by'"""
-        return {
-            x: self.data.loc[self.data.loc[:, by] == x, :]
-            for x in set(self.data.loc[:, by])
-        }
+        return {x: self.data.loc[self.data.loc[:, by] == x, :] for x in set(self.data.loc[:, by])}
 
 
 class SlidingWindowResults(VectorMultiset):
@@ -663,9 +622,7 @@ class SlidingWindowResults(VectorMultiset):
         """Helper function that returns individual dataframes for each window width"""
         return self.group_by_col(by=self.window_width_col_name)
 
-    def plot_results(
-        self, col_name: str, legend_override: List[str] = None, **kwargs
-    ) -> plt.Figure:
+    def plot_results(self, col_name: str, legend_override: List[str] = None, **kwargs) -> plt.Figure:
         """Plot any sequence (based on the data frame column name)
 
         :param col_name: dataframe column to plot
@@ -707,9 +664,7 @@ class SlidingWindowResults(VectorMultiset):
             **kwargs,
         )
 
-    def plot_pdfs(
-        self, col_name: str, legend_override: List[str] = None, **kwargs
-    ) -> plt.Figure:
+    def plot_pdfs(self, col_name: str, legend_override: List[str] = None, **kwargs) -> plt.Figure:
         """
         Plot the probability density function(s) of the sliding window results. Useful kwargs: [cumulative, density]
 
@@ -738,17 +693,13 @@ class SlidingWindowResults(VectorMultiset):
         :param kwargs: additional keyword arguments for surface method
         :return: figure handle of the plot
         """
-        return self.surface(
-            self.window_start_col_name, self.window_width_col_name, col_name, **kwargs
-        )
+        return self.surface(self.window_start_col_name, self.window_width_col_name, col_name, **kwargs)
 
 
 class InfoSurface(SlidingWindowResults):
     """Wrapper for SlidingWindowResults that knows how to plot the infosurface"""
 
-    def plot_info_surface(
-        self, singular_values: List[int] = None, **kwargs
-    ) -> List[plt.Figure]:
+    def plot_info_surface(self, singular_values: List[int] = None, **kwargs) -> List[plt.Figure]:
         """Plot the info surface showing value of singular vectors as a function of window start and width
 
         :param singular_values: Which singular values to plot [1, 2, 3] by default
@@ -759,9 +710,7 @@ class InfoSurface(SlidingWindowResults):
             singular_values: List[int] = [1, 2, 3]
         for s in singular_values:
             figure_handles.append(
-                self.heatmap_feature(
-                    f"singular_value_{s}", title=f"Singular value # {s}", **kwargs
-                )
+                self.heatmap_feature(f"singular_value_{s}", title=f"Singular value # {s}", **kwargs)
             )
         return figure_handles
 
@@ -778,20 +727,12 @@ class VectorSequence(VectorMultiset):
         super().__init__(**kwargs)
 
         # Cast to numeric if possible
-        if not kwargs.get("disable_auto_conversion_to_numeric", False) and (
-            self.data is not None
-        ):
+        if not kwargs.get("disable_auto_conversion_to_numeric", False) and (self.data is not None):
             self.cast_to_numeric()
 
         # Handle the other processing specific to ordered data
-        if (
-            (self.data is not None)
-            and len(self.data)
-            and (not skip_vector_sequence_init)
-        ):
-            if (not self.basis_col_name) or (
-                self.basis_col_name not in self.data.keys()
-            ):
+        if (self.data is not None) and len(self.data) and (not skip_vector_sequence_init):
+            if (not self.basis_col_name) or (self.basis_col_name not in self.data.keys()):
                 raise ValueError(
                     f"{self.basis_col_name=} not in known keys: {self.data.keys().tolist()=}\n"
                     + "Pass skip_vector_sequence_init=True to suppress"
@@ -862,16 +803,12 @@ class VectorSequence(VectorMultiset):
         :return: VectorSequence if not inplace
         """
         df: pd.DataFrame = deepcopy(self.data)
-        df.sort_values(
-            by=self.basis_col_name, ascending=True, inplace=True, ignore_index=True
-        )
+        df.sort_values(by=self.basis_col_name, ascending=True, inplace=True, ignore_index=True)
         if not start_at:
             start_at: Any = min(df.loc[:, self.basis_col_name])
         if not stop_at:
             stop_at: Any = max(df.loc[:, self.basis_col_name])
-        in_range: pd.DataFrame = df.loc[
-            df.loc[:, self.basis_col_name].between(start_at, stop_at), :
-        ]
+        in_range: pd.DataFrame = df.loc[df.loc[:, self.basis_col_name].between(start_at, stop_at), :]
         if reset_index:
             in_range.reset_index(drop=True, inplace=True)
         if inplace:
@@ -932,9 +869,7 @@ class VectorSequence(VectorMultiset):
         """
         if not by:
             by = self.basis_col_name
-        result: pd.DataFrame = self.data.sort_values(
-            by=by, ascending=True, inplace=False, ignore_index=False
-        )
+        result: pd.DataFrame = self.data.sort_values(by=by, ascending=True, inplace=False, ignore_index=False)
         if reset_index:
             result.reset_index(drop=True, inplace=True)
         if inplace:
@@ -946,9 +881,7 @@ class VectorSequence(VectorMultiset):
                 data=result,
             )
 
-    def downsample(
-        self, interval: Union[int, float], method: str = "by_basis", inplace=True
-    ):
+    def downsample(self, interval: Union[int, float], method: str = "by_basis", inplace=True):
         """
         Downsamples a VectorSequence
 
@@ -962,9 +895,7 @@ class VectorSequence(VectorMultiset):
 
         if "by_row" in method.lower():
             if not isinstance(interval, int):
-                raise ValueError(
-                    f"downsample with method='by_row' requires integer interval"
-                )
+                raise ValueError(f"downsample with method='by_row' requires integer interval")
             keep_indices: List[int] = list(range(0, len(result_vector.data), interval))
 
         elif "by_basis" in method:
@@ -976,9 +907,7 @@ class VectorSequence(VectorMultiset):
                     last = basis_value
 
         else:
-            raise ValueError(
-                f"Unknown downsample method {method}; try 'by_row' or 'by_basis'."
-            )
+            raise ValueError(f"Unknown downsample method {method}; try 'by_row' or 'by_basis'.")
 
         # Downsample and record or return the result
         result_vector.data = result_vector.data.iloc[keep_indices, :]
@@ -1037,9 +966,7 @@ class VectorSequence(VectorMultiset):
     #                                       vv sequence vv       vv args vv          vv kwargs vv
     def sliding_window(
         self,
-        function: Callable[
-            [Any, Union[Tuple[Any], List[Any]], Dict[str, Any]], Dict[str, Any]
-        ],
+        function: Callable[[Any, Union[Tuple[Any], List[Any]], Dict[str, Any]], Dict[str, Any]],
         window_widths: List[float] = None,
         window_starts: List[Any] = None,
         step_size: float = None,
@@ -1084,9 +1011,7 @@ class VectorSequence(VectorMultiset):
             duration: float = max(self.data.loc[:, self.basis_col_name]) - min(
                 self.data.loc[:, self.basis_col_name]
             )
-            window_widths: List[float] = [
-                duration / x for x in range(20, 401, 20)
-            ]  # TODO: move vals to vars
+            window_widths: List[float] = [duration / x for x in range(20, 401, 20)]  # TODO: move vals to vars
 
         # First, figure out where to place the windows based on the window widths and/or steps size:
         list_of_start_and_width_tuples: List[Tuple[float, float]] = []
@@ -1094,9 +1019,7 @@ class VectorSequence(VectorMultiset):
             if not window_starts:
                 if step_size:
                     if allow_shorter_windows:
-                        window_starts: List[float] = list(
-                            np.arange(min(basis), max(basis), step_size)
-                        )
+                        window_starts: List[float] = list(np.arange(min(basis), max(basis), step_size))
                     else:
                         window_starts: List[float] = list(
                             np.arange(min(basis), max(basis) - window_width, step_size)
@@ -1105,14 +1028,10 @@ class VectorSequence(VectorMultiset):
                     window_starts: List[float] = list(
                         np.arange(min(basis), max(basis) - window_width, window_width)
                     )
-            list_of_start_and_width_tuples += [
-                (start_time, window_width) for start_time in window_starts
-            ]
+            list_of_start_and_width_tuples += [(start_time, window_width) for start_time in window_starts]
 
         if not list_of_start_and_width_tuples:
-            raise ValueError(
-                "No windows for sliding analysis - check your sizes and start times"
-            )
+            raise ValueError("No windows for sliding analysis - check your sizes and start times")
 
         if limit and limit < len(list_of_start_and_width_tuples):
             list_of_start_and_width_tuples = list_of_start_and_width_tuples[:limit]
@@ -1123,8 +1042,7 @@ class VectorSequence(VectorMultiset):
             evaluations: List[Dict[Any, Any]] = process_queue(
                 func=self.evaluate_over_window,
                 iterable=[
-                    (function, start, width, args, kwargs)
-                    for start, width in list_of_start_and_width_tuples
+                    (function, start, width, args, kwargs) for start, width in list_of_start_and_width_tuples
                 ],
                 pool_function="starmap",
                 batching=False,
@@ -1169,9 +1087,7 @@ class VectorSequence(VectorMultiset):
         :return: repackaged instance with new class (if applicable)
         """
         cache: Dict[str, Any] = instance.dict()
-        cache["data"] = pd.DataFrame(
-            {x: input.__getattribute__(x) for x in [sequence_attribute, basis_name]}
-        )
+        cache["data"] = pd.DataFrame({x: input.__getattribute__(x) for x in [sequence_attribute, basis_name]})
         cache["basis_col_name"] = basis_name
         return self.__class__(**cache)
 
@@ -1187,9 +1103,7 @@ class VectorSequence(VectorMultiset):
         try:
             return sm.tsa.seasonal_decompose(x, period=period, **kwargs)
         except ValueError as e:
-            raise ValueError(
-                f"Error - did you include a non-numeric column, or not specify 'cols'? See: {e}"
-            )
+            raise ValueError(f"Error - did you include a non-numeric column, or not specify 'cols'? See: {e}")
 
     def plot_decomposition(
         self,
@@ -1270,9 +1184,7 @@ class VectorSequence(VectorMultiset):
                 color="darkslateblue",
             )
             add_labels(xlabel, ylabel)
-            plt.title(
-                f"{title}seasonality with period {period}", size=self.title_fontsize
-            )
+            plt.title(f"{title}seasonality with period {period}", size=self.title_fontsize)
             if xlim:
                 plt.xlim(xlim)
 
@@ -1357,15 +1269,9 @@ class VectorSequence(VectorMultiset):
         """
         # Set style. Overrides: kwargs > style input > Style() defaults
 
-        config: Style = Style(
-            **{**Style().dict(), **make_dict(style), **make_dict(kwargs)}
-        )
-        svd_kwargs: Dict[str, Any] = {
-            k: v for k, v in kwargs.items() if k not in config.dict()
-        }
-        style_kwargs: Dict[str, Any] = {
-            k: v for k, v in kwargs.items() if k in config.dict()
-        }
+        config: Style = Style(**{**Style().dict(), **make_dict(style), **make_dict(kwargs)})
+        svd_kwargs: Dict[str, Any] = {k: v for k, v in kwargs.items() if k not in config.dict()}
+        style_kwargs: Dict[str, Any] = {k: v for k, v in kwargs.items() if k in config.dict()}
 
         if use_cache and self.info_surface:
             info_surface: InfoSurface = self.info_surface
@@ -1439,17 +1345,13 @@ class VectorSequence(VectorMultiset):
         :param kwargs: additional keyword arguments for stumpy and plots (figsize, title, ...)
         :return: figure handle showing the data and the analysis results
         """
-        figsize: Any = kwargs.pop(
-            "figsize", self.figsize
-        )  # typically a 2-element tuple or list
+        figsize: Any = kwargs.pop("figsize", self.figsize)  # typically a 2-element tuple or list
         title: str = kwargs.pop("title", self.translate(self.name_root))
 
         # If column name not specified and only one non-basis column, infer that we should use that one
         if not col_name:
             if len(self.data.keys()) == 2:
-                col_name: str = [
-                    x for x in self.data.keys() if x != self.basis_col_name
-                ][0]
+                col_name: str = [x for x in self.data.keys() if x != self.basis_col_name][0]
             else:
                 raise ValueError(
                     f"For fluss, please specify `col_name=X` with X from: {list(self.data.keys())}"
@@ -1492,9 +1394,7 @@ class VectorSequence(VectorMultiset):
             **kwargs,
         )
 
-    def human_timeframe(
-        self, prefix: str = None, between: str = None, suffix: str = None, **kwargs
-    ) -> str:
+    def human_timeframe(self, prefix: str = None, between: str = None, suffix: str = None, **kwargs) -> str:
         """
         Formatting helper function for ensuring consistency across timeframe descriptions, for example
 
@@ -1580,22 +1480,17 @@ class Timeseries(VectorSequence):
             weights_all: List[float] = [slope * x + 1 for x in df.loc[:, age_col_name]]
         elif "exp" in method.lower():  # 'exp' or 'exponential'
             #  y = b ^ (-k * x) where k is the decay constant and x is the age
-            decay_constant: float = (
-                -1 * math.log(lowest_weight, base) / decay_timeframe_sec
-            )
+            decay_constant: float = -1 * math.log(lowest_weight, base) / decay_timeframe_sec
             weights_all: List[float] = [
                 base ** (-1 * decay_constant * tau) for tau in df.loc[:, age_col_name]
             ]
         else:
-            raise ValueError(
-                f"Unknown method {method}, please try 'linear' or 'exponential'"
-            )
+            raise ValueError(f"Unknown method {method}, please try 'linear' or 'exponential'")
 
         # Replace any out-of-timeframe data points with the post_window_weight
         ages_and_weights: zip = zip(df.loc[:, age_col_name], weights_all)
         weights_raw: List[float] = [
-            w if a < decay_timeframe_sec else post_window_weight
-            for a, w in ages_and_weights
+            w if a < decay_timeframe_sec else post_window_weight for a, w in ages_and_weights
         ]
         normalization_factor = sum(weights_raw)
         final_weights: List[float] = [w / normalization_factor for w in weights_raw]
@@ -1631,9 +1526,7 @@ class Timeseries(VectorSequence):
         """
 
         weights = self.calc_weights(**kwargs)
-        return sum(
-            [weight * val for weight, val in zip(weights, self.data.loc[:, col_name])]
-        )
+        return sum([weight * val for weight, val in zip(weights, self.data.loc[:, col_name])])
 
 
 ################
