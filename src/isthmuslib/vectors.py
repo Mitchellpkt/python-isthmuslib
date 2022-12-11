@@ -189,6 +189,7 @@ class VectorMultiset(PickleUtils, Style, Rosetta):
         self,
         x: Union[str, List[Any], Any],
         y: Union[str, List[Any], Any],
+        c: str = None,
         cumulative: Union[str, List[str]] = "",
         **kwargs,
     ) -> plt.Figure:
@@ -212,7 +213,12 @@ class VectorMultiset(PickleUtils, Style, Rosetta):
         else:
             y_data: Any = y
 
+        # Misc style
         kwargs.setdefault("title", self.translate(self.name_root))
+        if (c is not None) and (isinstance(c, str)) and (c in self.data.keys()):
+            kwargs["c"] = self.data.loc[:, c].tolist()
+        else:
+            kwargs["c"] = c
         return visualize_x_y(x_data, y_data, **kwargs)
 
     def viz2d(self, *args, **kwargs) -> plt.Figure:

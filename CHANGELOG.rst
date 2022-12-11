@@ -442,3 +442,8 @@ Changelog
 -------------------
 
 * tweak: keys helper
+
+0.0.95 (2022-12-11)
+-------------------
+
+* tweak: allow string specification of color column
