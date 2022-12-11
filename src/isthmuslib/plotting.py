@@ -189,6 +189,7 @@ def visualize_1d_distribution(
     legend_strings: Union[Tuple[str], List[str]] = None,
     xlim: Any = None,
     ylim: Any = None,
+    show: bool = False,
     **kwargs,
 ) -> plt.Figure:
     """Core function for visualizing 1-dimensional distribution(s)
@@ -204,6 +205,7 @@ def visualize_1d_distribution(
     :param legend_strings: override legend strings
     :param xlim: optional bound for the x-axis
     :param ylim: optional bound for the y-axis
+    :param show: set to true to trigger plt.show()
     :param kwargs: additional keyword arguments for matplotlib.pyplot.hist()
     :return: figure handle for the plot
     """
@@ -268,6 +270,8 @@ def visualize_1d_distribution(
 
     adjust_axes(log_axes=log_axes, style=config, xlim=xlim, ylim=ylim)
     apply_watermark(watermark, style=config)
+    if show:
+        plt.show()
     return figure_handle
 
 
@@ -294,6 +298,7 @@ def visualize_x_y(
     colorbar_label: str = None,
     x_axis_human_tick_labels: bool = False,
     x_axis_formatter: str = "%Y-%m-%d",
+    show: bool = False,
     **kwargs,
 ) -> plt.Figure:
     """Core function for visualizing 2-dimensional data sets
@@ -313,7 +318,6 @@ def visualize_x_y(
     :param plot_best_fit: whether to plot the best fit lines (specify degree, or pass True for degree 1)
     :param xlim: optional bound for the x-axis
     :param ylim: optional bound for the y-axis
-    :param kwargs: additional keyword arguments for matplotlib.pyplot.scatter()
     :param rolling_median_width: window width for rolling average taken by df.y.rolling(rolling_mean_width).mean()
     :param rolling_mean_width: window width for rolling average taken by df.y.rolling(rolling_median_width).median()
     :param colorbar_label: optional label for the colorbar
@@ -321,6 +325,8 @@ def visualize_x_y(
     :param show_colorbar: set to True to show colorbar
     :param x_axis_human_tick_labels: set to True to convert numeric values along the x-axis to human-readable timestamps
     :param x_axis_formatter: format string for the x-axis if human-readable
+    :param show: set to true to trigger plt.show()
+    :param kwargs: additional keyword arguments for matplotlib.pyplot.scatter()
     :return: figure handle for the plot
     """
     # Set style. Overrides: kwargs > style input > Style() defaults
@@ -448,6 +454,8 @@ def visualize_x_y(
         x_axis_formatter=x_axis_formatter,
     )
     apply_watermark(watermark, style=config)
+    if show:
+        plt.show()
     return figure_handle
 
 
@@ -582,6 +590,7 @@ def visualize_hist2d(
     show_colorbar: bool = True,
     colorbar_label: str = "counts",
     zscale: str = "linear",
+    show: bool = False,
     **kwargs,
 ) -> plt.Figure:
     """Visualize a 2-dimensional histogram (basically a heatmap of counts)
@@ -599,6 +608,7 @@ def visualize_hist2d(
     :param zscale: whether the colormap should be 'linear' or 'log'
     :param colorbar_label: text label to place next to the colorbar
     :param show_colorbar: whether to include the colorbar on teh plot
+    :param show: set to true to trigger plt.show()
     :param kwargs: additional keyword arguments for matplotlib.pyplot.hist2d()
     :return: figure handle for the plot
     """
@@ -636,6 +646,8 @@ def visualize_hist2d(
     if show_colorbar:
         cbar: plt.colorbar.Colorbar = plt.colorbar()
         cbar.set_label(colorbar_label, rotation=90, fontsize=config.label_fontsize)
+    if show:
+        plt.show()
     return figure_handle
 
 
@@ -651,6 +663,7 @@ def visualize_surface(
     style: Style = None,
     watermark: str = None,
     y_axis_ascending: bool = True,
+    show: bool = False,
     **kwargs,
 ) -> plt.Figure:
     """Plots a surface (note: seaborn heatmap has somewhat rigid requirements for data completeness)
@@ -666,6 +679,7 @@ def visualize_surface(
     :param style: configuration object (optional)
     :param watermark: watermark text
     :param y_axis_ascending: sort the axis low to high values bottom to top
+    :param show: set to true to trigger plt.show()
     :param kwargs: additional keyword arguments for seaborn heatmap()
     :return: figure handle for the plot
     """
@@ -699,6 +713,8 @@ def visualize_surface(
     apply_watermark(watermark, style=config)
     if y_axis_ascending:
         ax.invert_yaxis()
+    if show:
+        plt.show()
     return figure_handle
 
 
