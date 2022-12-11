@@ -15,6 +15,7 @@ from .utils import (
     margin_calc,
     to_list_if_other_array,
     make_dict,
+    dict_pretty,
 )
 
 
@@ -186,6 +187,9 @@ def visualize_1d_distribution(
     legend_strings: Union[Tuple[str], List[str]] = None,
     xlim: Any = None,
     ylim: Any = None,
+    describe: bool = False,
+    plot_mean: Union[bool, str] = False,
+    plot_median: Union[bool, str] = False,
     show: bool = False,
     **kwargs,
 ) -> plt.Figure:
@@ -202,11 +206,15 @@ def visualize_1d_distribution(
     :param legend_strings: override legend strings
     :param xlim: optional bound for the x-axis
     :param ylim: optional bound for the y-axis
+    :param describe: adds stats from pandas.DataFrame.describe() as a watermark
+    :param plot_mean: plots the mean as a vertical line
+    :param plot_median: plots the median as a vertical line
     :param show: set to true to trigger plt.show()
     :param kwargs: additional keyword arguments for matplotlib.pyplot.hist()
     :return: figure handle for the plot
     """
     # Set style. Overrides: kwargs > style input > Style() defaults
+    original_kwargs: dict = kwargs.copy()
     config: Style = Style(**{**Style().dict(), **make_dict(style), **make_dict(kwargs)})
     kwargs: Dict[str, Any] = {k: v for k, v in kwargs.items() if k not in config.dict()}
 
@@ -240,8 +248,25 @@ def visualize_1d_distribution(
             data_set,
             color=config.color,
             bins=hist_bins,
-            **{k: v for k, v in kwargs.items() if k != "bins"},
+            **{k: v for k, v in kwargs.items() if not any(x_ in k for x_ in ["plot", "bins"])},
         )
+        if describe:
+            description: pd.Series = pd.DataFrame({"_data_": data_set})["_data_"].describe()
+            stat_str: str = dict_pretty(
+                {stat_name: description[stat_name] for stat_name in description.keys().tolist()}
+            )
+            watermark += f"\n--- stats ---\n{stat_str}"
+            if "watermark_fontsize" not in original_kwargs:
+                config.watermark_fontsize = 12
+            if "watermark_placement" not in original_kwargs:
+                config.watermark_placement = (0.05, 0.6)
+
+        if plot_mean:
+            line_color: str = plot_mean if isinstance(plot_mean, str) else config.median_linecolor
+            plt.axvline(x=np.nanmean(data_set), color=line_color, linestyle="-")
+        if plot_median:
+            line_color: str = plot_mean if isinstance(plot_mean, str) else config.median_linecolor
+            plt.axvline(x=np.nanmedian(data_set), color=line_color, linestyle="--")
 
     # Make sure that the axes facecolor matches the figure facecolor
     plt.gca().set(facecolor=config.facecolor)
