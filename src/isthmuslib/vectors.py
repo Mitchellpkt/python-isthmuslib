@@ -881,14 +881,25 @@ class VectorSequence(VectorMultiset):
                 data=result,
             )
 
-    def downsample(self, interval: Union[int, float], method: str = "by_basis", inplace=True):
+    def downsample(
+        self,
+        interval: Union[int, float],
+        method: str = "by_basis",
+        basis_downsample_engine: str = "pandas",
+        inplace=True,
+        **kwargs,
+    ):
         """
         Downsamples a VectorSequence
+
+        If downsampling by basis, legacy mode leaves gaps where there is no data, whereas the pandas engine returns a regular timebase
 
         :param interval: interval by which to downsample (either by N rows, or by some basis interval)
         :param method: 'by_basis' or 'by_row'
         :param inplace: whether to update the dataframe data attribute in place or return an updated copy of self
-        :return:
+        :param basis_downsample_engine: How to downsample based on time 'pandas' or 'legacy' (default --> 'pandas')
+        :param kwargs: additional keyword arguments passed to the merge_asof method from padas
+        :return: Downsampled copy of self (or nothing if 'inplace=True')
         """
         result_vector: Any = deepcopy(self)
         result_vector.sort(inplace=True, reset_index=True)
@@ -897,20 +908,41 @@ class VectorSequence(VectorMultiset):
             if not isinstance(interval, int):
                 raise ValueError(f"downsample with method='by_row' requires integer interval")
             keep_indices: List[int] = list(range(0, len(result_vector.data), interval))
+            result_vector.data = result_vector.data.iloc[keep_indices, :]
 
         elif "by_basis" in method:
-            keep_indices: List[int] = []
-            last: float = result_vector.basis()[0]
-            for i, basis_value in enumerate(self.basis()):
-                if basis_value >= last + interval:
-                    keep_indices.append(i)
-                    last = basis_value
+            if basis_downsample_engine.lower() == "legacy":
+                keep_indices: List[int] = []
+                last: float = result_vector.basis()[0]
+                for i, basis_value in enumerate(self.basis()):
+                    if basis_value >= last + interval:
+                        keep_indices.append(i)
+                        last = basis_value
+                result_vector.data = result_vector.data.iloc[keep_indices, :]
+            elif basis_downsample_engine.lower() == "pandas":
+                basis_df = pd.DataFrame({self.basis_col_name: self.basis()})
+                min_basis = basis_df[self.basis_col_name].min()
+                max_basis = basis_df[self.basis_col_name].max()
+                target_timeseries = pd.DataFrame(
+                    {self.basis_col_name: np.arange(min_basis, max_basis, interval)}
+                )
+                result_vector.data = pd.merge_asof(
+                    result_vector.data,
+                    target_timeseries,
+                    left_on=self.basis_col_name,
+                    right_on=self.basis_col_name,
+                    direction="backward",
+                    **kwargs,
+                )
+            else:
+                raise ValueError(
+                    f"Unknown basis_downsample_engine: {basis_downsample_engine}. Use 'legacy' or 'pandas'"
+                )
 
         else:
             raise ValueError(f"Unknown downsample method {method}; try 'by_row' or 'by_basis'.")
 
         # Downsample and record or return the result
-        result_vector.data = result_vector.data.iloc[keep_indices, :]
         if inplace:
             self.data = result_vector.data
         else:
