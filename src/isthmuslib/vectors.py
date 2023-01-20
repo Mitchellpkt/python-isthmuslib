@@ -892,7 +892,7 @@ class VectorSequence(VectorMultiset):
         """
         Downsamples a VectorSequence
 
-        If downsampling by basis, legacy mode leaves gaps where there is no data, whereas the pandas engine returns a regular timebase
+        If downsampling by basis, legacy mode leaves gaps where there is no data, whereas the pandas engine returns a regular basis
 
         :param interval: interval by which to downsample (either by N rows, or by some basis interval)
         :param method: 'by_basis' or 'by_row'
