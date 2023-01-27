@@ -927,8 +927,8 @@ class VectorSequence(VectorMultiset):
                     {self.basis_col_name: np.arange(min_basis, max_basis, interval)}
                 )
                 result_vector.data = pd.merge_asof(
-                    result_vector.data,
                     target_timeseries,
+                    result_vector.data,
                     left_on=self.basis_col_name,
                     right_on=self.basis_col_name,
                     direction="backward",
