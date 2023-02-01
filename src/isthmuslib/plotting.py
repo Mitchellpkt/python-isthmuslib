@@ -304,6 +304,7 @@ def visualize_x_y(
     watermark: str = "",
     multi: bool = None,
     legend_strings: Union[Tuple[str], List[str]] = None,
+    loc: str = None,
     xlim: Any = None,
     ylim: Any = None,
     plot_best_fit: Union[bool, int] = False,
@@ -331,6 +332,7 @@ def visualize_x_y(
     :param watermark: watermark text
     :param multi: flag to specify whether multiple traces are desired, if the automatic inference is incorrect
     :param legend_strings: override legend strings
+    :param loc: location of the legend (matplotlib.pyplot convention)
     :param plot_best_fit: whether to plot the best fit lines (specify degree, or pass True for degree 1)
     :param xlim: optional bound for the x-axis
     :param ylim: optional bound for the y-axis
@@ -444,9 +446,9 @@ def visualize_x_y(
             cbar.set_label(colorbar_label, rotation=90, fontsize=config.label_fontsize)
     if legend_strings:
         if "scatter" in types:
-            plt.legend(scatter_handles, legend_strings, fontsize=config.legend_fontsize)
+            plt.legend(scatter_handles, legend_strings, fontsize=config.legend_fontsize, loc=loc)
         elif includes_line_plot:  # scatter legend overrides plot legend for now
-            plt.legend(legend_strings, fontsize=config.legend_fontsize)
+            plt.legend(legend_strings, fontsize=config.legend_fontsize, loc=loc)
     adjust_axes(
         log_axes=log_axes,
         style=config,
