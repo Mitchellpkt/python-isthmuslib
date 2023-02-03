@@ -887,6 +887,7 @@ class VectorSequence(VectorMultiset):
         method: str = "by_basis",
         basis_downsample_engine: str = "pandas",
         inplace=True,
+        target_timestamps: Union[List[float], None] = None,
         **kwargs,
     ):
         """
@@ -898,6 +899,7 @@ class VectorSequence(VectorMultiset):
         :param method: 'by_basis' or 'by_row'
         :param inplace: whether to update the dataframe data attribute in place or return an updated copy of self
         :param basis_downsample_engine: How to downsample based on time 'pandas' or 'legacy' (default --> 'pandas')
+        :param target_timestamps: optionally, specify an array of timestamps to downsample to (default --> None)
         :param kwargs: additional keyword arguments passed to the merge_asof method from padas
         :return: Downsampled copy of self (or nothing if 'inplace=True')
         """
@@ -920,14 +922,17 @@ class VectorSequence(VectorMultiset):
                         last = basis_value
                 result_vector.data = result_vector.data.iloc[keep_indices, :]
             elif basis_downsample_engine.lower() == "pandas":
-                basis_df = pd.DataFrame({self.basis_col_name: self.basis()})
-                min_basis = basis_df[self.basis_col_name].min()
-                max_basis = basis_df[self.basis_col_name].max()
-                target_timeseries = pd.DataFrame(
-                    {self.basis_col_name: np.arange(min_basis, max_basis, interval)}
-                )
+                if target_timestamps is not None:
+                    target_timebase: pd.DataFrame = pd.DataFrame({self.basis_col_name: target_timestamps})
+                else:
+                    basis_df = pd.DataFrame({self.basis_col_name: self.basis()})
+                    min_basis = basis_df[self.basis_col_name].min()
+                    max_basis = basis_df[self.basis_col_name].max()
+                    target_timebase: pd.DataFrame = pd.DataFrame(
+                        {self.basis_col_name: np.arange(min_basis, max_basis, interval)}
+                    )
                 result_vector.data = pd.merge_asof(
-                    target_timeseries,
+                    target_timebase,
                     result_vector.data,
                     left_on=self.basis_col_name,
                     right_on=self.basis_col_name,
