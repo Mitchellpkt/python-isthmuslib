@@ -886,7 +886,7 @@ class VectorSequence(VectorMultiset):
         interval: Union[int, float],
         method: str = "by_basis",
         basis_downsample_engine: str = "pandas",
-        inplace=True,
+        inplace: bool = True,
         target_timestamps: Union[List[float], None] = None,
         **kwargs,
     ):
