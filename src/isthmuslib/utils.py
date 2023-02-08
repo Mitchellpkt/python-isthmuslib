@@ -758,9 +758,8 @@ def process_queue(
     :param kwargs: additional keyword arguments for 'map' or 'starmap' (for example the max chunk size)
     :return: the results of func evaluated over the iterable
     """
-    # Get num workers if not supplied
-    if not num_workers:
-        num_workers = get_num_workers(num_workers)
+    # Logic in `get_num_workers` ensures that we do not fork in a child process or exceed CPU count
+    num_workers = get_num_workers(num_workers)
 
     # Attempt to infer the pool function to be used, if not specified
     # This is NOT infallible! Suppose you want to 'map' over a list of tuples; it would infer that 'starmap' is desired.
