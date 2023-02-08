@@ -457,3 +457,8 @@ Changelog
 -------------------
 
 * chore: distro stats in histogram watermark, and can mark mean & median on the plot
+
+0.0.98 (2022-02-08)
+-------------------
+
+* chore: more sophisticated utility controls

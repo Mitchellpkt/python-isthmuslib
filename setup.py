@@ -18,16 +18,18 @@ def read(*names, **kwargs):
         return fh.read()
 
 
+long_description_raw: str = "%s\n%s" % (
+    re.compile("^.. start-badges.*^.. end-badges", re.M | re.S).sub("", read("README.rst")),
+    re.sub(":[a-z]+:`~?(.*?)`", r"``\1``", read("CHANGELOG.rst")),
+)
+split_string: str = "Demo one-liners"
+
 setup(
     name="isthmuslib",
-    version="0.0.97",
+    version="0.0.98",
     license="LGPL-3.0-only",
     description="Tooling for rapid data exploration, timeseries analysis, log extraction & visualization, etc",
-    long_description="%s\n%s"
-    % (
-        re.compile("^.. start-badges.*^.. end-badges", re.M | re.S).sub("", read("README.rst")),
-        re.sub(":[a-z]+:`~?(.*?)`", r"``\1``", read("CHANGELOG.rst")),
-    ),
+    long_description=long_description_raw.split(split_string)[0],
     author="Isthmus (Mitchell P. Krawiec-Thayer)",
     author_email="isthmuslib@mitchellpkt.com",
     url="https://github.com/mitchellpkt/python-isthmuslib",
