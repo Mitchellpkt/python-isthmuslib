@@ -76,7 +76,7 @@ setup(
         "tqdm",
         # "scikit-learn",
         # "ipywidgets",
-        "stumpy",
+        # "stumpy",
     ],
     extras_require={},
     entry_points={

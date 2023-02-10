@@ -3,7 +3,8 @@ from typing import List, Any, Tuple, Callable, Dict, Union, Iterable
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import stumpy
+
+# import stumpy
 from matplotlib.patches import Rectangle
 from .config import Style
 from .utils import (
@@ -32,6 +33,7 @@ from tqdm.auto import tqdm
 
 # import matrixprofile
 import math
+import sys
 
 
 class SVD(BaseModel):
@@ -553,6 +555,15 @@ class VectorMultiset(PickleUtils, Style, Rosetta):
         :param kwargs: keyword arguments for stumpy.stump()
         :return: numpy array with the profile
         """
+
+        if "stumpy" not in sys.modules:
+            try:
+                import stumpy
+            except ImportError as e:
+                raise ImportError(
+                    f"Could not import stumpy. Please install if compatible with your environment.\n{e}"
+                )
+
         return stumpy.stump(self.data.loc[:, col_name].tolist(), window_size, **kwargs)
 
     def stumpy_profile_univariate(
@@ -567,6 +578,14 @@ class VectorMultiset(PickleUtils, Style, Rosetta):
         :param kwargs: keyword arguments for plots and stumpy.stump()
         :return: figure handle of the plot
         """
+        if "stumpy" not in sys.modules:
+            try:
+                import stumpy
+            except ImportError as e:
+                raise ImportError(
+                    f"Could not import stumpy. Please install if compatible with your environment.\n{e}"
+                )
+
         # Make the plot and profile
         figsize: Any = kwargs.pop("figsize", self.figsize)  # typically a 2-element tuple or list
         title: str = kwargs.pop("title", self.translate(self.name_root))

@@ -10,4 +10,4 @@ pytz
 # ipywidgets  # otherwise current tqdm throws a notice
 tqdm
 # matrixprofile
-stumpy
+# stumpy
