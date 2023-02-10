@@ -28,7 +28,6 @@ from .plotting import (
 )
 import pathlib
 from pydantic import BaseModel
-from sklearn.feature_selection import SelectKBest, chi2
 from tqdm.auto import tqdm
 
 # import matrixprofile
@@ -380,33 +379,33 @@ class VectorMultiset(PickleUtils, Style, Rosetta):
             colorbar_label=self.translate(z_axis_name),
         )
 
-    def feature_selection_univariate(
-        self,
-        target_feature_name: str,
-        input_feature_names: List[str] = None,
-        k_best: int = 3,
-        normalize: bool = True,
-        **kwargs,
-    ) -> any:
-        """Feature selection of k best using univariate methods.
-
-        :param target_feature_name: column name of the target feature
-        :param input_feature_names: column names of the input features
-        :param k_best: how many features to return
-        :param normalize: if True, scales input features to unit mean
-        :param kwargs: additional keyword arguments passed through to scikit-learn SelectKBest
-        :return: trimmed input feature data set
-        """
-        if not input_feature_names:
-            input_feature_names = [x for x in self.data.keys() if x != target_feature_name]
-        input_feature_data = self.data.loc[:, input_feature_names]
-        if normalize:
-            for fieldname in input_feature_data.keys():
-                std_dev: float = float(np.std(this_field_data := self.data.loc[:, fieldname]))
-                input_feature_data[fieldname] = [x / std_dev for x in this_field_data]
-
-        target_feature_data = self.data.loc[:, target_feature_name].to_numpy()
-        return SelectKBest(chi2, k=k_best).fit_transform(input_feature_data, target_feature_data, **kwargs)
+    # def feature_selection_univariate(
+    #     self,
+    #     target_feature_name: str,
+    #     input_feature_names: List[str] = None,
+    #     k_best: int = 3,
+    #     normalize: bool = True,
+    #     **kwargs,
+    # ) -> any:
+    #     """Feature selection of k best using univariate methods.
+    #
+    #     :param target_feature_name: column name of the target feature
+    #     :param input_feature_names: column names of the input features
+    #     :param k_best: how many features to return
+    #     :param normalize: if True, scales input features to unit mean
+    #     :param kwargs: additional keyword arguments passed through to scikit-learn SelectKBest
+    #     :return: trimmed input feature data set
+    #     """
+    #     if not input_feature_names:
+    #         input_feature_names = [x for x in self.data.keys() if x != target_feature_name]
+    #     input_feature_data = self.data.loc[:, input_feature_names]
+    #     if normalize:
+    #         for fieldname in input_feature_data.keys():
+    #             std_dev: float = float(np.std(this_field_data := self.data.loc[:, fieldname]))
+    #             input_feature_data[fieldname] = [x / std_dev for x in this_field_data]
+    #
+    #     target_feature_data = self.data.loc[:, target_feature_name].to_numpy()
+    #     return SelectKBest(chi2, k=k_best).fit_transform(input_feature_data, target_feature_data, **kwargs)
 
     def cast_to_numeric(
         self,
