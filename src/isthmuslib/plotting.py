@@ -233,6 +233,7 @@ def visualize_1d_distribution(
     show: bool = False,
     axhline: Union[float, List[float]] = None,
     axvline: Union[float, List[float]] = None,
+    downsample_viz_by_N_rows: int = 1,
     **kwargs,
 ) -> plt.Figure:
     """Core function for visualizing 1-dimensional distribution(s)
@@ -254,6 +255,7 @@ def visualize_1d_distribution(
     :param show: set to true to trigger plt.show()
     :param axhline: plots a horizontal line at the specified value(s)
     :param axvline: plots a vertical line at the specified value(s)
+    :param downsample_viz_by_N_rows: downsample the data by this factor for visualization purposes
     :param kwargs: additional keyword arguments for matplotlib.pyplot.hist()
     :return: figure handle for the plot
     """
@@ -289,7 +291,7 @@ def visualize_1d_distribution(
         else:
             hist_bins = kwargs.get("bins")
         plt.hist(
-            data_set,
+            data_set[::downsample_viz_by_N_rows],
             color=config.color,
             bins=hist_bins,
             **{k: v for k, v in kwargs.items() if not any(x_ in k for x_ in ["plot", "bins"])},
