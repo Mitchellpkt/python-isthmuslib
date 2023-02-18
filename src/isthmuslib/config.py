@@ -55,6 +55,12 @@ class Style(BaseModel):
     x_axis_formatter: str = None
     dict_pretty_max_length: int = 32
     dict_pretty_previews: bool = False
+    axhline_color: str = "gray"
+    axhline_linestyle: str = "--"
+    axhline_linewidth: float = 1.0
+    axvline_color: str = "gray"
+    axvline_linestyle: str = "--"
+    axvline_linewidth: float = 1.0
 
     def translate(self, key: str, **kwargs) -> str:
         """Helper function that allows Style objects to translate text according to the provided Rosetta mappings

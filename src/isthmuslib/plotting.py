@@ -169,6 +169,46 @@ def apply_watermark(watermark_text: str, style: Style = None, use_default: bool 
     )
 
 
+def apply_plot_lines(
+    axhline: Union[float, List[float]] = None,
+    axvline: Union[float, List[float]] = None,
+    style: Style = None,
+    **kwargs,
+) -> None:
+    """
+    Helper function to apply horizontal and vertical lines to a plot
+
+    :param axhline: horizontal line(s) to plot
+    :param axvline: vertical line(s) to plot
+    :param style: config Style object
+    :param kwargs: additional keyword arguments for matplotlib.pyplot.axhline and matplotlib.pyplot.axvline
+    """
+    if style is None:
+        style: Style = Style()
+    if axhline is not None:
+        if isinstance(axhline, (int, float)):
+            axhline = [axhline]
+        for line in axhline:
+            plt.axhline(
+                line,
+                color=style.axhline_color,
+                linestyle=style.axhline_linestyle,
+                linewidth=style.axhline_linewidth,
+                **kwargs,
+            )
+    if axvline is not None:
+        if isinstance(axvline, (int, float)):
+            axvline = [axvline]
+        for line in axvline:
+            plt.axvline(
+                line,
+                color=style.axvline_color,
+                linestyle=style.axvline_linestyle,
+                linewidth=style.axvline_linewidth,
+                **kwargs,
+            )
+
+
 ##################
 # Core visualize
 # functionality
@@ -191,6 +231,8 @@ def visualize_1d_distribution(
     plot_mean: Union[bool, str] = False,
     plot_median: Union[bool, str] = False,
     show: bool = False,
+    axhline: Union[float, List[float]] = None,
+    axvline: Union[float, List[float]] = None,
     **kwargs,
 ) -> plt.Figure:
     """Core function for visualizing 1-dimensional distribution(s)
@@ -210,6 +252,8 @@ def visualize_1d_distribution(
     :param plot_mean: plots the mean as a vertical line
     :param plot_median: plots the median as a vertical line
     :param show: set to true to trigger plt.show()
+    :param axhline: plots a horizontal line at the specified value(s)
+    :param axvline: plots a vertical line at the specified value(s)
     :param kwargs: additional keyword arguments for matplotlib.pyplot.hist()
     :return: figure handle for the plot
     """
@@ -283,7 +327,7 @@ def visualize_1d_distribution(
     apply_plot_labels(xlabel=xlabel_buffer, ylabel=ylabel_buffer, title=title, style=config)
     if legend_strings:
         plt.legend(legend_strings, fontsize=config.legend_fontsize)
-
+    apply_plot_lines(axhline=axhline, axvline=axvline, style=config)
     adjust_axes(log_axes=log_axes, style=config, xlim=xlim, ylim=ylim)
     apply_watermark(watermark, style=config)
     if show:
@@ -316,6 +360,8 @@ def visualize_x_y(
     x_axis_human_tick_labels: bool = False,
     x_axis_formatter: str = "%Y-%m-%d",
     show: bool = False,
+    axvline: Union[List[float], float] = None,
+    axhline: Union[List[float], float] = None,
     **kwargs,
 ) -> plt.Figure:
     """Core function for visualizing 2-dimensional data sets
@@ -344,6 +390,8 @@ def visualize_x_y(
     :param x_axis_human_tick_labels: set to True to convert numeric values along the x-axis to human-readable timestamps
     :param x_axis_formatter: format string for the x-axis if human-readable
     :param show: set to true to trigger plt.show()
+    :param axvline: list of x-values to draw vertical lines at
+    :param axhline: list of y-values to draw horizontal lines at
     :param kwargs: additional keyword arguments for matplotlib.pyplot.scatter()
     :return: figure handle for the plot
     """
@@ -449,6 +497,7 @@ def visualize_x_y(
             plt.legend(scatter_handles, legend_strings, fontsize=config.legend_fontsize, loc=loc)
         elif includes_line_plot:  # scatter legend overrides plot legend for now
             plt.legend(legend_strings, fontsize=config.legend_fontsize, loc=loc)
+    apply_plot_lines(axhline=axhline, axvline=axvline, style=config)
     adjust_axes(
         log_axes=log_axes,
         style=config,
