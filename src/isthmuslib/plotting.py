@@ -364,6 +364,8 @@ def visualize_x_y(
     show: bool = False,
     axvline: Union[List[float], float] = None,
     axhline: Union[List[float], float] = None,
+    downsample_viz_by_N_rows: int = 1,
+    infer_color_downsample: bool = True,
     **kwargs,
 ) -> plt.Figure:
     """Core function for visualizing 2-dimensional data sets
@@ -394,6 +396,8 @@ def visualize_x_y(
     :param show: set to true to trigger plt.show()
     :param axvline: list of x-values to draw vertical lines at
     :param axhline: list of y-values to draw horizontal lines at
+    :param downsample_viz_by_N_rows: downsample the data by this factor (for speed)
+    :param infer_color_downsample: set to False to disable automatic downsampling of the color data
     :param kwargs: additional keyword arguments for matplotlib.pyplot.scatter()
     :return: figure handle for the plot
     """
@@ -402,6 +406,10 @@ def visualize_x_y(
     kwargs: Dict[str, Any] = {
         k: v for k, v in kwargs.items() if (k not in config.dict()) or (k == "cmap")
     }  # allowlisting cmap is a hacky fix until the config handling is refactored
+
+    # Set sampling rate to 1 (no downsampling) if None is passed in for downsample_viz_by_N_rows
+    if not downsample_viz_by_N_rows:
+        downsample_viz_by_N_rows: int = 1
 
     x_data: List[Any] = to_list_if_other_array(x_data)
     y_data: List[Any] = to_list_if_other_array(y_data)
@@ -442,11 +450,35 @@ def visualize_x_y(
                 kwargs.setdefault("norm", matplotlib.colors.LogNorm())
             if kwargs.get("c") is None:
                 kwargs.setdefault("color", config.color)
-            scatter_handles.append(plt.scatter(x_array, y_array, config.markersize, **kwargs))
+            else:
+                if (downsample_viz_by_N_rows > 1) and infer_color_downsample:
+                    c_data: Any = kwargs["c"]
+                    # Logic to infer whether or not we should try to downsample the color data
+                    if (
+                        not isinstance(c_data, (str, float, int))
+                        and hasattr(c_data, "__len__")
+                        and len(c_data) not in (0, 1, 3)
+                        and len(c_data) == len(x_array)
+                        and len(c_data) == len(y_array)
+                    ):
+                        kwargs["c"]: Any = c_data[::downsample_viz_by_N_rows]
+            scatter_handles.append(
+                plt.scatter(
+                    x_array[::downsample_viz_by_N_rows],
+                    y_array[::downsample_viz_by_N_rows],
+                    config.markersize,
+                    **kwargs,
+                )
+            )
 
         if any(x in types for x in ["plot", "line"]):
             includes_line_plot: bool = True
-            p = plt.plot(x_array, y_array, color=config.color, linewidth=config.linewidth)
+            p = plt.plot(
+                x_array[::downsample_viz_by_N_rows],
+                y_array[::downsample_viz_by_N_rows],
+                color=config.color,
+                linewidth=config.linewidth,
+            )
 
         # Make sure that the axes facecolor matches the figure facecolor
         plt.gca().set(facecolor=config.facecolor)
