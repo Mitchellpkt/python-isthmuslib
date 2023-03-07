@@ -462,3 +462,9 @@ Changelog
 -------------------
 
 * chore: more sophisticated utility controls
+
+0.0.99 (2022-03-07)
+-------------------
+
+* chore: deprecate some methods until their dependencies are python 3.11 compatible
+* chore: improve downsampling and resampling, including integration with some plots
