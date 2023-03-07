@@ -899,13 +899,56 @@ class VectorSequence(VectorMultiset):
                 data=result,
             )
 
+    # Resampling function (same overall shape as the downsampling function, except with only the pandas engine functionality
+    def resample(
+        self,
+        interval: Union[int, float],
+        inplace: bool = True,
+        target_basis_vector: Union[List[float], None] = None,
+        direction: str = "backward",
+        **kwargs,
+    ):
+        """
+        Resamples a VectorSequence
+
+        :param interval: interval by which to resample (either by N rows, or by some basis interval)
+        :param inplace: whether to update the dataframe data attribute in place or return an updated copy of self
+        :param target_basis_vector: optionally, specify an array of timestamps to resample to (default --> None)
+        :param direction: whether to resample forward or backward (default --> "backward" to avoid data leaks!)
+        :param kwargs: additional keyword arguments passed to the resample method (e.g. reset_index, return_type)
+        :return: resampled VectorSequence
+        """
+        if target_basis_vector is not None:
+            target_timebase: pd.DataFrame = pd.DataFrame({self.basis_col_name: target_basis_vector})
+        else:
+            basis_df = pd.DataFrame({self.basis_col_name: self.basis()})
+            min_basis = basis_df[self.basis_col_name].min()
+            max_basis = basis_df[self.basis_col_name].max()
+            target_timebase: pd.DataFrame = pd.DataFrame(
+                {self.basis_col_name: np.arange(min_basis, max_basis, interval)}
+            )
+        df_merged: pd.DataFrame = pd.merge_asof(
+            target_timebase,
+            self.data,
+            left_on=self.basis_col_name,
+            right_on=self.basis_col_name,
+            direction=direction,
+            **kwargs,
+        )
+        if inplace:
+            self.data = df_merged
+        else:
+            return df_merged
+
+    # Downsampling function
     def downsample(
         self,
         interval: Union[int, float],
         method: str = "by_basis",
-        basis_downsample_engine: str = "pandas",
+        basis_downsample_engine: str = "legacy",
         inplace: bool = True,
         target_timestamps: Union[List[float], None] = None,
+        suppress_deprecation_warning: bool = False,
         **kwargs,
     ):
         """
@@ -918,6 +961,7 @@ class VectorSequence(VectorMultiset):
         :param inplace: whether to update the dataframe data attribute in place or return an updated copy of self
         :param basis_downsample_engine: How to downsample based on time 'pandas' or 'legacy' (default --> 'pandas')
         :param target_timestamps: optionally, specify an array of timestamps to downsample to (default --> None)
+        :param suppress_deprecation_warning: whether to suppress warnings (default --> False)
         :param kwargs: additional keyword arguments passed to the merge_asof method from padas
         :return: Downsampled copy of self (or nothing if 'inplace=True')
         """
@@ -927,8 +971,7 @@ class VectorSequence(VectorMultiset):
         if "by_row" in method.lower():
             if not isinstance(interval, int):
                 raise ValueError(f"downsample with method='by_row' requires integer interval")
-            keep_indices: List[int] = list(range(0, len(result_vector.data), interval))
-            result_vector.data = result_vector.data.iloc[keep_indices, :]
+            result_vector.data = result_vector.data.iloc[::interval, :]
 
         elif "by_basis" in method:
             if basis_downsample_engine.lower() == "legacy":
@@ -940,6 +983,11 @@ class VectorSequence(VectorMultiset):
                         last = basis_value
                 result_vector.data = result_vector.data.iloc[keep_indices, :]
             elif basis_downsample_engine.lower() == "pandas":
+                if not suppress_deprecation_warning:
+                    print(
+                        "... Please upgrade your code to use .resample() instead of .downsample(), at your leisure"
+                        "\n you can suppress this warning by passing suppress_deprecation_warning=True"
+                    )
                 if target_timestamps is not None:
                     target_timebase: pd.DataFrame = pd.DataFrame({self.basis_col_name: target_timestamps})
                 else:

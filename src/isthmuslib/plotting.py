@@ -169,6 +169,46 @@ def apply_watermark(watermark_text: str, style: Style = None, use_default: bool 
     )
 
 
+def apply_plot_lines(
+    axhline: Union[float, List[float]] = None,
+    axvline: Union[float, List[float]] = None,
+    style: Style = None,
+    **kwargs,
+) -> None:
+    """
+    Helper function to apply horizontal and vertical lines to a plot
+
+    :param axhline: horizontal line(s) to plot
+    :param axvline: vertical line(s) to plot
+    :param style: config Style object
+    :param kwargs: additional keyword arguments for matplotlib.pyplot.axhline and matplotlib.pyplot.axvline
+    """
+    if style is None:
+        style: Style = Style()
+    if axhline is not None:
+        if isinstance(axhline, (int, float)):
+            axhline = [axhline]
+        for line in axhline:
+            plt.axhline(
+                line,
+                color=style.axhline_color,
+                linestyle=style.axhline_linestyle,
+                linewidth=style.axhline_linewidth,
+                **kwargs,
+            )
+    if axvline is not None:
+        if isinstance(axvline, (int, float)):
+            axvline = [axvline]
+        for line in axvline:
+            plt.axvline(
+                line,
+                color=style.axvline_color,
+                linestyle=style.axvline_linestyle,
+                linewidth=style.axvline_linewidth,
+                **kwargs,
+            )
+
+
 ##################
 # Core visualize
 # functionality
@@ -191,6 +231,9 @@ def visualize_1d_distribution(
     plot_mean: Union[bool, str] = False,
     plot_median: Union[bool, str] = False,
     show: bool = False,
+    axhline: Union[float, List[float]] = None,
+    axvline: Union[float, List[float]] = None,
+    downsample_viz_by_N_rows: int = 1,
     **kwargs,
 ) -> plt.Figure:
     """Core function for visualizing 1-dimensional distribution(s)
@@ -210,6 +253,9 @@ def visualize_1d_distribution(
     :param plot_mean: plots the mean as a vertical line
     :param plot_median: plots the median as a vertical line
     :param show: set to true to trigger plt.show()
+    :param axhline: plots a horizontal line at the specified value(s)
+    :param axvline: plots a vertical line at the specified value(s)
+    :param downsample_viz_by_N_rows: downsample the data by this factor for visualization purposes
     :param kwargs: additional keyword arguments for matplotlib.pyplot.hist()
     :return: figure handle for the plot
     """
@@ -245,7 +291,7 @@ def visualize_1d_distribution(
         else:
             hist_bins = kwargs.get("bins")
         plt.hist(
-            data_set,
+            data_set[::downsample_viz_by_N_rows],
             color=config.color,
             bins=hist_bins,
             **{k: v for k, v in kwargs.items() if not any(x_ in k for x_ in ["plot", "bins"])},
@@ -283,7 +329,7 @@ def visualize_1d_distribution(
     apply_plot_labels(xlabel=xlabel_buffer, ylabel=ylabel_buffer, title=title, style=config)
     if legend_strings:
         plt.legend(legend_strings, fontsize=config.legend_fontsize)
-
+    apply_plot_lines(axhline=axhline, axvline=axvline, style=config)
     adjust_axes(log_axes=log_axes, style=config, xlim=xlim, ylim=ylim)
     apply_watermark(watermark, style=config)
     if show:
@@ -316,6 +362,10 @@ def visualize_x_y(
     x_axis_human_tick_labels: bool = False,
     x_axis_formatter: str = "%Y-%m-%d",
     show: bool = False,
+    axvline: Union[List[float], float] = None,
+    axhline: Union[List[float], float] = None,
+    downsample_viz_by_N_rows: int = 1,
+    infer_color_downsample: bool = True,
     **kwargs,
 ) -> plt.Figure:
     """Core function for visualizing 2-dimensional data sets
@@ -344,6 +394,10 @@ def visualize_x_y(
     :param x_axis_human_tick_labels: set to True to convert numeric values along the x-axis to human-readable timestamps
     :param x_axis_formatter: format string for the x-axis if human-readable
     :param show: set to true to trigger plt.show()
+    :param axvline: list of x-values to draw vertical lines at
+    :param axhline: list of y-values to draw horizontal lines at
+    :param downsample_viz_by_N_rows: downsample the data by this factor (for speed)
+    :param infer_color_downsample: set to False to disable automatic downsampling of the color data
     :param kwargs: additional keyword arguments for matplotlib.pyplot.scatter()
     :return: figure handle for the plot
     """
@@ -352,6 +406,10 @@ def visualize_x_y(
     kwargs: Dict[str, Any] = {
         k: v for k, v in kwargs.items() if (k not in config.dict()) or (k == "cmap")
     }  # allowlisting cmap is a hacky fix until the config handling is refactored
+
+    # Set sampling rate to 1 (no downsampling) if None is passed in for downsample_viz_by_N_rows
+    if not downsample_viz_by_N_rows:
+        downsample_viz_by_N_rows: int = 1
 
     x_data: List[Any] = to_list_if_other_array(x_data)
     y_data: List[Any] = to_list_if_other_array(y_data)
@@ -392,11 +450,35 @@ def visualize_x_y(
                 kwargs.setdefault("norm", matplotlib.colors.LogNorm())
             if kwargs.get("c") is None:
                 kwargs.setdefault("color", config.color)
-            scatter_handles.append(plt.scatter(x_array, y_array, config.markersize, **kwargs))
+            else:
+                if (downsample_viz_by_N_rows > 1) and infer_color_downsample:
+                    c_data: Any = kwargs["c"]
+                    # Logic to infer whether or not we should try to downsample the color data
+                    if (
+                        not isinstance(c_data, (str, float, int))
+                        and hasattr(c_data, "__len__")
+                        and len(c_data) not in (0, 1, 3)
+                        and len(c_data) == len(x_array)
+                        and len(c_data) == len(y_array)
+                    ):
+                        kwargs["c"]: Any = c_data[::downsample_viz_by_N_rows]
+            scatter_handles.append(
+                plt.scatter(
+                    x_array[::downsample_viz_by_N_rows],
+                    y_array[::downsample_viz_by_N_rows],
+                    config.markersize,
+                    **kwargs,
+                )
+            )
 
         if any(x in types for x in ["plot", "line"]):
             includes_line_plot: bool = True
-            p = plt.plot(x_array, y_array, color=config.color, linewidth=config.linewidth)
+            p = plt.plot(
+                x_array[::downsample_viz_by_N_rows],
+                y_array[::downsample_viz_by_N_rows],
+                color=config.color,
+                linewidth=config.linewidth,
+            )
 
         # Make sure that the axes facecolor matches the figure facecolor
         plt.gca().set(facecolor=config.facecolor)
@@ -449,6 +531,7 @@ def visualize_x_y(
             plt.legend(scatter_handles, legend_strings, fontsize=config.legend_fontsize, loc=loc)
         elif includes_line_plot:  # scatter legend overrides plot legend for now
             plt.legend(legend_strings, fontsize=config.legend_fontsize, loc=loc)
+    apply_plot_lines(axhline=axhline, axvline=axvline, style=config)
     adjust_axes(
         log_axes=log_axes,
         style=config,
