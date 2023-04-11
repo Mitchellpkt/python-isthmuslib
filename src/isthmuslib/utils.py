@@ -695,6 +695,10 @@ def multiprocess(*args, suppress_multiprocess_notice: bool = False, **kwargs) ->
     return process_queue(*args, **kwargs)
 
 
+def kwargs_map_wrapper(func: Callable, kwargs: Dict[str, Any]) -> Any:
+    return func(**kwargs)
+
+
 def recursive_process(
     func: Callable,
     initial_inputs: Any,
@@ -800,6 +804,10 @@ def process_queue(
             result = pool.starmap(func=use_function, iterable=map_style_inputs, **kwargs)
         elif pool_function.lower() == "map":
             result = pool.map(func=use_function, iterable=map_style_inputs, **kwargs)
+        elif "kwarg" in pool_function.lower().replace("_", ""):
+            result = pool.starmap(
+                func=kwargs_map_wrapper, iterable=[(use_function, i_) for i_ in iterable], **kwargs
+            )
         else:
             raise ValueError(
                 f"Pool function should be 'map' or 'starmap' but received unknown type: {pool_function}"
