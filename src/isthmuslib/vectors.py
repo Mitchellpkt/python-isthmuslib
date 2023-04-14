@@ -15,6 +15,7 @@ from .utils import (
     process_queue,
     dict_pretty,
     zero_mean_unit_variance,
+    convert_dtypes_subset,
 )
 from .data_quality import basis_quality_checks, basis_quality_plots, fill_ratio
 from copy import deepcopy
@@ -104,6 +105,13 @@ class VectorMultiset(PickleUtils, Style, Rosetta):
     def keys(self) -> List[str]:
         """Returns the dataframe columns as a list of strings"""
         return self.data.keys().tolist()
+
+    def convert_dtypes_subset(self, cols: List[str] = None) -> None:
+        """Converts the data types of a subset of columns, wraps utils.convert_dtypes_subset
+
+        :param cols: columns to convert (if None, converts all)
+        """
+        self.data = convert_dtypes_subset(self.data, cols)
 
     ################
     # I/O
@@ -1430,57 +1438,57 @@ class VectorSequence(VectorMultiset):
         downsampled.data.reset_index(inplace=True)
         return downsampled.matrix_profile_univariate(col_names, **kwargs)
 
-    def plot_fluss_semantic_segmentation(
-        self,
-        col_name: str = None,
-        fluss_width: int = 15,
-        n_regimes: int = 2,
-        excl_factor: float = 1,
-        **kwargs,
-    ) -> plt.Figure:
-        """
-        Wrapper for STUMPY's FLUSS algonithm + plots
-
-        :param col_name: name of the column to plot
-        :param fluss_width: FLUSS window size
-        :param n_regimes: number of regimes in the data
-        :param excl_factor: factor to correct for the start and end of the arc curve
-        :param kwargs: additional keyword arguments for stumpy and plots (figsize, title, ...)
-        :return: figure handle showing the data and the analysis results
-        """
-        figsize: Any = kwargs.pop("figsize", self.figsize)  # typically a 2-element tuple or list
-        title: str = kwargs.pop("title", self.translate(self.name_root))
-
-        # If column name not specified and only one non-basis column, infer that we should use that one
-        if not col_name:
-            if len(self.data.keys()) == 2:
-                col_name: str = [x for x in self.data.keys() if x != self.basis_col_name][0]
-            else:
-                raise ValueError(
-                    f"For fluss, please specify `col_name=X` with X from: {list(self.data.keys())}"
-                )
-
-        # Calculate the matrix profile and FLUSS results
-        data_array: np.ndarray = self.data.loc[:, col_name].to_numpy()
-        mp: np.ndarray = stumpy.stump(data_array, m=fluss_width, **kwargs)
-        cac, regime_locations = stumpy.fluss(
-            mp[:, 1], L=fluss_width, n_regimes=n_regimes, excl_factor=excl_factor
-        )
-
-        # Plot the results
-        f, axs = plt.subplots(
-            2,
-            sharex=True,  # noqa: bool is in fact allowed
-            gridspec_kw={"hspace": 0},
-            figsize=figsize,
-            facecolor=self.facecolor,
-        )
-        plt.suptitle(title, fontsize=self.title_fontsize)
-        axs[0].plot(range(data_array.shape[0]), data_array, color=self.color)
-        axs[0].axvline(x=regime_locations[0], linestyle="dashed")
-        axs[1].plot(range(cac.shape[0]), cac, color="k")
-        axs[1].axvline(x=regime_locations[0], linestyle="dashed")
-        return f
+    # def plot_fluss_semantic_segmentation(
+    #     self,
+    #     col_name: str = None,
+    #     fluss_width: int = 15,
+    #     n_regimes: int = 2,
+    #     excl_factor: float = 1,
+    #     **kwargs,
+    # ) -> plt.Figure:
+    #     """
+    #     Wrapper for STUMPY's FLUSS algonithm + plots
+    #
+    #     :param col_name: name of the column to plot
+    #     :param fluss_width: FLUSS window size
+    #     :param n_regimes: number of regimes in the data
+    #     :param excl_factor: factor to correct for the start and end of the arc curve
+    #     :param kwargs: additional keyword arguments for stumpy and plots (figsize, title, ...)
+    #     :return: figure handle showing the data and the analysis results
+    #     """
+    #     figsize: Any = kwargs.pop("figsize", self.figsize)  # typically a 2-element tuple or list
+    #     title: str = kwargs.pop("title", self.translate(self.name_root))
+    #
+    #     # If column name not specified and only one non-basis column, infer that we should use that one
+    #     if not col_name:
+    #         if len(self.data.keys()) == 2:
+    #             col_name: str = [x for x in self.data.keys() if x != self.basis_col_name][0]
+    #         else:
+    #             raise ValueError(
+    #                 f"For fluss, please specify `col_name=X` with X from: {list(self.data.keys())}"
+    #             )
+    #
+    #     # Calculate the matrix profile and FLUSS results
+    #     data_array: np.ndarray = self.data.loc[:, col_name].to_numpy()
+    #     mp: np.ndarray = stumpy.stump(data_array, m=fluss_width, **kwargs)
+    #     cac, regime_locations = stumpy.fluss(
+    #         mp[:, 1], L=fluss_width, n_regimes=n_regimes, excl_factor=excl_factor
+    #     )
+    #
+    #     # Plot the results
+    #     f, axs = plt.subplots(
+    #         2,
+    #         sharex=True,  # noqa: bool is in fact allowed
+    #         gridspec_kw={"hspace": 0},
+    #         figsize=figsize,
+    #         facecolor=self.facecolor,
+    #     )
+    #     plt.suptitle(title, fontsize=self.title_fontsize)
+    #     axs[0].plot(range(data_array.shape[0]), data_array, color=self.color)
+    #     axs[0].axvline(x=regime_locations[0], linestyle="dashed")
+    #     axs[1].plot(range(cac.shape[0]), cac, color="k")
+    #     axs[1].axvline(x=regime_locations[0], linestyle="dashed")
+    #     return f
 
     def human_time_start_and_stop(self, **kwargs) -> Tuple[str, str]:
         """

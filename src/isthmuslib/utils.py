@@ -519,6 +519,21 @@ def as_list(anything: Union[Any, List[Any]]) -> List[Any]:
     return [anything]
 
 
+def convert_dtypes_subset(df: pd.DataFrame, cols: List[str] = None) -> pd.DataFrame:
+    """
+    Convert dtypes for a subset of columns in a dataframe
+    @param df: dataframe to convert
+    @param cols: columns to convert
+    @return: dataframe with converted columns
+    """
+    if cols is None:
+        cols = df.columns
+    for col in cols:
+        if df[col].dtype == "object":
+            df[col] = df[col].convert_dtypes()
+    return df
+
+
 def looks_like_list_of_lists(input_var: Any) -> bool:
     """Does this look like a list of lists? Wraps a pandas util
 
