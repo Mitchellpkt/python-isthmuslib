@@ -7,6 +7,7 @@ import time
 from datetime import datetime
 from multiprocessing import cpu_count, Pool, current_process
 from typing import Iterable, List, Tuple, Dict, Any, Union, Callable
+from copy import deepcopy
 
 import numpy as np
 import pandas as pd
@@ -537,12 +538,6 @@ def convert_dtypes_subset(df: pd.DataFrame, cols: List[str] = None) -> pd.DataFr
     return df
 
 
-def apply_defaults(kwargs: Dict[str, Any], defaults: Dict[str, Any]) -> Dict[str, Any]:
-    for key, value in defaults.items():
-        kwargs.setdefault(key, value)
-    return kwargs
-
-
 def df_to_any(
     df: pd.DataFrame, paths: Union[Union[pathlib.Path, str], Union[pathlib.Path, str]], **kwargs
 ) -> None:
@@ -552,9 +547,9 @@ def df_to_any(
         path = pathlib.Path(path_raw)
         path.parent.mkdir(parents=True, exist_ok=True)
         if path.suffix == ".csv":
-            df.to_csv(str(path), **apply_defaults(kwargs, {"index": False}))
+            df.to_csv(str(path), **{**{"index": False}, **kwargs})
         elif path.suffix == ".json":
-            df.to_json(str(path), **apply_defaults(kwargs, {"orient": "records", "lines": True}))
+            df.to_json(str(path), **{**{"orient": "records", "lines": True}, **kwargs})
         elif path.suffix == ".parquet":
             df.to_parquet(str(path), **kwargs)
         elif path.suffix == ".feather":
@@ -562,7 +557,7 @@ def df_to_any(
         elif path.suffix in (".pkl", ".pickle", ".picklerick"):
             df.to_pickle(str(path), **kwargs)
         elif path.suffix == ".hdf":
-            df.to_hdf(str(path), **apply_defaults(kwargs, {"key": "df"}))
+            df.to_hdf(str(path), **{**{"key": "df"}, **kwargs})
         else:
             raise ValueError(f"Unrecognized file extension {path.suffix}")
 
