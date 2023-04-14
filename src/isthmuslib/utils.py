@@ -775,7 +775,12 @@ def process_queue(
 
     # If only 1 worker, do the work in serial since we don't need the pool and its overhead
     if num_workers == 1:
-        return [func(i) for i in tqdm(iterable, disable=None if serial_progress_bar else True)]
+        if pool_function.lower() == "map":
+            return [func(i) for i in tqdm(iterable, disable=None if serial_progress_bar else True)]
+        elif pool_function.lower() == "starmap":
+            return [func(*i) for i in tqdm(iterable, disable=None if serial_progress_bar else True)]
+        elif "kwarg" in pool_function.lower():
+            return [func(**i) for i in tqdm(iterable, disable=None if serial_progress_bar else True)]
 
     # Break the task list into batches if desired
     if batching:
