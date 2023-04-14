@@ -538,7 +538,7 @@ def convert_dtypes_automatically_subset(df: pd.DataFrame, cols: List[str] = None
     return df
 
 
-def apply_convert_dtypes_subset(
+def convert_dtypes_subset(
     df: pd.DataFrame, new_col_types: Dict[str, Union[type, str]], inplace: bool = True
 ) -> Optional[pd.DataFrame]:
     """
