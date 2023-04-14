@@ -523,7 +523,7 @@ def as_list(anything: Union[Any, List[Any]]) -> List[Any]:
     return [anything]
 
 
-def convert_dtypes_subset(df: pd.DataFrame, cols: List[str] = None) -> pd.DataFrame:
+def convert_dtypes_automatically_subset(df: pd.DataFrame, cols: List[str] = None) -> pd.DataFrame:
     """
     Convert dtypes for a subset of columns in a dataframe
     @param df: dataframe to convert
@@ -536,6 +536,23 @@ def convert_dtypes_subset(df: pd.DataFrame, cols: List[str] = None) -> pd.DataFr
         if df[col].dtype == "object":
             df[col] = df[col].convert_dtypes()
     return df
+
+
+def apply_convert_dtypes_subset(
+    df: pd.DataFrame, new_col_types: Dict[str, Union[type, str]], inplace: bool = True
+) -> Optional[pd.DataFrame]:
+    """
+    Apply the pandas `convert_dtypes` method to a subset of columns in a dataframe
+    :param df: dataframe to convert
+    :param new_col_types: dictionary of columns to convert and the new data types
+    :param inplace: whether to modify the dataframe in place or return a copy
+    :return: dataframe with converted columns (only returned if not inplace)
+    """
+    df_ = df if inplace else df.copy()
+    for col, new_type in new_col_types.items():
+        df_[col] = df_[col].astype(new_type)
+    if not inplace:
+        return df_
 
 
 def get_convert_dtypes_results_dict(df: pd.DataFrame, cols: Optional[List[str]] = None) -> Dict[str, Any]:
@@ -557,23 +574,6 @@ def get_convert_dtypes_results_dict(df: pd.DataFrame, cols: Optional[List[str]] 
         if old_dtype != new_dtype:
             changed_columns[str(column)] = str(new_dtype)
     return changed_columns
-
-
-def apply_convert_dtypes_subset(
-    df: pd.DataFrame, new_col_types: Dict[str, type], inplace: bool = True
-) -> Optional[pd.DataFrame]:
-    """
-    Apply the pandas `convert_dtypes` method to a subset of columns in a dataframe
-    :param df: dataframe to convert
-    :param new_col_types: dictionary of columns to convert and the new data types
-    :param inplace: whether to modify the dataframe in place or return a copy
-    :return: dataframe with converted columns (only returned if not inplace)
-    """
-    df_ = df if inplace else df.copy()
-    for col, new_type in new_col_types.items():
-        df_[col] = df_[col].astype(new_type)
-    if not inplace:
-        return df_
 
 
 def df_to_any(
