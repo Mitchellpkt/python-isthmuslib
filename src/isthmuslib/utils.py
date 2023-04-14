@@ -553,7 +553,7 @@ def df_to_any(
         elif path.suffix == ".parquet":
             df.to_parquet(str(path), **kwargs)
         elif path.suffix == ".feather":
-            df.to_feather(str(path), **kwargs)
+            df.reset_index(inplace=False).to_feather(str(path), **kwargs)
         elif path.suffix in (".pkl", ".pickle", ".picklerick"):
             df.to_pickle(str(path), **kwargs)
         elif path.suffix == ".hdf":
