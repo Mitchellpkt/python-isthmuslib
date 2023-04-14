@@ -550,6 +550,7 @@ def df_to_any(
     paths = as_list(paths)
     for path_raw in paths:
         path = pathlib.Path(path_raw)
+        path.parent.mkdir(parents=True, exist_ok=True)
         if path.suffix == ".csv":
             df.to_csv(str(path), **apply_defaults(kwargs, {"index": False}))
         elif path.suffix == ".json":
