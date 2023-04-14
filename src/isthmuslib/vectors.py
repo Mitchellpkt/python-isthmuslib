@@ -16,6 +16,8 @@ from .utils import (
     dict_pretty,
     zero_mean_unit_variance,
     convert_dtypes_subset,
+    df_to_any,
+    df_read_any,
 )
 from .data_quality import basis_quality_checks, basis_quality_plots, fill_ratio
 from copy import deepcopy
@@ -185,6 +187,22 @@ class VectorMultiset(PickleUtils, Style, Rosetta):
                 self.__setattr__(key, value)
         else:
             return self.__class__(data=data, **kwargs)
+
+    def to_any(
+        self, paths: Union[List[Union[str, pathlib.Path]], Union[str, pathlib.Path]], **kwargs
+    ) -> None:
+        """Saves the data as csv, json, feather, parquet, pickle, or hdf (inferred from file extension)
+
+        :param paths: path(s) to write the file
+        """
+        df_to_any(self.data, paths, **kwargs)
+
+    def read_any(self, file_path: Union[str, pathlib.Path], inplace: bool = True, **kwargs) -> Any:
+        df: pd.DataFrame = df_read_any(file_path, **kwargs)
+        if inplace:
+            self.data = df
+        else:
+            return self.__class__(data=df, **kwargs)
 
     ################
     # Visualizations

@@ -12,6 +12,9 @@ import numpy as np
 import pandas as pd
 import pytz
 from dateutil import parser
+from pandas import DataFrame, Series
+from pandas.io.json._json import JsonReader
+from pandas.io.parsers import TextFileReader
 from pydantic import BaseModel
 from tqdm.auto import tqdm
 
@@ -532,6 +535,58 @@ def convert_dtypes_subset(df: pd.DataFrame, cols: List[str] = None) -> pd.DataFr
         if df[col].dtype == "object":
             df[col] = df[col].convert_dtypes()
     return df
+
+
+def apply_defaults(kwargs: Dict[str, Any], defaults: Dict[str, Any]) -> Dict[str, Any]:
+    for key, value in defaults.items():
+        kwargs.setdefault(key, value)
+    return kwargs
+
+
+def df_to_any(
+    df: pd.DataFrame, paths: Union[Union[pathlib.Path, str], Union[pathlib.Path, str]], **kwargs
+) -> None:
+    """Save a dataframe to any of the supported formats, based on the file extension"""
+    paths = as_list(paths)
+    for path_raw in paths:
+        path = pathlib.Path(path_raw)
+        if path.suffix == ".csv":
+            df.to_csv(str(path), **apply_defaults(kwargs, {"index": False}))
+        elif path.suffix == ".json":
+            df.to_json(str(path), **apply_defaults(kwargs, {"orient": "records", "lines": True}))
+        elif path.suffix == ".parquet":
+            df.to_parquet(str(path), **kwargs)
+        elif path.suffix == ".feather":
+            df.to_feather(str(path), **kwargs)
+        elif path.suffix in (".pkl", ".pickle", ".picklerick"):
+            df.to_pickle(str(path), **kwargs)
+        elif path.suffix == ".hdf":
+            df.to_hdf(str(path), **apply_defaults(kwargs, {"key": "df"}))
+        else:
+            raise ValueError(f"Unrecognized file extension {path.suffix}")
+
+
+def df_read_any(path: Union[pathlib.Path, str], **kwargs) -> pd.DataFrame:
+    """Read a dataframe from any of the supported formats, based on the file extension"""
+    path = pathlib.Path(path)
+    if path.suffix == ".csv":
+        return pd.read_csv(str(path), **kwargs)
+    elif path.suffix == ".json":
+        return pd.read_json(str(path), **kwargs)
+    elif path.suffix == ".parquet":
+        return pd.read_parquet(str(path), **kwargs)
+    elif path.suffix == ".feather":
+        return pd.read_feather(str(path), **kwargs)
+    elif path.suffix in (".pkl", ".pickle", ".picklerick"):
+        return pd.read_pickle(str(path), **kwargs)
+    elif path.suffix == ".hdf":
+        key = kwargs.pop("key", None)
+        if key is not None:
+            return pd.read_hdf(path=str(path), key=key, **kwargs)
+        else:
+            raise ValueError("Must specify key for hdf file. Hint: isthmuslib by default writes the key 'df'")
+    else:
+        raise ValueError(f"Unrecognized file extension {path.suffix}")
 
 
 def looks_like_list_of_lists(input_var: Any) -> bool:
