@@ -18,6 +18,7 @@ from .utils import (
     convert_dtypes_subset,
     df_to_any,
     df_read_any,
+    convert_dtypes_automatically_subset,
 )
 from .data_quality import basis_quality_checks, basis_quality_plots, fill_ratio
 from copy import deepcopy
@@ -108,12 +109,19 @@ class VectorMultiset(PickleUtils, Style, Rosetta):
         """Returns the dataframe columns as a list of strings"""
         return self.data.keys().tolist()
 
-    def convert_dtypes_subset(self, cols: List[str] = None) -> None:
+    def convert_dtypes_subset(self, new_col_types: Dict[str, Union[type, str]] = None) -> None:
         """Converts the data types of a subset of columns, wraps utils.convert_dtypes_subset
 
         :param cols: columns to convert (if None, converts all)
         """
-        self.data = convert_dtypes_subset(self.data, cols)
+        self.data = convert_dtypes_subset(self.data, new_col_types)
+
+    def convert_dtypes_automatically_subset(self, cols: List[str] = None) -> None:
+        """Converts the data types of a subset of columns, wraps utils.convert_dtypes_subset
+
+        :param cols: columns to convert (if None, converts all)
+        """
+        self.data = convert_dtypes_automatically_subset(self.data, cols)
 
     ################
     # I/O
