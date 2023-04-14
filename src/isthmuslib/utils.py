@@ -6,7 +6,7 @@ import random
 import time
 from datetime import datetime
 from multiprocessing import cpu_count, Pool, current_process
-from typing import Iterable, List, Tuple, Dict, Any, Union, Callable
+from typing import Iterable, List, Tuple, Dict, Any, Union, Callable, Optional
 from copy import deepcopy
 
 import numpy as np
@@ -536,6 +536,44 @@ def convert_dtypes_subset(df: pd.DataFrame, cols: List[str] = None) -> pd.DataFr
         if df[col].dtype == "object":
             df[col] = df[col].convert_dtypes()
     return df
+
+
+def get_convert_dtypes_results_dict(df: pd.DataFrame, cols: Optional[List[str]] = None) -> Dict[str, Any]:
+    """
+    Apply the pandas `convert_dtypes` method to a subset of columns in a dataframe and return a dictionary of the results
+    This does not actually change df, it just shows how the columns would change
+    :param df: dataframe to convert
+    :param cols: columns to convert, if not specified, will use all
+    :return: dictionary of the columns that would change and the new data types
+    """
+    df_ = df if cols is None else df[cols]
+    old_dtypes = df_.dtypes
+    df_converted = df_.convert_dtypes()
+    new_dtypes = df_converted.dtypes
+    changed_columns: Dict[str, Any] = dict()
+    # Compare the old data types with the new data types and store the changed columns
+    for column, old_dtype in old_dtypes.items():
+        new_dtype = new_dtypes[column]
+        if old_dtype != new_dtype:
+            changed_columns[str(column)] = str(new_dtype)
+    return changed_columns
+
+
+def apply_convert_dtypes_subset(
+    df: pd.DataFrame, new_col_types: Dict[str, type], inplace: bool = True
+) -> Optional[pd.DataFrame]:
+    """
+    Apply the pandas `convert_dtypes` method to a subset of columns in a dataframe
+    :param df: dataframe to convert
+    :param new_col_types: dictionary of columns to convert and the new data types
+    :param inplace: whether to modify the dataframe in place or return a copy
+    :return: dataframe with converted columns (only returned if not inplace)
+    """
+    df_ = df if inplace else df.copy()
+    for col, new_type in new_col_types.items():
+        df_[col] = df_[col].astype(new_type)
+    if not inplace:
+        return df_
 
 
 def df_to_any(
