@@ -458,13 +458,20 @@ Changelog
 
 * chore: distro stats in histogram watermark, and can mark mean & median on the plot
 
-0.0.98 (2022-02-08)
+0.0.98 (2023-02-08)
 -------------------
 
 * chore: more sophisticated utility controls
 
-0.0.99 (2022-03-07)
+0.0.99 (2023-03-07)
 -------------------
 
 * chore: deprecate some methods until their dependencies are python 3.11 compatible
 * chore: improve downsampling and resampling, including integration with some plots
+
+0.0.100 (2023-04-25)
+--------------------
+
+* kwargsmap multiprocessing
+* data type conversions
+* misc data I/O
