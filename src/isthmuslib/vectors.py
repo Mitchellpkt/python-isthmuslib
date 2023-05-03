@@ -125,10 +125,7 @@ class VectorMultiset(PickleUtils, Style, Rosetta):
         self.data = convert_dtypes_automatically_subset(self.data, cols)
 
     def convert_dtypes_advanced(self, **kwargs) -> None:
-        """Converts the data types of a subset of columns, wraps utils.convert_dtypes_subset
-
-        :param cols: columns to convert (if None, converts all)
-        """
+        """Converts the data types of a subset of columns, wraps utils.convert_dtypes_advanced """
         self.data = convert_dtypes_advanced(self.data, **kwargs)
 
     ################
