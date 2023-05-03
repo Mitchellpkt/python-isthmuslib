@@ -1054,3 +1054,107 @@ def hush_warnings() -> None:
     import warnings
 
     warnings.filterwarnings("ignore")
+
+
+def convert_dtypes_advanced(
+    df: pd.DataFrame,
+    use_cols: List[str] = None,
+    skip_cols: List[str] = None,
+    infer_float_to_int: bool = True,
+    infer_string_to_category: bool = True,
+    infer_string_to_category_frac_threshold: float = 0.5,
+    inplace: bool = True,
+    verbose: bool = True,
+) -> Optional[pd.DataFrame]:
+
+    # Setup / Init
+    if not inplace:
+        df = df.copy()
+    if use_cols is None:
+        use_cols = df.columns
+    if skip_cols is not None:
+        use_cols = list(set(use_cols) - set(skip_cols))
+    initial_types = df.dtypes
+    initial_sizes = df.memory_usage(deep=True)
+
+    # Leverage pandas inference for non-numeric columns
+    non_numeric_cols = [col for col in use_cols if not pd.api.types.is_numeric_dtype(df[col])]
+    if len(non_numeric_cols) > 0:
+        df[non_numeric_cols] = df[non_numeric_cols].convert_dtypes()
+
+    dtype_changes = {}
+    for col in use_cols:
+        col_dtype = df[col].dtype
+
+        # Convert floats to integers if they're all round numbers
+        if infer_float_to_int and pd.api.types.is_float_dtype(col_dtype):
+            if all((x % 1 == 0) for x in df[col]):
+                downcast_arg = "integer" if df[col].min() < 0 else "unsigned"
+                df[col] = pd.to_numeric(df[col], downcast=downcast_arg, errors="ignore")
+
+        if pd.api.types.is_float_dtype(col_dtype) and not all((x % 1 == 0) for x in df[col]):
+            df[col] = pd.to_numeric(df[col], downcast="float", errors="ignore")
+
+        if infer_string_to_category and pd.api.types.is_string_dtype(col_dtype):
+            unique_ratio = len(df[col].unique()) / len(df)
+            if unique_ratio < infer_string_to_category_frac_threshold:
+                df[col] = df[col].astype("category")
+
+        # Record dtype changes
+        if col_dtype != df[col].dtype:
+            dtype_changes[col] = df[col].dtype
+
+    if verbose:
+        final_types = df.dtypes
+        final_sizes = df.memory_usage(deep=True)
+        total_initial_size = initial_sizes.sum()
+        total_final_size = final_sizes.sum()
+
+        print("\n\nChanged\tColumn\tInitial Type\tFinal Type\tInitial Size\tFinal Size")
+        for col in use_cols:
+            changed = initial_types[col] != final_types[col]
+            print(
+                f"{'[X]' if changed else '[ ]'}\t{col}\t{initial_types[col]}\t{final_types[col]}\t"
+                f"{initial_sizes[col]}\t{final_sizes[col]}"
+            )
+        print(f"\nTotal size before: {total_initial_size}\nTotal size after: {total_final_size}")
+
+        print("\nApply changes using the following command:")
+        print(f"df = df.astype({dtype_changes})")
+
+    if inplace:
+        return None
+    else:
+        return df
+
+
+def test_convert_dtypes_advanced():
+    # Create a test dataframe with various data types
+    test_df = pd.DataFrame(
+        {
+            "small_ints_uint8": [1.0, 2.0, 3.0, 4.0, 5.0],
+            "small_floats_float32": [-1.5, 2.5, 3.5, 4.5, 5.5],
+            "big_floats_round_uint64": [1e10, 2e10, 3e10, 4e10, 5e10],
+            "medium_floats_round_uint32": [1e5, 2e5, 3e5, 4e5, 3],
+            "medium_neg_floats_round_int32": [1e5, 2e5, 3e5, 4e5, -3],
+            "big_floats_float64": [1e20, 2e20, 3e20, 4e20, 3.3],
+            "few_strings_category": ["apple", "orange", "apple", "apple", "apple"],
+            "many_strings_str": ["red", "blue", "green", "yellow", "black"],
+            "ints_with_negative_int8": [-3, 0, 2, 4, 7],
+        }
+    )
+
+    # Call the convert_dtypes_advanced function
+    convert_dtypes_advanced(test_df, verbose=True)
+
+    # Assert the expected data types after conversion
+    assert test_df["small_ints_uint8"].dtype == "uint8"
+    assert test_df["small_floats_float32"].dtype == "float32"
+    assert test_df["big_floats_round_uint64"].dtype == "uint64"
+    assert test_df["medium_floats_round_uint32"].dtype == "uint32"
+    assert test_df["medium_neg_floats_round_int32"].dtype == "int32"
+    assert test_df["big_floats_float64"].dtype == "float64"
+    assert pd.api.types.is_categorical_dtype(test_df["few_strings_category"])
+    assert pd.api.types.is_string_dtype(test_df["many_strings_str"])
+    print("WE EXPECT THIS NEXT LINE TO FAIL. MITCHELL TODO")
+    assert test_df["ints_with_negative_int8"].dtype == "int8"
