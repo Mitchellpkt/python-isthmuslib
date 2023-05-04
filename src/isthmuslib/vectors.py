@@ -20,6 +20,7 @@ from .utils import (
     df_read_any,
     convert_dtypes_automatically_subset,
     convert_dtypes_advanced,
+    machine_time,
 )
 from .data_quality import basis_quality_checks, basis_quality_plots, fill_ratio
 from copy import deepcopy
@@ -125,7 +126,7 @@ class VectorMultiset(PickleUtils, Style, Rosetta):
         self.data = convert_dtypes_automatically_subset(self.data, cols)
 
     def convert_dtypes_advanced(self, **kwargs) -> None:
-        """Converts the data types of a subset of columns, wraps utils.convert_dtypes_advanced """
+        """Converts the data types of a subset of columns, wraps utils.convert_dtypes_advanced"""
         self.data = convert_dtypes_advanced(self.data, **kwargs)
 
     ################
@@ -861,6 +862,19 @@ class VectorSequence(VectorMultiset):
         """
         df: pd.DataFrame = deepcopy(self.data)
         df.sort_values(by=self.basis_col_name, ascending=True, inplace=True, ignore_index=True)
+
+        # If inputs are strings, attempt to convert to timestamps
+        if isinstance(start_at, str):
+            try:
+                start_at: float = machine_time(start_at)
+            except ValueError:
+                raise ValueError(f"Unsure how to process {start_at=}")
+        if isinstance(stop_at, str):
+            try:
+                stop_at: float = machine_time(stop_at)
+            except ValueError:
+                raise ValueError(f"Unsure how to process {stop_at=}")
+
         if not start_at:
             start_at: Any = min(df.loc[:, self.basis_col_name])
         if not stop_at:
