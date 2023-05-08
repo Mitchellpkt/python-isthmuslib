@@ -475,3 +475,9 @@ Changelog
 * kwargsmap multiprocessing
 * data type conversions
 * misc data I/O
+
+0.0.101 (2023-05-05)
+--------------------
+
+* autosizer
+* strings for time slices
