@@ -1734,8 +1734,10 @@ def correlation_matrix(
 
     # Filter the correlation matrix by the provided row and column names, if they are not None
     if display_row_names is not None:
+        display_row_names = [row for row in display_row_names if row in corr.index]
         corr = corr.loc[display_row_names, :]
     if display_col_names is not None:
+        display_col_names = [col for col in display_col_names if col in corr.columns]
         corr = corr.loc[:, display_col_names]
 
     return corr.style.background_gradient(**kwargs)  # type: ignore
