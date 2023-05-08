@@ -481,3 +481,8 @@ Changelog
 
 * autosizer
 * strings for time slices
+
+0.0.102 (2023-05-08)
+--------------------
+
+* auto filter for numeric
