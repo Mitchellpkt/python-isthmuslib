@@ -1,5 +1,5 @@
 import time as time
-from typing import List, Any, Tuple, Callable, Dict, Union, Iterable
+from typing import List, Any, Tuple, Callable, Dict, Union, Iterable, Optional
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -1696,6 +1696,9 @@ def correlation_matrix(
     exclude_cols: List[str] = None,
     correlation_method: str = "pearson",
     style: Style = None,
+    display_row_names: Optional[List[str]] = None,
+    display_col_names: Optional[List[str]] = None,
+    auto_filter_to_numeric: bool = True,
     **kwargs,
 ) -> pd.DataFrame:
     """
@@ -1706,6 +1709,9 @@ def correlation_matrix(
     :param exclude_cols: which columns to exclude (NB: exclude overrides include)
     :param correlation_method: Method of correlation {‘pearson’, ‘kendall’, ‘spearman’} or Callable
     :param style: isthmuslib Style object for the colormap
+    :param display_row_names: which row names to display in the final output
+    :param display_col_names: which column names to display in the final output
+    :param auto_filter_to_numeric: automatically filter non-numeric columns
     :param kwargs: additional keyword arguments for df.style.background_gradient()
     :return: styled pandas dataframe
     """
@@ -1713,12 +1719,26 @@ def correlation_matrix(
         use_cols: List[str] = dataframe.keys().tolist()
     if exclude_cols:
         use_cols: List[str] = [x for x in use_cols if x not in exclude_cols]
+
+    # Filter to numeric columns if auto_filter_to_numeric is True
+    if auto_filter_to_numeric:
+        dataframe = dataframe.select_dtypes(include=np.number)
+        use_cols: List[str] = [col for col in use_cols if col in dataframe.columns]
+
     if style:
         kwargs.setdefault("cmap", style.cmap)
     else:
         kwargs.setdefault("cmap", Style().cmap)
+
     corr: pd.DataFrame = dataframe.loc[:, use_cols].corr(method=correlation_method)
-    return corr.style.background_gradient(**kwargs)  # noqa: misinterprets type
+
+    # Filter the correlation matrix by the provided row and column names, if they are not None
+    if display_row_names is not None:
+        corr = corr.loc[display_row_names, :]
+    if display_col_names is not None:
+        corr = corr.loc[:, display_col_names]
+
+    return corr.style.background_gradient(**kwargs)  # type: ignore
 
 
 def info_surface_slider(vs: VectorSequence, *args, **kwargs) -> Dict[str, Any]:
