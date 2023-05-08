@@ -1699,22 +1699,11 @@ def correlation_matrix(
     display_row_names: Optional[List[str]] = None,
     display_col_names: Optional[List[str]] = None,
     auto_filter_to_numeric: bool = True,
+    minimum_sample_size: Optional[int] = None,
+    val_for_under_minimum_sample_size: Optional[Any] = np.nan,
     **kwargs,
 ) -> pd.DataFrame:
-    """
-    Returns a styled pandas data frame with correlation coefficients (Pearson by default), wraps pandas.corr()
 
-    :param dataframe: dataframe to analyze
-    :param use_cols: which columns to use
-    :param exclude_cols: which columns to exclude (NB: exclude overrides include)
-    :param correlation_method: Method of correlation {‘pearson’, ‘kendall’, ‘spearman’} or Callable
-    :param style: isthmuslib Style object for the colormap
-    :param display_row_names: which row names to display in the final output
-    :param display_col_names: which column names to display in the final output
-    :param auto_filter_to_numeric: automatically filter non-numeric columns
-    :param kwargs: additional keyword arguments for df.style.background_gradient()
-    :return: styled pandas dataframe
-    """
     if not use_cols:
         use_cols: List[str] = dataframe.keys().tolist()
     if exclude_cols:
@@ -1730,7 +1719,16 @@ def correlation_matrix(
     else:
         kwargs.setdefault("cmap", Style().cmap)
 
-    corr: pd.DataFrame = dataframe.loc[:, use_cols].corr(method=correlation_method)
+    corr: pd.DataFrame = pd.DataFrame(index=use_cols, columns=use_cols)
+    for col1 in use_cols:
+        for col2 in use_cols:
+            pair_df = dataframe[[col1, col2]].dropna()
+            if (
+                minimum_sample_size is not None and len(pair_df) < minimum_sample_size
+            ):  # If there are not enough non-NaN pairs
+                corr.loc[col1, col2] = val_for_under_minimum_sample_size
+            else:
+                corr.loc[col1, col2] = pair_df[col1].corr(pair_df[col2], method=correlation_method)
 
     # Filter the correlation matrix by the provided row and column names, if they are not None
     if display_row_names is not None:
