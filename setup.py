@@ -26,7 +26,7 @@ split_string: str = "Demo one-liners"
 
 setup(
     name="isthmuslib",
-    version="0.0.102",
+    version="0.0.103",
     license="LGPL-3.0-only",
     description="Tooling for rapid data exploration, timeseries analysis, log extraction & visualization, etc",
     long_description=long_description_raw.split(split_string)[0],

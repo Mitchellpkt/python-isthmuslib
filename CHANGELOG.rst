@@ -486,3 +486,8 @@ Changelog
 --------------------
 
 * auto filter for numeric
+
+0.0.103 (2023-05-08)
+--------------------
+
+* improve arg handling
