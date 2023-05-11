@@ -7,15 +7,12 @@ import time
 from datetime import datetime
 from multiprocessing import cpu_count, Pool, current_process
 from typing import Iterable, List, Tuple, Dict, Any, Union, Callable, Optional
-from copy import deepcopy
 
+import nbformat
 import numpy as np
 import pandas as pd
 import pytz
 from dateutil import parser
-from pandas import DataFrame, Series
-from pandas.io.json._json import JsonReader
-from pandas.io.parsers import TextFileReader
 from pydantic import BaseModel
 from tqdm.auto import tqdm
 
@@ -1066,7 +1063,6 @@ def convert_dtypes_advanced(
     inplace: bool = True,
     verbose: bool = True,
 ) -> Optional[pd.DataFrame]:
-
     # Setup / Init
     if not inplace:
         df = df.copy()
@@ -1158,3 +1154,49 @@ def test_convert_dtypes_advanced():
     assert pd.api.types.is_string_dtype(test_df["many_strings_str"])
     print("WE EXPECT THIS NEXT LINE TO FAIL. MITCHELL TODO")
     assert test_df["ints_with_negative_int8"].dtype == "int8"
+
+
+def notebook_to_py(
+    notebook_path: Union[pathlib.Path, str],
+    output_path: Optional[Union[pathlib.Path, str]] = "auto",
+    print_to_console: bool = True,
+    include_markdown: bool = True,
+) -> str:
+    """Convert a Jupyter notebook to a Python script. Can print to console, to file, and return converted code.
+
+    :param notebook_path: Path to the notebook file.
+    :param output_path: Path to the output Python file. If 'auto', the output path will be the same as the notebook
+        path, but with the extension changed to '.py'.
+    :param print_to_console: If True, print the Python script to the console.
+    :param include_markdown: If True, include markdown cells in the Python script as comments.
+    """
+    notebook_path_as_path: pathlib.Path = pathlib.Path(notebook_path)
+    if not notebook_path_as_path.exists():
+        raise ValueError(f"Notebook path {notebook_path} does not exist.")
+
+    # Load the notebook file
+    with open(notebook_path_as_path, "r") as f:
+        notebook: nbformat.notebooknode = nbformat.read(f, as_version=4)
+
+    # Extract the code cells and markdown cells from the notebook
+    notebook_content: List[str] = []
+    for cell in notebook.cells:
+        if cell.cell_type == "code":
+            notebook_content.append(cell.source)
+        elif cell.cell_type == "markdown" and include_markdown:
+            # Convert markdown to comments
+            md_as_comment: str = "\n".join("# " + line for line in cell.source.split("\n"))
+            notebook_content.append(md_as_comment)
+
+    code_content: str = "\n\n".join(notebook_content)
+
+    if output_path is not None:
+        if output_path.lower() == "auto":
+            output_path: pathlib.Path = notebook_path_as_path.with_suffix(".py")
+        with open(output_path, "w") as f:
+            f.write(code_content)
+
+    if print_to_console:
+        print(f"\n{code_content}")
+
+    return code_content
