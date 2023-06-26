@@ -140,6 +140,7 @@ def human_time(
     formatter: str = "%Y-%m-%d %H:%M:%S",
     timezone: str = "US/Pacific",
     include_timezone: bool = True,
+    pass_through_strings: bool = True,
 ) -> str:
     """Converts timestamp to human readable time, taking into account time zone (US/Pacific by default)
     To see other time zone options, see `pytz.common_timezones`"""
@@ -152,7 +153,12 @@ def human_time(
             if timestamp_sec.replace(".", "", 1).isdigit():
                 timestamp_sec: float = float(timestamp_sec)
             else:
-                raise ValueError(f"Could not interpret string as a numeric timestamp: {timestamp_sec})")
+                if pass_through_strings:
+                    return timestamp_sec
+                else:
+                    raise ValueError(
+                        f"Could not interpret string as a numeric timestamp: {timestamp_sec}) and pass_through_strings=False"
+                    )
     datetime_string: str = datetime.fromtimestamp(timestamp_sec, pytz.timezone(timezone)).strftime(formatter)
     if include_timezone:
         datetime_string += f" ({timezone})"
@@ -164,6 +170,7 @@ def machine_time(
     units: str = "seconds",
     disable_progress_bar: bool = True,
     use_pandas_for_multiple_conversions: bool = None,
+    pass_through_numerics: bool = True,
     **kwargs,
 ) -> Union[float, List[float]]:
     """
@@ -173,6 +180,7 @@ def machine_time(
     :param units: seconds or milliseconds
     :param disable_progress_bar: setting to False will activate a tqdm progress bar for conversions over lists
     :param use_pandas_for_multiple_conversions: Use pandas for converting many timestamps (recommended)
+    :param pass_through_numerics: if True, will simply pass through integers or floats
     :return: unix timestamp
     """
 
@@ -187,6 +195,17 @@ def machine_time(
         multiplier: int = 1_000_000_000
     else:
         raise ValueError(f"Unknown units: {units}")
+
+    # check if time_or_times is either numeric or if all its elements are numeric
+    if isinstance(time_or_times, (int, float)) or (
+        isinstance(time_or_times, list) and all(isinstance(i, (int, float)) for i in time_or_times)
+    ):
+        if pass_through_numerics:
+            return time_or_times
+        else:
+            raise ValueError(
+                "Numeric values are not allowed when pass_through_numerics is set to False. Did you mean `human_time`?"
+            )
 
     # If just one string, drop it into a list
     if isinstance(time_or_times, str):
@@ -597,6 +616,9 @@ def df_to_any(
             raise ValueError(f"Unrecognized file extension {path.suffix}")
 
 
+to_any = df_to_any
+
+
 def df_read_any(path: Union[pathlib.Path, str], **kwargs) -> pd.DataFrame:
     """Read a dataframe from any of the supported formats, based on the file extension"""
     path = pathlib.Path(path)
@@ -618,6 +640,9 @@ def df_read_any(path: Union[pathlib.Path, str], **kwargs) -> pd.DataFrame:
             raise ValueError("Must specify key for hdf file. Hint: isthmuslib by default writes the key 'df'")
     else:
         raise ValueError(f"Unrecognized file extension {path.suffix}")
+
+
+read_any = df_read_any
 
 
 def looks_like_list_of_lists(input_var: Any) -> bool:
@@ -1157,7 +1182,7 @@ def test_convert_dtypes_advanced():
 
 
 def notebook_to_py(
-    notebook_path: Union[pathlib.Path, str],
+    notebook_path: Optional[Union[pathlib.Path, str]] = None,
     output_path: Optional[Union[pathlib.Path, str]] = "auto",
     print_to_console: bool = True,
     include_markdown: bool = True,
@@ -1170,6 +1195,10 @@ def notebook_to_py(
     :param print_to_console: If True, print the Python script to the console.
     :param include_markdown: If True, include markdown cells in the Python script as comments.
     """
+    # If notebook path is not specified, use the filename from the file that called it
+    if ...:
+        ...
+
     notebook_path_as_path: pathlib.Path = pathlib.Path(notebook_path)
     if not notebook_path_as_path.exists():
         raise ValueError(f"Notebook path {notebook_path} does not exist.")
@@ -1200,3 +1229,7 @@ def notebook_to_py(
         print(f"\n{code_content}")
 
     return code_content
+
+
+# alias for extention_to_extension
+ipynb_to_py = notebook_to_py

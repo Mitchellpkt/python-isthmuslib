@@ -51,7 +51,9 @@ Convenience utils for plotting, styling, and manipulating high-dimensional vecto
 * The :code:`VectorSequence` object is designed for handling, plotting, and manipulating timeseries-like high-dimensional vectors. Its functionality includes: dimensionality reduction via singular vealue decomposition, seasonal (e.g. weekly, monthly, ...) timeseries decomposition, infosurface generation, and more.
 * Uses industry standard libraries (pyplot, numpy, seaborn, pandas, etc) under the hood, and exposes their underlying functionality through the wrappers.
 
-Free software for personal or academic use: **GNU Lesser General Public License v3 (LGPLv3).** Contact licensing@mitchellpkt.com for commercial applications.
+Free software under the  `MIT license <https://github.com/Mitchellpkt/python-isthmuslib/blob/main/LICENSE>`_.
+
+Contact: isthmuslib@mitchellpkt.com
 
 Installation
 ============
