@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import Tuple, Any, Dict
+from typing import Tuple, Any, Dict, Optional
 from .utils import Rosetta
 from copy import deepcopy
 
@@ -8,59 +8,59 @@ class Style(BaseModel):
     """Miscellaneous properties; set defaults once, then use or inherit elsewhere for consistent style
     (note: some names are formatted to be congruent with matplotlib.pyplot vars & args, rather than isthmuslib)"""
 
-    color: Any = "DarkGreen"  # isthmuslib default
-    facecolor: Any = "w"
-    title_fontsize: Any = 18.0
-    label_fontsize: Any = 15.0
-    legend_fontsize: Any = 15.0
-    tick_fontsize: Any = 12.0
-    figsize: Tuple[Any, Any] = (12.0, 8.0)
-    linewidth: Any = 5.0
-    linestyle: Any = "-"
-    grid: bool = False
-    tight_axes: bool = True
-    formatter: str = "%Y-%m-%d %H:%M:%S"
-    include_timezone: bool = False
-    markersize: Any = 50
-    transparent_alpha: float = 0.5
-    watermark_placement: Any = (0.05, 0.05)
-    watermark_fontsize: Any = 20
-    watermark_color: Any = "dimgrey"
-    watermark_text: str = ""
-    histogram_bins: Any = 25
-    multi_hist_alpha: float = 0.5
-    rosetta: Rosetta = Rosetta()
-    median_linestyle: Any = "--"
-    median_linewidth: Any = 3.0
-    median_linecolor: Any = "k"
-    mean_linestyle: Any = "-"
-    mean_linewidth: Any = 3.0
-    mean_linecolor: Any = "k"
-    cycler: Any = None
-    good_color: Any = "navy"
-    bad_color: Any = "firebrick"
-    cmap: Any = "inferno"
-    sequential_cmap: Any = "Greens"
-    log_formatter: str = "\n@@ {time:x} AT: {time} | LEVEL: {level} | IN: {name}.{function}\n\n{message} |\n"
-    timeframe_prefix: str = "from "
-    timeframe_between: str = " to "
-    timeframe_suffix: str = ""
-    auto_locf_params: Dict[str, Any] = {
+    color: Optional[Any] = "DarkGreen"  # isthmuslib default
+    facecolor: Optional[Any] = "w"
+    title_fontsize: Optional[Any] = 18.0
+    label_fontsize: Optional[Any] = 15.0
+    legend_fontsize: Optional[Any] = 15.0
+    tick_fontsize: Optional[Any] = 12.0
+    figsize: Optional[Tuple[Any, Any]] = (12.0, 8.0)
+    linewidth: Optional[Any] = 5.0
+    linestyle: Optional[Any] = "-"
+    grid: Optional[bool] = False
+    tight_axes: Optional[bool] = True
+    formatter: Optional[str] = "%Y-%m-%d %H:%M:%S"
+    include_timezone: Optional[bool] = False
+    markersize: Optional[Any] = 50
+    transparent_alpha: Optional[float] = 0.5
+    watermark_placement: Optional[Any] = (0.05, 0.05)
+    watermark_fontsize: Optional[Any] = 20
+    watermark_color: Optional[Any] = "dimgrey"
+    watermark_text: Optional[str] = ""
+    histogram_bins: Optional[Any] = 25
+    multi_hist_alpha: Optional[float] = 0.5
+    rosetta: Optional[Rosetta] = Rosetta()
+    median_linestyle: Optional[Any] = "--"
+    median_linewidth: Optional[Any] = 3.0
+    median_linecolor: Optional[Any] = "k"
+    mean_linestyle: Optional[Any] = "-"
+    mean_linewidth: Optional[Any] = 3.0
+    mean_linecolor: Optional[Any] = "k"
+    cycler: Optional[Any] = None
+    good_color: Optional[Any] = "navy"
+    bad_color: Optional[Any] = "firebrick"
+    cmap: Optional[Any] = "inferno"
+    sequential_cmap: Optional[Any] = "Greens"
+    log_formatter: Optional[str] = "\n@@ {time:x} AT: {time} | LEVEL: {level} | IN: {name}.{function}\n\n{message} |\n"
+    timeframe_prefix: Optional[str] = "from "
+    timeframe_between: Optional[str] = " to "
+    timeframe_suffix: Optional[str] = ""
+    auto_locf_params: Optional[Dict[str, Any]] = {
         "window": 3,
         "impute_method": "median",
         "impute_direction": "forward",
         "add_noise": False,
     }
-    x_axis_human_tick_labels: bool = False
-    x_axis_formatter: str = None
-    dict_pretty_max_length: int = 32
-    dict_pretty_previews: bool = False
-    axhline_color: str = "gray"
-    axhline_linestyle: str = "--"
-    axhline_linewidth: float = 1.0
-    axvline_color: str = "gray"
-    axvline_linestyle: str = "--"
-    axvline_linewidth: float = 1.0
+    x_axis_human_tick_labels: Optional[bool] = False
+    x_axis_formatter: Optional[str] = None
+    dict_pretty_max_length: Optional[int] = 32
+    dict_pretty_previews: Optional[bool] = False
+    axhline_color: Optional[str] = "gray"
+    axhline_linestyle: Optional[str] = "--"
+    axhline_linewidth: Optional[float] = 1.0
+    axvline_color: Optional[str] = "gray"
+    axvline_linestyle: Optional[str] = "--"
+    axvline_linewidth: Optional[float] = 1.0
 
     def translate(self, key: str, **kwargs) -> str:
         """Helper function that allows Style objects to translate text according to the provided Rosetta mappings
