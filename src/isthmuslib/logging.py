@@ -1,4 +1,4 @@
-from typing import Union, Dict, Any, List, Tuple
+from typing import Union, Dict, Any, List, Tuple, Optional
 import pandas as pd
 from tqdm.auto import tqdm
 from .utils import divvy_workload, get_num_workers, process_queue
@@ -11,14 +11,16 @@ import pathlib
 
 
 class LogIO(BaseModel):
-    record_delimiter: str = "[@@@]"
-    left_token: str = "[<<"
-    key_value_delimiter: str = "="
-    right_token: str = ">>]"
-    parallelize_imports: bool = True
-    embedded_json_line_prefix: str = "[[EMBEDDED_JSON_LINE]]"
-    embedded_csv_line_prefix: str = "[[EMBEDDED_CSV_LINE]]"  # spoiler alert
-    log_formatter: str = "\n@@ {time:x} AT: {time} | LEVEL: {level} | IN: {name}.{function}\n\n{message} |\n"  # TODO: unify this object's string fields with Config?? # noqa
+    record_delimiter: Optional[str] = "[@@@]"
+    left_token: Optional[str] = "[<<"
+    key_value_delimiter: Optional[str] = "="
+    right_token: Optional[str] = ">>]"
+    parallelize_imports: Optional[bool] = True
+    embedded_json_line_prefix: Optional[str] = "[[EMBEDDED_JSON_LINE]]"
+    embedded_csv_line_prefix: Optional[str] = "[[EMBEDDED_CSV_LINE]]"  # spoiler alert
+    log_formatter: Optional[
+        str
+    ] = "\n@@ {time:x} AT: {time} | LEVEL: {level} | IN: {name}.{function}\n\n{message} |\n"  # TODO: unify this object's string fields with Config?? # noqa
 
     def single_feature_to_log(self, key: str, value: str) -> str:
         return f"{self.left_token}{key}{self.key_value_delimiter}{value}{self.right_token}"

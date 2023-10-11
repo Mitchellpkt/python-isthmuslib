@@ -51,9 +51,9 @@ class SVD(BaseModel):
 class VectorMultiset(PickleUtils, Style, Rosetta):
     """A set of vectors (which may or may not be ordered)"""
 
-    data: Any = None  # needs to be dataframe or path/str to CSV file
-    name_root: str = None
-    svd: SVD = None
+    data: Optional[Any] = None  # needs to be dataframe or path/str to CSV file
+    name_root: Optional[str] = None
+    svd: Optional[SVD] = None
 
     class Config:
         arbitrary_types_allowed = True

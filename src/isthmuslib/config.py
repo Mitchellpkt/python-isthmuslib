@@ -41,7 +41,9 @@ class Style(BaseModel):
     bad_color: Optional[Any] = "firebrick"
     cmap: Optional[Any] = "inferno"
     sequential_cmap: Optional[Any] = "Greens"
-    log_formatter: Optional[str] = "\n@@ {time:x} AT: {time} | LEVEL: {level} | IN: {name}.{function}\n\n{message} |\n"
+    log_formatter: Optional[
+        str
+    ] = "\n@@ {time:x} AT: {time} | LEVEL: {level} | IN: {name}.{function}\n\n{message} |\n"
     timeframe_prefix: Optional[str] = "from "
     timeframe_between: Optional[str] = " to "
     timeframe_suffix: Optional[str] = ""

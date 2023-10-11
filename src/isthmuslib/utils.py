@@ -55,16 +55,16 @@ class PickleJar(PickleUtils):
 class Rosetta(BaseModel):
     """Rules and methods for converting timestamps and raw labels to human-readable formats"""
 
-    timezone: str = "US/Pacific"
-    formatter: str = "%Y-%m-%d %H:%M:%S"
-    stone: Dict[str, str] = {
+    timezone: Optional[str] = "US/Pacific"
+    formatter: Optional[str] = "%Y-%m-%d %H:%M:%S"
+    stone: Optional[Dict[str, str]] = {
         # input string : human-readable output
         "input": "The Input (formatted)",
         "window_start": "Window start time",
         "window_width": "Window width"
         # ... (fill out the rest of the human-readable names)
     }
-    default_missing_response: str = "return_input"
+    default_missing_response: Optional[str] = "return_input"
 
     def translate(self, key: str, missing_response: str = None) -> str:
         """Main function that wraps dictionary access with robust handling for missing inputs, missing keys, etc.
@@ -794,7 +794,7 @@ def benchmark_process_queue(
     :return: dictionary with worker counts for keys and performance time in seconds for the values
     """
     if not worker_counts:
-        worker_counts = [2**x for x in range(int(math.log2(cpu_count())) + 1)][::-1]
+        worker_counts = [2 ** x for x in range(int(math.log2(cpu_count())) + 1)][::-1]
 
     benchmarks: Dict[int, float] = dict()
     try:
