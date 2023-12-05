@@ -233,6 +233,7 @@ def visualize_1d_distribution(
     show: bool = False,
     axhline: Union[float, List[float]] = None,
     axvline: Union[float, List[float]] = None,
+    annotate_raw_counts: bool = False,
     downsample_viz_by_N_rows: int = 1,
     **kwargs,
 ) -> plt.Figure:
@@ -290,12 +291,24 @@ def visualize_1d_distribution(
                 )
         else:
             hist_bins = kwargs.get("bins")
-        plt.hist(
+        counts, bins, patches = plt.hist(
             data_set[::downsample_viz_by_N_rows],
             color=config.color,
             bins=hist_bins,
             **{k: v for k, v in kwargs.items() if not any(x_ in k for x_ in ["plot", "bins"])},
         )
+
+        # Add text annotations for each bar
+        if annotate_raw_counts:
+            for count, patch in zip(counts, patches):
+                plt.text(
+                    patch.get_x() + patch.get_width() / 2,  # X position
+                    patch.get_height(),  # Y position
+                    f"{int(count)}",  # Text (count)
+                    ha="center",  # Center alignment
+                    va="bottom",  # Place text at the bottom of the count
+                )
+
         if describe:
             description: pd.Series = pd.DataFrame({"_data_": data_set})["_data_"].describe()
             stat_str: str = dict_pretty(
