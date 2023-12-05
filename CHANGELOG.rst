@@ -503,3 +503,8 @@ Changelog
 
 * MIT License
 * passthrough args
+
+0.0.106 (2023-12-05)
+--------------------
+
+* `annotate_raw_values` for histograms
