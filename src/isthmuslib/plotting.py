@@ -787,7 +787,7 @@ def visualize_surface(
 
     # Initial data wrangling
     df: pd.DataFrame = pd.DataFrame({"x": x_data, "y": y_data, "z": z_data})
-    pivoted: pd.DataFrame = df.pivot("y", "x", "z")
+    pivoted: pd.DataFrame = df.pivot(index="y", columns="x", values="z")
 
     # Make the plot
     figure_handle: plt.Figure = plt.figure(facecolor=config.facecolor, figsize=config.figsize)

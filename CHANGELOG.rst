@@ -508,3 +508,9 @@ Changelog
 --------------------
 
 * `annotate_raw_values` for histograms
+
+0.0.107 (2023-12-18)
+--------------------
+
+* change to pivot is called internally
+* updated formatting in utils

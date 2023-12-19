@@ -794,7 +794,7 @@ def benchmark_process_queue(
     :return: dictionary with worker counts for keys and performance time in seconds for the values
     """
     if not worker_counts:
-        worker_counts = [2 ** x for x in range(int(math.log2(cpu_count())) + 1)][::-1]
+        worker_counts = [2**x for x in range(int(math.log2(cpu_count())) + 1)][::-1]
 
     benchmarks: Dict[int, float] = dict()
     try:
