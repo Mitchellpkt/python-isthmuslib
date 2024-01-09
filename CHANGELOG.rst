@@ -514,3 +514,7 @@ Changelog
 
 * change to pivot is called internally
 * updated formatting in utils
+
+0.0.108 (2024-01-07)
+--------------------
+* add flag to allow workers to exceed core count
