@@ -717,11 +717,12 @@ def make_dict(d: Union[Dict, object, None]) -> Dict[Any, Any]:
         return d
 
 
-def get_num_workers(parallelize_arg: Union[bool, int, None]) -> int:
+def get_num_workers(parallelize_arg: Union[bool, int, None], allow_workers_exceed_cores: bool = False) -> int:
     """
     This is a helper function to ascertain the number of workers based on the parallelize_sliding_window input
 
     :param parallelize_arg: Whether to use multiprocessing for the sliding window. If True, uses # CPU cores.
+    :param allow_workers_exceed_cores: If True, allows the number of workers to exceed the number of CPU cores
     :return: number of parallel workers to instantiate
     """
     # (Daemonic processes are not allowed to have children)
@@ -739,8 +740,12 @@ def get_num_workers(parallelize_arg: Union[bool, int, None]) -> int:
         else:
             return 1
 
+    # if allow_workers_exceed_cores is True, we can return the input here
+    if allow_workers_exceed_cores:
+        return parallelize_arg
+
     # Otherwise return numeric inputs (but no more than the number of cores available)
-    return min(cpu_count(), parallelize_arg)
+    return min((cpu_count(), parallelize_arg))
 
 
 def determine_load_per_worker(num_tasks: int, num_workers: int) -> List[int]:
@@ -870,6 +875,7 @@ def process_queue(
     pool_function: str = None,
     batching: bool = False,
     num_workers: int = None,
+    allow_workers_exceed_cores: bool = False,
     cuts_per_worker: int = 3,
     serial_progress_bar: bool = True,
     *_,
@@ -883,13 +889,14 @@ def process_queue(
     :param pool_function: whether to use 'map' or 'starmap'. Will try to infer if not provided.
     :param batching: whether to handle batching manually
     :param num_workers: number of processes to run in parallel (should not exceed CPU core count)
+    :param allow_workers_exceed_cores: if True, allows the number of workers to exceed the number of CPU cores
     :param cuts_per_worker: if batching manually, can break into extra chunks to avoid idle time even if runtimes vary
     :param serial_progress_bar: whether to show the progress bar if processing in serial
     :param kwargs: additional keyword arguments for 'map' or 'starmap' (for example the max chunk size)
     :return: the results of func evaluated over the iterable
     """
     # Logic in `get_num_workers` ensures that we do not fork in a child process or exceed CPU count
-    num_workers = get_num_workers(num_workers)
+    num_workers = get_num_workers(num_workers, allow_workers_exceed_cores=allow_workers_exceed_cores)
 
     # Attempt to infer the pool function to be used, if not specified
     # This is NOT infallible! Suppose you want to 'map' over a list of tuples; it would infer that 'starmap' is desired.
