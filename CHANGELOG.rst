@@ -522,3 +522,7 @@ Changelog
 0.0.109 (2024-01-07)
 --------------------
 * fix: plot behavior args
+
+0.0.110 (2024-01-07)
+--------------------
+* tweak: additional style
