@@ -8,6 +8,8 @@ import numpy as np
 import pandas as pd
 import seaborn as sns
 from mpl_toolkits.mplot3d import Axes3D
+from itertools import cycle
+
 
 from .config import Style
 from .utils import (
@@ -878,6 +880,59 @@ def surface_from_dataframe(
     if any(element not in (keys := df.keys().tolist()) for element in col_names):
         raise ValueError(f"Could not find all of {col_names} in data frame keys: {keys}")
     return visualize_surface(df[x_col_name], df[y_col_name], df[z_col_name], **kwargs)
+
+
+def dict_to_bar_chart(
+    data,
+    xlabel: str = "",
+    ylabel="",
+    title: str = "",
+    cmap="tab10",
+    yscale: str = "linear",
+    grid: str = "xy",
+    show: bool = True,
+    figsize: Tuple[float, float] = (10.0, 6.0),
+) -> plt.Figure:
+    """
+    Plots a bar chart given a dict with string keys and numeric values.
+
+    :param data: dictionary of data to plot
+    :param xlabel: label text for the x-axis
+    :param ylabel: label text for the y-axis
+    :param title: title text
+    :param cmap: color map for bars (cycles)
+    :param yscale: scale for y-axis
+    :param grid: whether to show grid lines (can be 'x' or 'y', or 'xy'/'on' for both)
+    :param show: whether to show the plot
+    :param figsize: size of the figure
+    :return: figure handle for the plot
+    """
+
+    # Prepare color cycle
+    colormap = plt.get_cmap(cmap)
+    colors = cycle(colormap.colors)  # Cycling the colors
+
+    # Create the figure
+    f: plt.Figure = plt.figure(figsize=(10, 6))
+    for key, value in data.items():
+        plt.bar(key, value, color=next(colors))
+
+    # Adjust view & style where applicable
+    plt.yscale(yscale)
+    plt.xlabel(xlabel)
+    plt.ylabel(ylabel)
+    plt.title(title)
+
+    # Modify grid if desired
+    if "x" in grid.lower() or "on" in grid.lower():
+        plt.grid(axis="x", linestyle="--", alpha=0.7)
+    if "y" in grid.lower() or "on" in grid.lower():
+        plt.grid(axis="y", linestyle="--", alpha=0.7)
+
+    # Show the plot
+    plt.show()
+
+    return f
 
 
 ###################
