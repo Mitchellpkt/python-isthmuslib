@@ -889,7 +889,7 @@ def dict_to_bar_chart(
     title: str = "",
     cmap="tab10",
     yscale: str = "linear",
-    grid: str = "xy",
+    grid: str = "y",
     show: bool = True,
     figsize: Tuple[float, float] = (10.0, 6.0),
     facecolor: str = "white",
@@ -898,6 +898,8 @@ def dict_to_bar_chart(
     title_fontsize: int = 16,
     xlabel_fontsize: int = 14,
     ylabel_fontsize: int = 14,
+    label_values: bool = True,
+    label_fontsize: int = 12,
 ) -> plt.Figure:
     """
     Plots a bar chart given a dict with string keys and numeric values.
@@ -917,6 +919,8 @@ def dict_to_bar_chart(
     :param title_fontsize: fontsize for the title
     :param xlabel_fontsize: fontsize for the x-axis label
     :param ylabel_fontsize: fontsize for the y-axis label
+    :param label_values: whether to label the top of each bar with its value
+    :param label_fontsize: fontsize for the value labels
     :return: figure handle for the plot
     """
 
@@ -924,10 +928,20 @@ def dict_to_bar_chart(
     colormap = plt.get_cmap(cmap)
     colors = cycle(colormap.colors)  # Cycling the colors
 
-    # Create the figure
+    # Plot each bar and put a label on its top
     f: plt.Figure = plt.figure(figsize=figsize, facecolor=facecolor)
+    ax = f.add_subplot(111)
     for key, value in data.items():
-        plt.bar(key, value, color=next(colors))
+        bar = ax.bar(key, value, color=next(colors))
+        if label_values:
+            ax.text(
+                bar[0].get_x() + bar[0].get_width() / 2,
+                bar[0].get_height(),
+                str(value),
+                ha="center",
+                va="bottom",
+                fontsize=label_fontsize,
+            )
 
     # Adjust view & style where applicable
     plt.yscale(yscale)

@@ -526,3 +526,7 @@ Changelog
 0.0.110 (2024-01-07)
 --------------------
 * tweak: additional style
+
+0.0.111 (2024-01-07)
+--------------------
+* tweak: additional style
