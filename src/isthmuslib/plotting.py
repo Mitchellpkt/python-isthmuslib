@@ -913,7 +913,7 @@ def dict_to_bar_chart(
     colors = cycle(colormap.colors)  # Cycling the colors
 
     # Create the figure
-    f: plt.Figure = plt.figure(figsize=(10, 6))
+    f: plt.Figure = plt.figure(figsize=figsize)
     for key, value in data.items():
         plt.bar(key, value, color=next(colors))
 
@@ -930,7 +930,8 @@ def dict_to_bar_chart(
         plt.grid(axis="y", linestyle="--", alpha=0.7)
 
     # Show the plot
-    plt.show()
+    if show:
+        plt.show()
 
     return f
 

@@ -518,3 +518,7 @@ Changelog
 0.0.108 (2024-01-07)
 --------------------
 * add flag to allow workers to exceed core count
+
+0.0.109 (2024-01-07)
+--------------------
+* fix: plot behavior args
