@@ -892,6 +892,12 @@ def dict_to_bar_chart(
     grid: str = "xy",
     show: bool = True,
     figsize: Tuple[float, float] = (10.0, 6.0),
+    facecolor: str = "white",
+    xtick_rotation: int = 0,
+    xtick_fontsize: int = 12,
+    title_fontsize: int = 16,
+    xlabel_fontsize: int = 14,
+    ylabel_fontsize: int = 14,
 ) -> plt.Figure:
     """
     Plots a bar chart given a dict with string keys and numeric values.
@@ -905,6 +911,12 @@ def dict_to_bar_chart(
     :param grid: whether to show grid lines (can be 'x' or 'y', or 'xy'/'on' for both)
     :param show: whether to show the plot
     :param figsize: size of the figure
+    :param facecolor: facecolor for the figure
+    :param xtick_rotation: rotation for x-axis tick labels
+    :param xtick_fontsize: fontsize for x-axis tick labels
+    :param title_fontsize: fontsize for the title
+    :param xlabel_fontsize: fontsize for the x-axis label
+    :param ylabel_fontsize: fontsize for the y-axis label
     :return: figure handle for the plot
     """
 
@@ -913,15 +925,16 @@ def dict_to_bar_chart(
     colors = cycle(colormap.colors)  # Cycling the colors
 
     # Create the figure
-    f: plt.Figure = plt.figure(figsize=figsize)
+    f: plt.Figure = plt.figure(figsize=figsize, facecolor=facecolor)
     for key, value in data.items():
         plt.bar(key, value, color=next(colors))
 
     # Adjust view & style where applicable
     plt.yscale(yscale)
-    plt.xlabel(xlabel)
-    plt.ylabel(ylabel)
-    plt.title(title)
+    plt.xlabel(xlabel, fontsize=xlabel_fontsize)
+    plt.ylabel(ylabel, fontsize=ylabel_fontsize)
+    plt.title(title, fontsize=title_fontsize)
+    plt.xticks(rotation=xtick_rotation, fontsize=xtick_fontsize)
 
     # Modify grid if desired
     if "x" in grid.lower() or "on" in grid.lower():
