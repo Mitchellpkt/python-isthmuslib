@@ -2,12 +2,12 @@ import datetime
 from typing import List, Any, Union, Tuple, Callable, Dict
 
 import matplotlib
+import matplotlib.dates as mdates
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import seaborn as sns
 from mpl_toolkits.mplot3d import Axes3D
-import matplotlib.dates as mdates
 
 from .config import Style
 from .utils import (
