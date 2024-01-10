@@ -1,5 +1,5 @@
 import datetime
-from typing import List, Any, Union, Tuple, Callable, Dict
+from typing import List, Any, Union, Tuple, Callable, Dict, Optional
 
 import matplotlib
 import matplotlib.dates as mdates
@@ -18,6 +18,7 @@ from .utils import (
     to_list_if_other_array,
     make_dict,
     dict_pretty,
+    format_to_sig_figs_str,
 )
 
 
@@ -900,6 +901,7 @@ def dict_to_bar_chart(
     ylabel_fontsize: int = 14,
     label_values: bool = True,
     label_fontsize: int = 12,
+    sig_figs: Optional[int] = None,
 ) -> plt.Figure:
     """
     Plots a bar chart given a dict with string keys and numeric values.
@@ -921,6 +923,7 @@ def dict_to_bar_chart(
     :param ylabel_fontsize: fontsize for the y-axis label
     :param label_values: whether to label the top of each bar with its value
     :param label_fontsize: fontsize for the value labels
+    :param sig_figs: number of significant figures to use for the value labels
     :return: figure handle for the plot
     """
 
@@ -934,10 +937,15 @@ def dict_to_bar_chart(
     for key, value in data.items():
         bar = ax.bar(key, value, color=next(colors))
         if label_values:
+            if sig_figs is None:
+                label: str = str(value)
+            else:
+                label: str = format_to_sig_figs_str(value, sig_figs=sig_figs)
+
             ax.text(
                 bar[0].get_x() + bar[0].get_width() / 2,
                 bar[0].get_height(),
-                str(value),
+                label,
                 ha="center",
                 va="bottom",
                 fontsize=label_fontsize,

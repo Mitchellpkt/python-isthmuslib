@@ -1238,5 +1238,25 @@ def notebook_to_py(
     return code_content
 
 
+def format_to_sig_figs_str(num: float, sig_figs: int) -> str:
+    """Helper function to format numbers with a certain number of significant figures without commas."""
+    if num != 0:
+        # Calculate the number of digits to round to
+        num_digits: int = int(math.floor(math.log10(abs(num)))) + 1
+        round_digits: int = sig_figs - num_digits
+
+        # Round the number and format it as a string
+        rounded_num: float = round(num, round_digits)
+        if round_digits < 0:
+            # For numbers larger than 1, avoid decimal places if not needed
+            formatted_str = f"{int(rounded_num)}"
+        else:
+            # For numbers smaller than 1, keep the decimal places
+            formatted_str = f"{rounded_num:.{round_digits}f}".rstrip("0").rstrip(".")
+        return formatted_str
+    else:
+        return "0"
+
+
 # alias for extention_to_extension
 ipynb_to_py = notebook_to_py
