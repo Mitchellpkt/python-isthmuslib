@@ -372,6 +372,7 @@ def visualize_x_y(
     plot_best_fit: Union[bool, int] = False,
     rolling_mean_width: int = None,
     rolling_median_width: int = None,
+    rolling_center: bool = False,
     show_colorbar: bool = False,
     log_norm_colors: bool = False,
     colorbar_label: str = None,
@@ -404,6 +405,7 @@ def visualize_x_y(
     :param ylim: optional bound for the y-axis
     :param rolling_median_width: window width for rolling average taken by df.y.rolling(rolling_mean_width).mean()
     :param rolling_mean_width: window width for rolling average taken by df.y.rolling(rolling_median_width).median()
+    :param rolling_center: whether to center the `.rolling(...)` averages
     :param colorbar_label: optional label for the colorbar
     :param log_norm_colors: set to True to normalize the colorbar scale
     :param show_colorbar: set to True to show colorbar
@@ -516,7 +518,7 @@ def visualize_x_y(
             if rolling_mean_width:
                 plt.plot(
                     df.x,
-                    df.y.rolling(rolling_mean_width).mean(),
+                    df.y.rolling(rolling_mean_width, center=rolling_center).mean(),
                     color=config.mean_linecolor,
                     linewidth=config.mean_linewidth,
                     linestyle=config.mean_linestyle,
@@ -524,7 +526,7 @@ def visualize_x_y(
             if rolling_median_width:
                 plt.plot(
                     df.x,
-                    df.y.rolling(rolling_median_width).median(),
+                    df.y.rolling(rolling_median_width, center=rolling_center).median(),
                     color=config.median_linecolor,
                     linewidth=config.median_linewidth,
                     linestyle=config.median_linestyle,

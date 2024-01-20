@@ -534,3 +534,7 @@ Changelog
 0.0.112 (2024-01-07)
 --------------------
 * tweak: sig figs
+
+0.0.113 (2024-01-20)
+--------------------
+* tweak: center arg passthrough on viz xy
